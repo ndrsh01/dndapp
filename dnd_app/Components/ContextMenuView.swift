@@ -59,7 +59,7 @@ struct ContextMenuView: View {
         .background(Color.white)
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
-        .frame(width: 180)
+        .frame(width: 220)
     }
 }
 
@@ -94,48 +94,88 @@ struct ContextMenuModifier: ViewModifier {
     let onEdit: () -> Void
     let onDelete: () -> Void
     let onDuplicate: () -> Void
-    @State private var elementFrame: CGRect = .zero
+    @State private var showMenu = false
     @State private var scale: CGFloat = 1.0
-    @StateObject private var globalManager = GlobalContextMenuManager.shared
-    
+    @State private var borderColor: Color = .clear
+    @State private var borderWidth: CGFloat = 0
+
     func body(content: Content) -> some View {
-        content
-            .scaleEffect(scale)
-            .background(
-                GeometryReader { geometry in
-                    Color.clear
-                        .onAppear {
-                            elementFrame = geometry.frame(in: .global)
-                        }
-                        .onChange(of: geometry.frame(in: .global)) { _, newFrame in
-                            elementFrame = newFrame
-                        }
-                }
-            )
-            .gesture(
-                LongPressGesture(minimumDuration: 0.5)
-                    .onEnded { _ in
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                            scale = 1.05
-                        }
-                        // Haptic feedback
-                        let generator = UIImpactFeedbackGenerator(style: .medium)
-                        generator.impactOccurred()
-
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                            withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
-                                scale = 1.0
+        ZStack {
+            content
+                .scaleEffect(scale)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(borderColor, lineWidth: borderWidth)
+                )
+                .gesture(
+                    LongPressGesture(minimumDuration: 0.5)
+                        .onEnded { _ in
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                scale = 1.05
+                                borderColor = .orange.opacity(0.8)
+                                borderWidth = 2
                             }
-                        }
+                            // Haptic feedback
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
 
-                        globalManager.showMenu(
-                            for: elementFrame,
-                            onEdit: onEdit,
-                            onDelete: onDelete,
-                            onDuplicate: onDuplicate
-                        )
+                            showMenu = true
+                        }
+                )
+                .onTapGesture {
+                    if showMenu {
+                        withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
+                            scale = 1.0
+                            borderColor = .clear
+                            borderWidth = 0
+                        }
+                        showMenu = false
                     }
-            )
+                }
+
+            if showMenu {
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        ContextMenuView(
+                            onEdit: {
+                                onEdit()
+                                hideMenu()
+                            },
+                            onDelete: {
+                                onDelete()
+                                hideMenu()
+                            },
+                            onDuplicate: {
+                                onDuplicate()
+                                hideMenu()
+                            }
+                        )
+                        .offset(y: 20) // Опускаем меню ниже элемента
+                        Spacer()
+                    }
+                    Spacer()
+                }
+                .background(
+                    Color.black.opacity(0.3) // Затемнение всей области
+                        .onTapGesture {
+                            hideMenu()
+                        }
+                )
+                .transition(.opacity)
+                .zIndex(1000)
+            }
+        }
+    }
+
+    private func hideMenu() {
+        withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
+            scale = 1.0
+            borderColor = .clear
+            borderWidth = 0
+            showMenu = false
+        }
     }
 }
 

@@ -69,7 +69,7 @@ struct RelationshipIndicator: View {
         HStack(spacing: 6) {
             ForEach(0..<11, id: \.self) { index in
                 Button(action: {
-                    onTap(index + 1)
+                    onTap(index)
                 }) {
                     Image(systemName: iconForLevel(index))
                         .foregroundColor(colorForLevel(index))
@@ -168,12 +168,20 @@ struct ImportanceIndicator: View {
 // MARK: - Tabaxi Image Component
 struct TabaxiImageView: View {
     let imageName: String
-    
+
     var body: some View {
-        Image(imageName)
-            .resizable()
-            .aspectRatio(contentMode: .fit)
-            .frame(maxHeight: 200)
+        GeometryReader { geometry in
+            Image(imageName)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(
+                    width: min(geometry.size.width, geometry.size.height * 0.8),
+                    height: min(geometry.size.height, geometry.size.width * 1.2)
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        }
+        .frame(minHeight: 200, maxHeight: .infinity)
+        .clipped()
     }
 }
 

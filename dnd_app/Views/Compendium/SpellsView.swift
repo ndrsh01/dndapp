@@ -56,8 +56,8 @@ struct SpellsView: View {
         dataService.spells.filter { favoriteSpells.contains($0.id) }
     }
 
-    var regularSpellsList: [Spell] {
-        filteredSpells.filter { !favoriteSpells.contains($0.id) }
+    var allSpellsList: [Spell] {
+        filteredSpells
     }
     
     var availableLevels: [String] {
@@ -83,62 +83,29 @@ struct SpellsView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Search Bar
-                SearchBar(text: $searchText, placeholder: "Поиск заклинаний...")
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        // Favorite Spells Section
-                        if !favoriteSpellsList.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Image(systemName: "heart.fill")
-                                        .foregroundColor(.red)
-                                    Text("Избранные заклинания")
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
-                                    Spacer()
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.top, 16)
-                                
-                                ForEach(favoriteSpellsList) { spell in
-                                    SpellCardView(
-                                        spell: spell,
-                                        isExpanded: expandedSpells.contains(spell.id),
-                                        isFavorite: favoriteSpells.contains(spell.id),
-                                        onToggleExpanded: {
-                                            toggleExpanded(spell.id)
-                                        },
-                                        onToggleFavorite: {
-                                            toggleFavorite(spell.id)
-                                        }
-                                    )
-                                    .padding(.horizontal, 16)
-                                }
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    // Search Bar
+                    SearchBar(text: $searchText, placeholder: "Поиск заклинаний...")
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+
+                    // All Spells
+                    ForEach(allSpellsList) { spell in
+                        SpellCardView(
+                            spell: spell,
+                            isExpanded: expandedSpells.contains(spell.id),
+                            isFavorite: favoriteSpells.contains(spell.id),
+                            onToggleExpanded: {
+                                toggleExpanded(spell.id)
+                            },
+                            onToggleFavorite: {
+                                toggleFavorite(spell.id)
                             }
-                        }
-                        
-                        // Regular Spells
-                        ForEach(regularSpellsList) { spell in
-                            SpellCardView(
-                                spell: spell,
-                                isExpanded: expandedSpells.contains(spell.id),
-                                isFavorite: favoriteSpells.contains(spell.id),
-                                onToggleExpanded: {
-                                    toggleExpanded(spell.id)
-                                },
-                                onToggleFavorite: {
-                                    toggleFavorite(spell.id)
-                                }
-                            )
-                        }
+                        )
+                        .padding(.horizontal, 16)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
+                    .padding(.bottom, 20)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -162,7 +129,7 @@ struct SpellsView: View {
                 if dataService.spells.isEmpty {
                     print("Loading spells...")
                     Task {
-                        await dataService.loadSpells()
+                        await dataService.loadSpells();
                         print("Spells loaded, count: \(dataService.spells.count)")
                     }
                 }
@@ -187,7 +154,7 @@ struct SpellsView: View {
             expandedSpells.insert(spellId)
         }
     }
-    
+
     private func toggleFavorite(_ spellId: UUID) {
         if favoriteSpells.contains(spellId) {
             favoriteSpells.remove(spellId)
@@ -196,22 +163,20 @@ struct SpellsView: View {
         }
         saveFavoriteSpells()
     }
-    
+
     private func loadFavoriteSpells() {
         if let data = UserDefaults.standard.data(forKey: "favoriteSpells"),
            let favorites = try? JSONDecoder().decode(Set<UUID>.self, from: data) {
             favoriteSpells = favorites
         }
     }
-    
+
     private func saveFavoriteSpells() {
         if let data = try? JSONEncoder().encode(favoriteSpells) {
             UserDefaults.standard.set(data, forKey: "favoriteSpells")
         }
     }
 }
-
-
 // MARK: - Spell Card View
 struct SpellCardView: View {
     let spell: Spell

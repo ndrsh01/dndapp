@@ -49,15 +49,16 @@ struct MainTabView: View {
                     }
                     .zIndex(9998)
                 
-                // Подсветка элемента
+                // Вырезаем область элемента из затемнения
                 if globalContextMenu.showContextMenu {
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.blue.opacity(0.3))
+                    Rectangle()
+                        .fill(Color.clear)
                         .frame(width: globalContextMenu.highlightedElementFrame.width,
                                height: globalContextMenu.highlightedElementFrame.height)
                         .position(x: globalContextMenu.highlightedElementFrame.midX,
                                  y: globalContextMenu.highlightedElementFrame.midY)
                         .zIndex(9999)
+                        .blendMode(.destinationOut)
                 }
                 
                 // Само меню под элементом

@@ -15,75 +15,86 @@ struct BestiaryView: View {
     }
     
     var body: some View {
-        VStack {
-            // Search Bar
-            SearchBar(text: $searchText, placeholder: "Поиск монстров...")
+        NavigationView {
+            VStack {
+                // Search Bar
+                SearchBar(text: $searchText, placeholder: "Поиск монстров...")
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+
+                // Filters
+                HStack {
+                    Button(action: {
+                        showFilters = true
+                    }) {
+                        HStack {
+                            Image(systemName: "line.3.horizontal.decrease")
+                            Text("Фильтры")
+                        }
+                        .font(.caption)
+                        .foregroundColor(.orange)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(Color.orange.opacity(0.1))
+                        .cornerRadius(8)
+                    }
+
+                    Spacer()
+                }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
-            
-            // Filters
-            HStack {
-                Button(action: {
-                    showFilters = true
-                }) {
-                    HStack {
-                        Image(systemName: "line.3.horizontal.decrease")
-                        Text("Фильтры")
+
+                // Monsters List
+                if monsterService.isLoading {
+                    ProgressView("Загрузка монстров...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let error = monsterService.error {
+                    ErrorView(error: error) {
+                        monsterService.loadMonsters()
                     }
-                    .font(.caption)
-                    .foregroundColor(.orange)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.orange.opacity(0.1))
-                    .cornerRadius(8)
-                }
-                
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-            
-            // Monsters List
-            if monsterService.isLoading {
-                ProgressView("Загрузка монстров...")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = monsterService.error {
-                ErrorView(error: error) {
-                    monsterService.loadMonsters()
-                }
-            } else if filteredMonsters.isEmpty {
-                EmptyStateView(
-                    icon: "pawprint",
-                    title: "Монстры не найдены",
-                    description: searchText.isEmpty ? "Нет монстров в базе данных" : "Попробуйте изменить поисковый запрос"
-                )
-            } else {
-                List {
-                    ForEach(filteredMonsters) { monster in
-                        MonsterCardView(
-                            monster: monster,
-                            isExpanded: expandedMonsters.contains(monster.id)
-                        ) {
-                            toggleExpansion(for: monster)
-                        }
-                        .contextMenu(
-                            onEdit: {
-                                // TODO: Implement monster editing
-                            },
-                            onDelete: {
-                                // TODO: Implement monster deletion
-                            },
-                            onDuplicate: {
-                                // TODO: Implement monster duplication
+                } else if filteredMonsters.isEmpty {
+                    EmptyStateView(
+                        icon: "pawprint",
+                        title: "Монстры не найдены",
+                        description: searchText.isEmpty ? "Нет монстров в базе данных" : "Попробуйте изменить поисковый запрос"
+                    )
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(filteredMonsters) { monster in
+                                MonsterCardView(
+                                    monster: monster,
+                                    isExpanded: expandedMonsters.contains(monster.id)
+                                ) {
+                                    toggleExpansion(for: monster)
+                                }
+                                .contextMenu(
+                                    onEdit: {
+                                        // TODO: Implement monster editing
+                                    },
+                                    onDelete: {
+                                        // TODO: Implement monster deletion
+                                    },
+                                    onDuplicate: {
+                                        // TODO: Implement monster duplication
+                                    }
+                                )
+                                .padding(.horizontal, 16)
                             }
-                        )
+                        }
+                        .padding(.vertical, 8)
                     }
+                }
+            }
+            .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+            .navigationTitle("Бестиарий")
+            .navigationBarTitleDisplayMode(.large)
+            .onAppear {
+                if monsterService.monsters.isEmpty {
+                    monsterService.loadMonsters()
                 }
             }
         }
-        .background(Color(red: 0.98, green: 0.97, blue: 0.95))
-        .navigationTitle("Бестиарий")
-        .navigationBarTitleDisplayMode(.large)
         .sheet(isPresented: $showFilters) {
             MonsterFiltersView(selectedType: $selectedType)
         }

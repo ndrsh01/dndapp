@@ -30,63 +30,30 @@ struct FeatsView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Поиск
-                SearchBar(text: $searchText, placeholder: "Поиск черт...")
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        // Избранные черты
-                        if !favoriteFeatsList.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Image(systemName: "heart.fill")
-                                        .foregroundColor(.red)
-                                    Text("Избранные черты")
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
-                                    Spacer()
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.top, 16)
-                                
-                                ForEach(favoriteFeatsList) { feat in
-                                    FeatCardView(
-                                        feat: feat,
-                                        isExpanded: expandedFeats.contains(feat.id),
-                                        isFavorite: favoriteFeats.contains(feat.id),
-                                        onToggleExpanded: {
-                                            toggleExpanded(feat.id)
-                                        },
-                                        onToggleFavorite: {
-                                            toggleFavorite(feat.id)
-                                        }
-                                    )
-                                    .padding(.horizontal, 16)
-                                }
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    // Search Bar
+                    SearchBar(text: $searchText, placeholder: "Поиск черт...")
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+
+                    // All Feats
+                    ForEach(filteredFeats) { feat in
+                        FeatCardView(
+                            feat: feat,
+                            isExpanded: expandedFeats.contains(feat.id),
+                            isFavorite: favoriteFeats.contains(feat.id),
+                            onToggleExpanded: {
+                                toggleExpanded(feat.id)
+                            },
+                            onToggleFavorite: {
+                                toggleFavorite(feat.id)
                             }
-                        }
-                        
-                        // Обычные черты
-                        ForEach(regularFeatsList) { feat in
-                            FeatCardView(
-                                feat: feat,
-                                isExpanded: expandedFeats.contains(feat.id),
-                                isFavorite: favoriteFeats.contains(feat.id),
-                                onToggleExpanded: {
-                                    toggleExpanded(feat.id)
-                                },
-                                onToggleFavorite: {
-                                    toggleFavorite(feat.id)
-                                }
-                            )
-                            .padding(.horizontal, 16)
-                        }
+                        )
+                        .padding(.horizontal, 16)
                     }
-                    .padding(.bottom, 20)
                 }
+                .padding(.bottom, 20)
             }
             .navigationTitle("Черты")
             .navigationBarTitleDisplayMode(.large)

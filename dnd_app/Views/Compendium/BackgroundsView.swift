@@ -30,63 +30,30 @@ struct BackgroundsView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
-                // Поиск
-                SearchBar(text: $searchText, placeholder: "Поиск предысторий...")
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
-                
-                ScrollView {
-                    LazyVStack(spacing: 12) {
-                        // Избранные предыстории
-                        if !favoriteBackgroundsList.isEmpty {
-                            VStack(alignment: .leading, spacing: 8) {
-                                HStack {
-                                    Image(systemName: "heart.fill")
-                                        .foregroundColor(.red)
-                                    Text("Избранные предыстории")
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
-                                    Spacer()
-                                }
-                                .padding(.horizontal, 16)
-                                .padding(.top, 16)
-                                
-                                ForEach(favoriteBackgroundsList) { background in
-                                    BackgroundCardView(
-                                        background: background,
-                                        isExpanded: expandedBackgrounds.contains(background.id),
-                                        isFavorite: favoriteBackgrounds.contains(background.id),
-                                        onToggleExpanded: {
-                                            toggleExpanded(background.id)
-                                        },
-                                        onToggleFavorite: {
-                                            toggleFavorite(background.id)
-                                        }
-                                    )
-                                    .padding(.horizontal, 16)
-                                }
+            ScrollView {
+                LazyVStack(spacing: 12) {
+                    // Search Bar
+                    SearchBar(text: $searchText, placeholder: "Поиск предысторий...")
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
+
+                    // All Backgrounds
+                    ForEach(filteredBackgrounds) { background in
+                        BackgroundCardView(
+                            background: background,
+                            isExpanded: expandedBackgrounds.contains(background.id),
+                            isFavorite: favoriteBackgrounds.contains(background.id),
+                            onToggleExpanded: {
+                                toggleExpanded(background.id)
+                            },
+                            onToggleFavorite: {
+                                toggleFavorite(background.id)
                             }
-                        }
-                        
-                        // Обычные предыстории
-                        ForEach(regularBackgroundsList) { background in
-                            BackgroundCardView(
-                                background: background,
-                                isExpanded: expandedBackgrounds.contains(background.id),
-                                isFavorite: favoriteBackgrounds.contains(background.id),
-                                onToggleExpanded: {
-                                    toggleExpanded(background.id)
-                                },
-                                onToggleFavorite: {
-                                    toggleFavorite(background.id)
-                                }
-                            )
-                            .padding(.horizontal, 16)
-                        }
+                        )
+                        .padding(.horizontal, 16)
                     }
-                    .padding(.bottom, 20)
                 }
+                .padding(.bottom, 20)
             }
             .navigationTitle("Предыстории")
             .navigationBarTitleDisplayMode(.large)

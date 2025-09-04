@@ -47,7 +47,7 @@ struct QuotesView: View {
                         
                         // Tabaxi Image без фона - максимальный размер
                         RandomTabaxiImageView()
-                            .frame(maxWidth: 600, maxHeight: 600)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .id(viewModel.currentImage)
                     }
                     .padding(.horizontal, 20)
@@ -164,14 +164,15 @@ struct CategoryManagementView: View {
                     }
                     .zIndex(9998)
                 
-                // Подсветка элемента
+                // Вырезаем область элемента из затемнения
                 Rectangle()
-                    .fill(Color.blue.opacity(0.3))
+                    .fill(Color.clear)
                     .frame(width: globalContextMenu.highlightedElementFrame.width, 
                            height: globalContextMenu.highlightedElementFrame.height)
                     .position(x: globalContextMenu.highlightedElementFrame.midX, 
                              y: globalContextMenu.highlightedElementFrame.midY)
                     .zIndex(9999)
+                    .blendMode(.destinationOut)
                     
                     // Само меню под элементом
                     if let onEdit = globalContextMenu.onEdit,
@@ -431,14 +432,15 @@ struct QuotesListView: View {
                     }
                     .zIndex(9998)
                 
-                // Подсветка элемента
+                // Вырезаем область элемента из затемнения
                 Rectangle()
-                    .fill(Color.blue.opacity(0.3))
+                    .fill(Color.clear)
                     .frame(width: globalContextMenu.highlightedElementFrame.width, 
                            height: globalContextMenu.highlightedElementFrame.height)
                     .position(x: globalContextMenu.highlightedElementFrame.midX, 
                              y: globalContextMenu.highlightedElementFrame.midY)
                     .zIndex(9999)
+                    .blendMode(.destinationOut)
                     
                     // Само меню под элементом
                     if let onEdit = globalContextMenu.onEdit,
