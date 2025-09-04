@@ -7,20 +7,88 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		27AF9D942E6963CC006311EC /* dnd_appApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9D932E6963CC006311EC /* dnd_appApp.swift */; };
-		27AF9D962E6963CC006311EC /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9D952E6963CC006311EC /* ContentView.swift */; };
-		27AF9D982E6963CC006311EC /* Item.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9D972E6963CC006311EC /* Item.swift */; };
-		27AF9D9A2E6963D1006311EC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 27AF9D992E6963D1006311EC /* Assets.xcassets */; };
-		27AF9D9D2E6963D1006311EC /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 27AF9D9C2E6963D1006311EC /* Preview Assets.xcassets */; };
+		27AF9DF82E696FB7006311EC /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DC22E696FB6006311EC /* MainTabView.swift */; };
+		27AF9DF92E696FB7006311EC /* RelationshipsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DC42E696FB6006311EC /* RelationshipsViewModel.swift */; };
+		27AF9DFA2E696FB7006311EC /* CompendiumViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DC52E696FB6006311EC /* CompendiumViewModel.swift */; };
+		27AF9DFB2E696FB7006311EC /* QuotesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DC62E696FB6006311EC /* QuotesViewModel.swift */; };
+		27AF9DFC2E696FB7006311EC /* NotesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DC72E696FB6006311EC /* NotesViewModel.swift */; };
+		27AF9DFD2E696FB7006311EC /* CharacterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DC82E696FB6006311EC /* CharacterViewModel.swift */; };
+		27AF9DFE2E696FB7006311EC /* dnd_appApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DC92E696FB6006311EC /* dnd_appApp.swift */; };
+		27AF9DFF2E696FB7006311EC /* Глубинный шепот  — Long Story Short.json in Resources */ = {isa = PBXBuildFile; fileRef = 27AF9DCA2E696FB6006311EC /* Глубинный шепот  — Long Story Short.json */; };
+		27AF9E002E696FB7006311EC /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 27AF9DCB2E696FB6006311EC /* Assets.xcassets */; };
+		27AF9E012E696FB7006311EC /* TabaxiImages.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DCD2E696FB6006311EC /* TabaxiImages.swift */; };
+		27AF9E022E696FB7006311EC /* Monster.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DCF2E696FB7006311EC /* Monster.swift */; };
+		27AF9E032E696FB7006311EC /* Feat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DD02E696FB7006311EC /* Feat.swift */; };
+		27AF9E042E696FB7006311EC /* Character.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DD12E696FB7006311EC /* Character.swift */; };
+		27AF9E052E696FB7006311EC /* Background.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DD22E696FB7006311EC /* Background.swift */; };
+		27AF9E062E696FB7006311EC /* Quote.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DD32E696FB7006311EC /* Quote.swift */; };
+		27AF9E072E696FB7006311EC /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DD42E696FB7006311EC /* Note.swift */; };
+		27AF9E082E696FB7006311EC /* Relationship.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DD52E696FB7006311EC /* Relationship.swift */; };
+		27AF9E092E696FB7006311EC /* Spell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DD62E696FB7006311EC /* Spell.swift */; };
+		27AF9E0A2E696FB7006311EC /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 27AF9DD82E696FB7006311EC /* Preview Assets.xcassets */; };
+		27AF9E0B2E696FB7006311EC /* SharedComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DDA2E696FB7006311EC /* SharedComponents.swift */; };
+		27AF9E0C2E696FB7006311EC /* ContextMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DDB2E696FB7006311EC /* ContextMenuView.swift */; };
+		27AF9E0D2E696FB7006311EC /* feats.json in Resources */ = {isa = PBXBuildFile; fileRef = 27AF9DDE2E696FB7006311EC /* feats.json */; };
+		27AF9E0E2E696FB7006311EC /* classes.json in Resources */ = {isa = PBXBuildFile; fileRef = 27AF9DDF2E696FB7006311EC /* classes.json */; };
+		27AF9E0F2E696FB7006311EC /* backgrounds.json in Resources */ = {isa = PBXBuildFile; fileRef = 27AF9DE02E696FB7006311EC /* backgrounds.json */; };
+		27AF9E102E696FB7006311EC /* quotes.json in Resources */ = {isa = PBXBuildFile; fileRef = 27AF9DE12E696FB7006311EC /* quotes.json */; };
+		27AF9E112E696FB7006311EC /* class_tables.json in Resources */ = {isa = PBXBuildFile; fileRef = 27AF9DE22E696FB7006311EC /* class_tables.json */; };
+		27AF9E122E696FB7006311EC /* bestiary_5e.ndjson in Resources */ = {isa = PBXBuildFile; fileRef = 27AF9DE32E696FB7006311EC /* bestiary_5e.ndjson */; };
+		27AF9E132E696FB7006311EC /* feats_examples.json in Resources */ = {isa = PBXBuildFile; fileRef = 27AF9DE42E696FB7006311EC /* feats_examples.json */; };
+		27AF9E142E696FB7006311EC /* spells.json in Resources */ = {isa = PBXBuildFile; fileRef = 27AF9DE52E696FB7006311EC /* spells.json */; };
+		27AF9E152E696FB7006311EC /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DE82E696FB7006311EC /* SettingsView.swift */; };
+		27AF9E162E696FB7006311EC /* QuotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DEA2E696FB7006311EC /* QuotesView.swift */; };
+		27AF9E172E696FB7006311EC /* CharacterCreationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DEC2E696FB7006311EC /* CharacterCreationView.swift */; };
+		27AF9E182E696FB7006311EC /* CharacterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DED2E696FB7006311EC /* CharacterView.swift */; };
+		27AF9E192E696FB7006311EC /* NotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DEF2E696FB7006311EC /* NotesView.swift */; };
+		27AF9E1A2E696FB7006311EC /* BestiaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DF12E696FB7006311EC /* BestiaryView.swift */; };
+		27AF9E1B2E696FB7006311EC /* CompendiumView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DF22E696FB7006311EC /* CompendiumView.swift */; };
+		27AF9E1C2E696FB7006311EC /* RelationshipsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DF42E696FB7006311EC /* RelationshipsView.swift */; };
+		27AF9E1D2E696FB7006311EC /* DataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DF62E696FB7006311EC /* DataService.swift */; };
+		27AF9E1E2E696FB7006311EC /* MonsterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DF72E696FB7006311EC /* MonsterService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		27AF9D902E6963CC006311EC /* dnd_app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = dnd_app.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		27AF9D932E6963CC006311EC /* dnd_appApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = dnd_appApp.swift; sourceTree = "<group>"; };
-		27AF9D952E6963CC006311EC /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-		27AF9D972E6963CC006311EC /* Item.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Item.swift; sourceTree = "<group>"; };
-		27AF9D992E6963D1006311EC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		27AF9D9C2E6963D1006311EC /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		27AF9DC22E696FB6006311EC /* MainTabView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		27AF9DC42E696FB6006311EC /* RelationshipsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RelationshipsViewModel.swift; sourceTree = "<group>"; };
+		27AF9DC52E696FB6006311EC /* CompendiumViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CompendiumViewModel.swift; sourceTree = "<group>"; };
+		27AF9DC62E696FB6006311EC /* QuotesViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuotesViewModel.swift; sourceTree = "<group>"; };
+		27AF9DC72E696FB6006311EC /* NotesViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotesViewModel.swift; sourceTree = "<group>"; };
+		27AF9DC82E696FB6006311EC /* CharacterViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterViewModel.swift; sourceTree = "<group>"; };
+		27AF9DC92E696FB6006311EC /* dnd_appApp.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = dnd_appApp.swift; sourceTree = "<group>"; };
+		27AF9DCA2E696FB6006311EC /* Глубинный шепот  — Long Story Short.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = "Глубинный шепот  — Long Story Short.json"; sourceTree = "<group>"; };
+		27AF9DCB2E696FB6006311EC /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		27AF9DCD2E696FB6006311EC /* TabaxiImages.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TabaxiImages.swift; sourceTree = "<group>"; };
+		27AF9DCF2E696FB7006311EC /* Monster.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Monster.swift; sourceTree = "<group>"; };
+		27AF9DD02E696FB7006311EC /* Feat.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Feat.swift; sourceTree = "<group>"; };
+		27AF9DD12E696FB7006311EC /* Character.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Character.swift; sourceTree = "<group>"; };
+		27AF9DD22E696FB7006311EC /* Background.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Background.swift; sourceTree = "<group>"; };
+		27AF9DD32E696FB7006311EC /* Quote.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Quote.swift; sourceTree = "<group>"; };
+		27AF9DD42E696FB7006311EC /* Note.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
+		27AF9DD52E696FB7006311EC /* Relationship.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Relationship.swift; sourceTree = "<group>"; };
+		27AF9DD62E696FB7006311EC /* Spell.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Spell.swift; sourceTree = "<group>"; };
+		27AF9DD82E696FB7006311EC /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
+		27AF9DDA2E696FB7006311EC /* SharedComponents.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SharedComponents.swift; sourceTree = "<group>"; };
+		27AF9DDB2E696FB7006311EC /* ContextMenuView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContextMenuView.swift; sourceTree = "<group>"; };
+		27AF9DDE2E696FB7006311EC /* feats.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = feats.json; sourceTree = "<group>"; };
+		27AF9DDF2E696FB7006311EC /* classes.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = classes.json; sourceTree = "<group>"; };
+		27AF9DE02E696FB7006311EC /* backgrounds.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = backgrounds.json; sourceTree = "<group>"; };
+		27AF9DE12E696FB7006311EC /* quotes.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = quotes.json; sourceTree = "<group>"; };
+		27AF9DE22E696FB7006311EC /* class_tables.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = class_tables.json; sourceTree = "<group>"; };
+		27AF9DE32E696FB7006311EC /* bestiary_5e.ndjson */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = bestiary_5e.ndjson; sourceTree = "<group>"; };
+		27AF9DE42E696FB7006311EC /* feats_examples.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = feats_examples.json; sourceTree = "<group>"; };
+		27AF9DE52E696FB7006311EC /* spells.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = spells.json; sourceTree = "<group>"; };
+		27AF9DE82E696FB7006311EC /* SettingsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		27AF9DEA2E696FB7006311EC /* QuotesView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = QuotesView.swift; sourceTree = "<group>"; };
+		27AF9DEC2E696FB7006311EC /* CharacterCreationView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterCreationView.swift; sourceTree = "<group>"; };
+		27AF9DED2E696FB7006311EC /* CharacterView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterView.swift; sourceTree = "<group>"; };
+		27AF9DEF2E696FB7006311EC /* NotesView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NotesView.swift; sourceTree = "<group>"; };
+		27AF9DF12E696FB7006311EC /* BestiaryView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BestiaryView.swift; sourceTree = "<group>"; };
+		27AF9DF22E696FB7006311EC /* CompendiumView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CompendiumView.swift; sourceTree = "<group>"; };
+		27AF9DF42E696FB7006311EC /* RelationshipsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RelationshipsView.swift; sourceTree = "<group>"; };
+		27AF9DF62E696FB7006311EC /* DataService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataService.swift; sourceTree = "<group>"; };
+		27AF9DF72E696FB7006311EC /* MonsterService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MonsterService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,7 +105,7 @@
 		27AF9D872E6963CB006311EC = {
 			isa = PBXGroup;
 			children = (
-				27AF9D922E6963CC006311EC /* dnd_app */,
+				27AF9DC12E696FB6006311EC /* dnd_app */,
 				27AF9D912E6963CC006311EC /* Products */,
 			);
 			sourceTree = "<group>";
@@ -50,24 +118,170 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		27AF9D922E6963CC006311EC /* dnd_app */ = {
+		27AF9DC12E696FB6006311EC /* dnd_app */ = {
 			isa = PBXGroup;
 			children = (
-				27AF9D932E6963CC006311EC /* dnd_appApp.swift */,
-				27AF9D952E6963CC006311EC /* ContentView.swift */,
-				27AF9D972E6963CC006311EC /* Item.swift */,
-				27AF9D992E6963D1006311EC /* Assets.xcassets */,
-				27AF9D9B2E6963D1006311EC /* Preview Content */,
+				27AF9DC22E696FB6006311EC /* MainTabView.swift */,
+				27AF9DC32E696FB6006311EC /* ViewModels */,
+				27AF9DC92E696FB6006311EC /* dnd_appApp.swift */,
+				27AF9DCA2E696FB6006311EC /* Глубинный шепот  — Long Story Short.json */,
+				27AF9DCB2E696FB6006311EC /* Assets.xcassets */,
+				27AF9DCC2E696FB6006311EC /* Utils */,
+				27AF9DCE2E696FB7006311EC /* Models */,
+				27AF9DD72E696FB7006311EC /* Preview Content */,
+				27AF9DD92E696FB7006311EC /* Components */,
+				27AF9DDC2E696FB7006311EC /* Sources */,
+				27AF9DE62E696FB7006311EC /* Views */,
+				27AF9DF52E696FB7006311EC /* Services */,
 			);
 			path = dnd_app;
 			sourceTree = "<group>";
 		};
-		27AF9D9B2E6963D1006311EC /* Preview Content */ = {
+		27AF9DC32E696FB6006311EC /* ViewModels */ = {
 			isa = PBXGroup;
 			children = (
-				27AF9D9C2E6963D1006311EC /* Preview Assets.xcassets */,
+				27AF9DC42E696FB6006311EC /* RelationshipsViewModel.swift */,
+				27AF9DC52E696FB6006311EC /* CompendiumViewModel.swift */,
+				27AF9DC62E696FB6006311EC /* QuotesViewModel.swift */,
+				27AF9DC72E696FB6006311EC /* NotesViewModel.swift */,
+				27AF9DC82E696FB6006311EC /* CharacterViewModel.swift */,
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		27AF9DCC2E696FB6006311EC /* Utils */ = {
+			isa = PBXGroup;
+			children = (
+				27AF9DCD2E696FB6006311EC /* TabaxiImages.swift */,
+			);
+			path = Utils;
+			sourceTree = "<group>";
+		};
+		27AF9DCE2E696FB7006311EC /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				27AF9DCF2E696FB7006311EC /* Monster.swift */,
+				27AF9DD02E696FB7006311EC /* Feat.swift */,
+				27AF9DD12E696FB7006311EC /* Character.swift */,
+				27AF9DD22E696FB7006311EC /* Background.swift */,
+				27AF9DD32E696FB7006311EC /* Quote.swift */,
+				27AF9DD42E696FB7006311EC /* Note.swift */,
+				27AF9DD52E696FB7006311EC /* Relationship.swift */,
+				27AF9DD62E696FB7006311EC /* Spell.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		27AF9DD72E696FB7006311EC /* Preview Content */ = {
+			isa = PBXGroup;
+			children = (
+				27AF9DD82E696FB7006311EC /* Preview Assets.xcassets */,
 			);
 			path = "Preview Content";
+			sourceTree = "<group>";
+		};
+		27AF9DD92E696FB7006311EC /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				27AF9DDA2E696FB7006311EC /* SharedComponents.swift */,
+				27AF9DDB2E696FB7006311EC /* ContextMenuView.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+		27AF9DDC2E696FB7006311EC /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				27AF9DDD2E696FB7006311EC /* Resources */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		27AF9DDD2E696FB7006311EC /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				27AF9DDE2E696FB7006311EC /* feats.json */,
+				27AF9DDF2E696FB7006311EC /* classes.json */,
+				27AF9DE02E696FB7006311EC /* backgrounds.json */,
+				27AF9DE12E696FB7006311EC /* quotes.json */,
+				27AF9DE22E696FB7006311EC /* class_tables.json */,
+				27AF9DE32E696FB7006311EC /* bestiary_5e.ndjson */,
+				27AF9DE42E696FB7006311EC /* feats_examples.json */,
+				27AF9DE52E696FB7006311EC /* spells.json */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		27AF9DE62E696FB7006311EC /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				27AF9DE72E696FB7006311EC /* Settings */,
+				27AF9DE92E696FB7006311EC /* Quotes */,
+				27AF9DEB2E696FB7006311EC /* Character */,
+				27AF9DEE2E696FB7006311EC /* Notes */,
+				27AF9DF02E696FB7006311EC /* Compendium */,
+				27AF9DF32E696FB7006311EC /* Relationships */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		27AF9DE72E696FB7006311EC /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				27AF9DE82E696FB7006311EC /* SettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		27AF9DE92E696FB7006311EC /* Quotes */ = {
+			isa = PBXGroup;
+			children = (
+				27AF9DEA2E696FB7006311EC /* QuotesView.swift */,
+			);
+			path = Quotes;
+			sourceTree = "<group>";
+		};
+		27AF9DEB2E696FB7006311EC /* Character */ = {
+			isa = PBXGroup;
+			children = (
+				27AF9DEC2E696FB7006311EC /* CharacterCreationView.swift */,
+				27AF9DED2E696FB7006311EC /* CharacterView.swift */,
+			);
+			path = Character;
+			sourceTree = "<group>";
+		};
+		27AF9DEE2E696FB7006311EC /* Notes */ = {
+			isa = PBXGroup;
+			children = (
+				27AF9DEF2E696FB7006311EC /* NotesView.swift */,
+			);
+			path = Notes;
+			sourceTree = "<group>";
+		};
+		27AF9DF02E696FB7006311EC /* Compendium */ = {
+			isa = PBXGroup;
+			children = (
+				27AF9DF12E696FB7006311EC /* BestiaryView.swift */,
+				27AF9DF22E696FB7006311EC /* CompendiumView.swift */,
+			);
+			path = Compendium;
+			sourceTree = "<group>";
+		};
+		27AF9DF32E696FB7006311EC /* Relationships */ = {
+			isa = PBXGroup;
+			children = (
+				27AF9DF42E696FB7006311EC /* RelationshipsView.swift */,
+			);
+			path = Relationships;
+			sourceTree = "<group>";
+		};
+		27AF9DF52E696FB7006311EC /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				27AF9DF62E696FB7006311EC /* DataService.swift */,
+				27AF9DF72E696FB7006311EC /* MonsterService.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -128,8 +342,17 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				27AF9D9D2E6963D1006311EC /* Preview Assets.xcassets in Resources */,
-				27AF9D9A2E6963D1006311EC /* Assets.xcassets in Resources */,
+				27AF9E0E2E696FB7006311EC /* classes.json in Resources */,
+				27AF9E142E696FB7006311EC /* spells.json in Resources */,
+				27AF9E112E696FB7006311EC /* class_tables.json in Resources */,
+				27AF9E132E696FB7006311EC /* feats_examples.json in Resources */,
+				27AF9E0F2E696FB7006311EC /* backgrounds.json in Resources */,
+				27AF9E002E696FB7006311EC /* Assets.xcassets in Resources */,
+				27AF9E102E696FB7006311EC /* quotes.json in Resources */,
+				27AF9E0D2E696FB7006311EC /* feats.json in Resources */,
+				27AF9E0A2E696FB7006311EC /* Preview Assets.xcassets in Resources */,
+				27AF9E122E696FB7006311EC /* bestiary_5e.ndjson in Resources */,
+				27AF9DFF2E696FB7006311EC /* Глубинный шепот  — Long Story Short.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,9 +363,34 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				27AF9D962E6963CC006311EC /* ContentView.swift in Sources */,
-				27AF9D982E6963CC006311EC /* Item.swift in Sources */,
-				27AF9D942E6963CC006311EC /* dnd_appApp.swift in Sources */,
+				27AF9DF92E696FB7006311EC /* RelationshipsViewModel.swift in Sources */,
+				27AF9E022E696FB7006311EC /* Monster.swift in Sources */,
+				27AF9E042E696FB7006311EC /* Character.swift in Sources */,
+				27AF9DFC2E696FB7006311EC /* NotesViewModel.swift in Sources */,
+				27AF9E182E696FB7006311EC /* CharacterView.swift in Sources */,
+				27AF9DFB2E696FB7006311EC /* QuotesViewModel.swift in Sources */,
+				27AF9E192E696FB7006311EC /* NotesView.swift in Sources */,
+				27AF9E062E696FB7006311EC /* Quote.swift in Sources */,
+				27AF9E092E696FB7006311EC /* Spell.swift in Sources */,
+				27AF9E1D2E696FB7006311EC /* DataService.swift in Sources */,
+				27AF9E1B2E696FB7006311EC /* CompendiumView.swift in Sources */,
+				27AF9DF82E696FB7006311EC /* MainTabView.swift in Sources */,
+				27AF9E012E696FB7006311EC /* TabaxiImages.swift in Sources */,
+				27AF9DFD2E696FB7006311EC /* CharacterViewModel.swift in Sources */,
+				27AF9E0B2E696FB7006311EC /* SharedComponents.swift in Sources */,
+				27AF9E1C2E696FB7006311EC /* RelationshipsView.swift in Sources */,
+				27AF9E072E696FB7006311EC /* Note.swift in Sources */,
+				27AF9E082E696FB7006311EC /* Relationship.swift in Sources */,
+				27AF9E032E696FB7006311EC /* Feat.swift in Sources */,
+				27AF9DFE2E696FB7006311EC /* dnd_appApp.swift in Sources */,
+				27AF9E172E696FB7006311EC /* CharacterCreationView.swift in Sources */,
+				27AF9E0C2E696FB7006311EC /* ContextMenuView.swift in Sources */,
+				27AF9E1A2E696FB7006311EC /* BestiaryView.swift in Sources */,
+				27AF9DFA2E696FB7006311EC /* CompendiumViewModel.swift in Sources */,
+				27AF9E1E2E696FB7006311EC /* MonsterService.swift in Sources */,
+				27AF9E052E696FB7006311EC /* Background.swift in Sources */,
+				27AF9E152E696FB7006311EC /* SettingsView.swift in Sources */,
+				27AF9E162E696FB7006311EC /* QuotesView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -289,7 +537,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "-.dnd-app";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.alexanderaferenok.dndapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -318,7 +566,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "-.dnd-app";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.alexanderaferenok.dndapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
