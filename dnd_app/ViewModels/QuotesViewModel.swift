@@ -76,4 +76,21 @@ class QuotesViewModel: ObservableObject {
         let newName = "\(name) (копия)"
         dataService.duplicateQuoteCategory(from: name, to: newName)
     }
+    
+    // MARK: - Quote Management
+    func addQuote(_ quote: Quote) {
+        dataService.addQuote(quote)
+    }
+    
+    func updateQuote(_ quote: Quote) {
+        dataService.updateQuote(quote)
+    }
+    
+    func deleteQuote(_ quote: Quote) {
+        dataService.deleteQuote(quote)
+    }
+    
+    func duplicateQuote(_ quote: Quote) {
+        dataService.duplicateQuote(quote)
+    }
 }
