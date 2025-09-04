@@ -1,9 +1,15 @@
 import Foundation
 
 struct Quote: Codable, Identifiable {
-    let id = UUID()
+    let id: UUID
     let text: String
     let category: String
+    
+    init(text: String, category: String) {
+        self.id = UUID()
+        self.text = text
+        self.category = category
+    }
 }
 
 struct QuotesData: Codable {

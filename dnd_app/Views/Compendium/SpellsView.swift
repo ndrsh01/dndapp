@@ -11,7 +11,7 @@ struct SpellsView: View {
     @State private var selectedClass: String? = nil
     
     var filteredSpells: [Spell] {
-        let spells = dataService.spells ?? []
+        let spells = dataService.spells
         var filtered = spells
         
         // Поиск по тексту
@@ -53,15 +53,15 @@ struct SpellsView: View {
     }
     
     var favoriteSpellsList: [Spell] {
-        filteredSpells.filter { favoriteSpells.contains($0.id) }
+        dataService.spells.filter { favoriteSpells.contains($0.id) }
     }
-    
+
     var regularSpellsList: [Spell] {
         filteredSpells.filter { !favoriteSpells.contains($0.id) }
     }
     
     var availableLevels: [String] {
-        let spells = dataService.spells ?? []
+        let spells = dataService.spells
         let levels = Set(spells.map { $0.уровень }).sorted { level1, level2 in
             if level1 == "Заговор" { return true }
             if level2 == "Заговор" { return false }
@@ -71,12 +71,12 @@ struct SpellsView: View {
     }
     
     var availableSchools: [String] {
-        let spells = dataService.spells ?? []
+        let spells = dataService.spells
         return Set(spells.map { $0.школа }).sorted()
     }
     
     var availableClasses: [String] {
-        let spells = dataService.spells ?? []
+        let spells = dataService.spells
         let allClasses = spells.flatMap { $0.классы.components(separatedBy: ", ") }
         return Set(allClasses.map { $0.trimmingCharacters(in: .whitespaces) }).sorted()
     }
@@ -93,11 +93,33 @@ struct SpellsView: View {
                     LazyVStack(spacing: 12) {
                         // Favorite Spells Section
                         if !favoriteSpellsList.isEmpty {
-                            FavoriteSpellsSection(
-                                spells: favoriteSpellsList,
-                                expandedSpells: $expandedSpells,
-                                favoriteSpells: $favoriteSpells
-                            )
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Image(systemName: "heart.fill")
+                                        .foregroundColor(.red)
+                                    Text("Избранные заклинания")
+                                        .font(.headline)
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.top, 16)
+                                
+                                ForEach(favoriteSpellsList) { spell in
+                                    SpellCardView(
+                                        spell: spell,
+                                        isExpanded: expandedSpells.contains(spell.id),
+                                        isFavorite: favoriteSpells.contains(spell.id),
+                                        onToggleExpanded: {
+                                            toggleExpanded(spell.id)
+                                        },
+                                        onToggleFavorite: {
+                                            toggleFavorite(spell.id)
+                                        }
+                                    )
+                                    .padding(.horizontal, 16)
+                                }
+                            }
                         }
                         
                         // Regular Spells
@@ -135,6 +157,15 @@ struct SpellsView: View {
             }
             .onAppear {
                 loadFavoriteSpells()
+                // Загружаем заклинания если они не загружены
+                print("SpellsView appeared, spells count: \(dataService.spells.count)")
+                if dataService.spells.isEmpty {
+                    print("Loading spells...")
+                    Task {
+                        await dataService.loadSpells()
+                        print("Spells loaded, count: \(dataService.spells.count)")
+                    }
+                }
             }
             .sheet(isPresented: $showFilters) {
                 FiltersView(
@@ -180,75 +211,6 @@ struct SpellsView: View {
     }
 }
 
-// MARK: - Favorite Spells Section
-struct FavoriteSpellsSection: View {
-    let spells: [Spell]
-    @Binding var expandedSpells: Set<UUID>
-    @Binding var favoriteSpells: Set<UUID>
-    @State private var isExpanded = true
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Section Header
-            HStack {
-                Text("Избранные заклинания (\(spells.count))")
-                    .font(.headline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.black)
-                
-                Spacer()
-                
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        isExpanded.toggle()
-                    }
-                }) {
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            
-            // Favorite Spells List
-            if isExpanded {
-                ForEach(spells) { spell in
-                    SpellCardView(
-                        spell: spell,
-                        isExpanded: expandedSpells.contains(spell.id),
-                        isFavorite: true,
-                        onToggleExpanded: {
-                            toggleExpanded(spell.id)
-                        },
-                        onToggleFavorite: {
-                            toggleFavorite(spell.id)
-                        }
-                    )
-                }
-            }
-        }
-        .background(Color(red: 0.95, green: 0.94, blue: 0.92))
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-    }
-    
-    private func toggleExpanded(_ spellId: UUID) {
-        if expandedSpells.contains(spellId) {
-            expandedSpells.remove(spellId)
-        } else {
-            expandedSpells.insert(spellId)
-        }
-    }
-    
-    private func toggleFavorite(_ spellId: UUID) {
-        if favoriteSpells.contains(spellId) {
-            favoriteSpells.remove(spellId)
-        } else {
-            favoriteSpells.insert(spellId)
-        }
-    }
-}
 
 // MARK: - Spell Card View
 struct SpellCardView: View {

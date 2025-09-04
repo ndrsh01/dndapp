@@ -49,18 +49,16 @@ struct MainTabView: View {
                     }
                     .zIndex(9998)
                 
-                // Подсветка элемента (активный элемент)
-                Rectangle()
-                    .fill(Color.clear)
-                    .frame(
-                        width: globalContextMenu.highlightedElementFrame.width,
-                        height: globalContextMenu.highlightedElementFrame.height
-                    )
-                    .position(
-                        x: globalContextMenu.highlightedElementFrame.midX,
-                        y: globalContextMenu.highlightedElementFrame.midY
-                    )
-                    .zIndex(9999)
+                // Подсветка элемента
+                if globalContextMenu.showContextMenu {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.blue.opacity(0.3))
+                        .frame(width: globalContextMenu.highlightedElementFrame.width,
+                               height: globalContextMenu.highlightedElementFrame.height)
+                        .position(x: globalContextMenu.highlightedElementFrame.midX,
+                                 y: globalContextMenu.highlightedElementFrame.midY)
+                        .zIndex(9999)
+                }
                 
                 // Само меню под элементом
                 if let onEdit = globalContextMenu.onEdit,
@@ -82,7 +80,7 @@ struct MainTabView: View {
                     )
                     .position(
                         x: globalContextMenu.highlightedElementFrame.midX,
-                        y: globalContextMenu.highlightedElementFrame.maxY + 60
+                        y: globalContextMenu.highlightedElementFrame.maxY + 10
                     )
                     .transition(.scale.combined(with: .opacity))
                     .animation(.spring(response: 0.3, dampingFraction: 0.8), value: globalContextMenu.showContextMenu)

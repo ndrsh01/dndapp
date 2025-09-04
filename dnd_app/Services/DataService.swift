@@ -27,6 +27,7 @@ class DataService: ObservableObject {
     @Published var spells: [Spell] = []
     @Published var feats: [Feat] = []
     @Published var backgrounds: [Background] = []
+    @Published var monsters: [Monster] = []
     @Published var relationships: [Relationship] = []
     @Published var notes: [Note] = []
     @Published var characters: [DnDCharacter] = []
@@ -113,7 +114,7 @@ class DataService: ObservableObject {
         }
     }
     
-    private func loadSpells() async {
+    func loadSpells() async {
         do {
             let spellsData = try await cacheManager.loadWithCache(
                 [Spell].self,
@@ -134,7 +135,7 @@ class DataService: ObservableObject {
         }
     }
     
-    private func loadFeats() async {
+    func loadFeats() async {
         do {
             let featsData = try await cacheManager.loadWithCache(
                 [Feat].self,
@@ -155,7 +156,7 @@ class DataService: ObservableObject {
         }
     }
     
-    private func loadBackgrounds() async {
+    func loadBackgrounds() async {
         do {
             let backgroundsData = try await cacheManager.loadWithCache(
                 [Background].self,
@@ -173,6 +174,44 @@ class DataService: ObservableObject {
             }
         } catch {
             print("Failed to load backgrounds: \(error)")
+        }
+    }
+    
+    func loadMonsters() async {
+        do {
+            let monstersData = try await cacheManager.loadWithCache(
+                [Monster].self,
+                forKey: .monsters
+            ) {
+                guard let url = Bundle.main.url(forResource: "bestiary_5e", withExtension: "ndjson"),
+                      let data = try? Data(contentsOf: url) else {
+                    throw DataServiceError.fileNotFound("bestiary_5e.ndjson")
+                }
+                
+                // Парсим NDJSON
+                let lines = String(data: data, encoding: .utf8)?.components(separatedBy: .newlines) ?? []
+                var monsters: [Monster] = []
+                
+                for line in lines {
+                    guard !line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                          let lineData = line.data(using: .utf8) else { continue }
+                    
+                    do {
+                        let monster = try JSONDecoder().decode(Monster.self, from: lineData)
+                        monsters.append(monster)
+                    } catch {
+                        print("Failed to decode monster: \(error)")
+                    }
+                }
+                
+                return monsters
+            }
+            
+            await MainActor.run {
+                self.monsters = monstersData
+            }
+        } catch {
+            print("Failed to load monsters: \(error)")
         }
     }
     

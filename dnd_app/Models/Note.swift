@@ -1,7 +1,7 @@
 import Foundation
 
 struct Note: Codable, Identifiable {
-    let id = UUID()
+    let id: UUID
     var title: String
     var description: String
     var importance: Int // 1-5
@@ -11,6 +11,7 @@ struct Note: Codable, Identifiable {
     var dateModified: Date
     
     init(title: String, description: String = "", importance: Int = 3, category: NoteCategory = .all, isAlive: Bool = true) {
+        self.id = UUID()
         self.title = title
         self.description = description
         self.importance = importance

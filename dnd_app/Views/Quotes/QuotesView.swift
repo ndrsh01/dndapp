@@ -156,26 +156,22 @@ struct CategoryManagementView: View {
                 
                 // Глобальное контекстное меню поверх всего
                 if globalContextMenu.showContextMenu {
-                    // Затемненный фон
-                    Color.black.opacity(0.5)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            globalContextMenu.hideMenu()
-                        }
-                        .zIndex(9998)
-                    
-                    // Подсветка элемента (активный элемент)
-                    Rectangle()
-                        .fill(Color.clear)
-                        .frame(
-                            width: globalContextMenu.highlightedElementFrame.width,
-                            height: globalContextMenu.highlightedElementFrame.height
-                        )
-                        .position(
-                            x: globalContextMenu.highlightedElementFrame.midX,
-                            y: globalContextMenu.highlightedElementFrame.midY
-                        )
-                        .zIndex(9999)
+                                    // Затемненный фон
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        globalContextMenu.hideMenu()
+                    }
+                    .zIndex(9998)
+                
+                // Подсветка элемента
+                Rectangle()
+                    .fill(Color.blue.opacity(0.3))
+                    .frame(width: globalContextMenu.highlightedElementFrame.width, 
+                           height: globalContextMenu.highlightedElementFrame.height)
+                    .position(x: globalContextMenu.highlightedElementFrame.midX, 
+                             y: globalContextMenu.highlightedElementFrame.midY)
+                    .zIndex(9999)
                     
                     // Само меню под элементом
                     if let onEdit = globalContextMenu.onEdit,
@@ -197,7 +193,7 @@ struct CategoryManagementView: View {
                         )
                         .position(
                             x: globalContextMenu.highlightedElementFrame.midX,
-                            y: globalContextMenu.highlightedElementFrame.maxY + 60
+                            y: globalContextMenu.highlightedElementFrame.maxY + 10
                         )
                         .transition(.scale.combined(with: .opacity))
                         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: globalContextMenu.showContextMenu)
@@ -427,26 +423,22 @@ struct QuotesListView: View {
                 
                 // Глобальное контекстное меню поверх всего
                 if globalContextMenu.showContextMenu {
-                    // Затемненный фон
-                    Color.black.opacity(0.5)
-                        .ignoresSafeArea()
-                        .onTapGesture {
-                            globalContextMenu.hideMenu()
-                        }
-                        .zIndex(9998)
-                    
-                    // Подсветка элемента (активный элемент)
-                    Rectangle()
-                        .fill(Color.clear)
-                        .frame(
-                            width: globalContextMenu.highlightedElementFrame.width,
-                            height: globalContextMenu.highlightedElementFrame.height
-                        )
-                        .position(
-                            x: globalContextMenu.highlightedElementFrame.midX,
-                            y: globalContextMenu.highlightedElementFrame.midY
-                        )
-                        .zIndex(9999)
+                                    // Затемненный фон
+                Color.black.opacity(0.5)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        globalContextMenu.hideMenu()
+                    }
+                    .zIndex(9998)
+                
+                // Подсветка элемента
+                Rectangle()
+                    .fill(Color.blue.opacity(0.3))
+                    .frame(width: globalContextMenu.highlightedElementFrame.width, 
+                           height: globalContextMenu.highlightedElementFrame.height)
+                    .position(x: globalContextMenu.highlightedElementFrame.midX, 
+                             y: globalContextMenu.highlightedElementFrame.midY)
+                    .zIndex(9999)
                     
                     // Само меню под элементом
                     if let onEdit = globalContextMenu.onEdit,
@@ -468,7 +460,7 @@ struct QuotesListView: View {
                         )
                         .position(
                             x: globalContextMenu.highlightedElementFrame.midX,
-                            y: globalContextMenu.highlightedElementFrame.maxY + 60
+                            y: globalContextMenu.highlightedElementFrame.maxY + 10
                         )
                         .transition(.scale.combined(with: .opacity))
                         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: globalContextMenu.showContextMenu)
@@ -500,10 +492,10 @@ struct QuotesListView: View {
         }
         .onAppear {
             // Инициализируем данные при открытии
-            if dataService.quotes == nil {
-                Task {
-                    await dataService.loadQuotes()
-                }
+            print("QuotesListView appeared for category: \(category)")
+            Task {
+                await dataService.loadQuotes()
+                print("Quotes loaded, categories: \(dataService.quotes?.categoryNames ?? [])")
             }
         }
         .sheet(isPresented: $showAddQuote) {

@@ -18,6 +18,7 @@ class CacheManager: ObservableObject {
         case backgrounds = "backgrounds_cache"
         case classes = "classes_cache"
         case bestiary = "bestiary_cache"
+        case monsters = "monsters_cache"
         case relationships = "relationships_cache"
         case notes = "notes_cache"
         case character = "character_cache"

@@ -48,6 +48,9 @@
 		27AF9E1E2E696FB7006311EC /* MonsterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DF72E696FB7006311EC /* MonsterService.swift */; };
 		27AF9E232E6989DC006311EC /* CacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9E222E6989DB006311EC /* CacheManager.swift */; };
 		27AF9E252E6998F6006311EC /* SpellsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9E242E6998F6006311EC /* SpellsView.swift */; };
+		27AF9E272E69ACD8006311EC /* BackgroundsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9E262E69ACD7006311EC /* BackgroundsView.swift */; };
+		27AF9E292E69ACE1006311EC /* FeatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9E282E69ACE0006311EC /* FeatsView.swift */; };
+		27AF9E2B2E69ACEA006311EC /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9E2A2E69ACEA006311EC /* FavoritesView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -93,6 +96,9 @@
 		27AF9DF72E696FB7006311EC /* MonsterService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MonsterService.swift; sourceTree = "<group>"; };
 		27AF9E222E6989DB006311EC /* CacheManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CacheManager.swift; sourceTree = "<group>"; };
 		27AF9E242E6998F6006311EC /* SpellsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SpellsView.swift; sourceTree = "<group>"; };
+		27AF9E262E69ACD7006311EC /* BackgroundsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BackgroundsView.swift; sourceTree = "<group>"; };
+		27AF9E282E69ACE0006311EC /* FeatsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeatsView.swift; sourceTree = "<group>"; };
+		27AF9E2A2E69ACEA006311EC /* FavoritesView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FavoritesView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -266,6 +272,9 @@
 			isa = PBXGroup;
 			children = (
 				27AF9E242E6998F6006311EC /* SpellsView.swift */,
+				27AF9E2A2E69ACEA006311EC /* FavoritesView.swift */,
+				27AF9E282E69ACE0006311EC /* FeatsView.swift */,
+				27AF9E262E69ACD7006311EC /* BackgroundsView.swift */,
 				27AF9DF12E696FB7006311EC /* BestiaryView.swift */,
 				27AF9DF22E696FB7006311EC /* CompendiumView.swift */,
 			);
@@ -380,6 +389,7 @@
 				27AF9E062E696FB7006311EC /* Quote.swift in Sources */,
 				27AF9E092E696FB7006311EC /* Spell.swift in Sources */,
 				27AF9E1D2E696FB7006311EC /* DataService.swift in Sources */,
+				27AF9E2B2E69ACEA006311EC /* FavoritesView.swift in Sources */,
 				27AF9E1B2E696FB7006311EC /* CompendiumView.swift in Sources */,
 				27AF9E232E6989DC006311EC /* CacheManager.swift in Sources */,
 				27AF9DF82E696FB7006311EC /* MainTabView.swift in Sources */,
@@ -392,6 +402,8 @@
 				27AF9E032E696FB7006311EC /* Feat.swift in Sources */,
 				27AF9DFE2E696FB7006311EC /* dnd_appApp.swift in Sources */,
 				27AF9E172E696FB7006311EC /* CharacterCreationView.swift in Sources */,
+				27AF9E272E69ACD8006311EC /* BackgroundsView.swift in Sources */,
+				27AF9E292E69ACE1006311EC /* FeatsView.swift in Sources */,
 				27AF9E0C2E696FB7006311EC /* ContextMenuView.swift in Sources */,
 				27AF9E1A2E696FB7006311EC /* BestiaryView.swift in Sources */,
 				27AF9DFA2E696FB7006311EC /* CompendiumViewModel.swift in Sources */,

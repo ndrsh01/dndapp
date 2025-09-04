@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct ContextMenuView: View {
     let onEdit: () -> Void
@@ -58,6 +59,7 @@ struct ContextMenuView: View {
         .background(Color.white)
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
+        .frame(width: 180)
     }
 }
 
@@ -93,29 +95,47 @@ struct ContextMenuModifier: ViewModifier {
     let onDelete: () -> Void
     let onDuplicate: () -> Void
     @State private var elementFrame: CGRect = .zero
+    @State private var scale: CGFloat = 1.0
     @StateObject private var globalManager = GlobalContextMenuManager.shared
     
     func body(content: Content) -> some View {
         content
+            .scaleEffect(scale)
             .background(
                 GeometryReader { geometry in
                     Color.clear
                         .onAppear {
                             elementFrame = geometry.frame(in: .global)
                         }
-                        .onChange(of: geometry.frame(in: .global)) { newFrame in
+                        .onChange(of: geometry.frame(in: .global)) { _, newFrame in
                             elementFrame = newFrame
                         }
                 }
             )
-            .onLongPressGesture {
-                globalManager.showMenu(
-                    for: elementFrame,
-                    onEdit: onEdit,
-                    onDelete: onDelete,
-                    onDuplicate: onDuplicate
-                )
-            }
+            .gesture(
+                LongPressGesture(minimumDuration: 0.5)
+                    .onEnded { _ in
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                            scale = 1.05
+                        }
+                        // Haptic feedback
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                            withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
+                                scale = 1.0
+                            }
+                        }
+
+                        globalManager.showMenu(
+                            for: elementFrame,
+                            onEdit: onEdit,
+                            onDelete: onDelete,
+                            onDuplicate: onDuplicate
+                        )
+                    }
+            )
     }
 }
 

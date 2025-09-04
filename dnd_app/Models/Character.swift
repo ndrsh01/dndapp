@@ -2,7 +2,7 @@ import Foundation
 
 // MARK: - Main Character Model
 struct DnDCharacter: Codable, Identifiable {
-    let id = UUID()
+    let id: UUID
     var name: String
     var info: CharacterInfo
     var subInfo: CharacterSubInfo
@@ -18,6 +18,7 @@ struct DnDCharacter: Codable, Identifiable {
     var dateModified: Date
     
     init() {
+        self.id = UUID()
         self.name = ""
         self.info = CharacterInfo()
         self.subInfo = CharacterSubInfo()

@@ -48,7 +48,7 @@ struct CharacterView: View {
                             // TODO: Implement character import
                         }
                         
-                        if let character = viewModel.selectedCharacter {
+                        if viewModel.selectedCharacter != nil {
                             Button("Экспорт персонажа") {
                                 // TODO: Implement character export
                             }

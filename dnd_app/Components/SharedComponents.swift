@@ -67,7 +67,7 @@ struct RelationshipIndicator: View {
     
     var body: some View {
         HStack(spacing: 6) {
-            ForEach(0..<10, id: \.self) { index in
+            ForEach(0..<11, id: \.self) { index in
                 Button(action: {
                     onTap(index + 1)
                 }) {
