@@ -12,7 +12,15 @@ class QuotesViewModel: ObservableObject {
     
     init() {
         loadSelectedCategory()
-        generateRandomQuote()
+        
+        // Подписываемся на изменения данных
+        dataService.$quotes
+            .sink { [weak self] quotes in
+                if quotes != nil {
+                    self?.generateRandomQuote()
+                }
+            }
+            .store(in: &cancellables)
         
         // Отладочная информация
         print("QuotesViewModel init - selectedCategory: \(selectedCategory)")
@@ -84,6 +92,10 @@ class QuotesViewModel: ObservableObject {
     
     func updateQuote(_ quote: Quote) {
         dataService.updateQuote(quote)
+    }
+    
+    func updateQuote(from oldQuote: Quote, to newQuote: Quote) {
+        dataService.updateQuote(from: oldQuote, to: newQuote)
     }
     
     func deleteQuote(_ quote: Quote) {

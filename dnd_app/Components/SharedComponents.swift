@@ -53,38 +53,94 @@ struct CardView<Content: View>: View {
 struct RelationshipIndicator: View {
     let level: Int
     let onTap: (Int) -> Void
+    let onEdit: (() -> Void)?
+    let onDelete: (() -> Void)?
+    let onDuplicate: (() -> Void)?
+    
+    init(level: Int, onTap: @escaping (Int) -> Void, onEdit: (() -> Void)? = nil, onDelete: (() -> Void)? = nil, onDuplicate: (() -> Void)? = nil) {
+        self.level = level
+        self.onTap = onTap
+        self.onEdit = onEdit
+        self.onDelete = onDelete
+        self.onDuplicate = onDuplicate
+    }
     
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 6) {
             ForEach(0..<10, id: \.self) { index in
                 Button(action: {
-                    onTap(index)
+                    onTap(index + 1)
                 }) {
                     Image(systemName: iconForLevel(index))
                         .foregroundColor(colorForLevel(index))
-                        .font(.system(size: 16))
+                        .font(.system(size: 12, weight: .medium))
+                        .frame(width: 20, height: 20)
+                        .background(backgroundColorForLevel(index))
+                        .clipShape(Circle())
+                        .overlay(
+                            Circle()
+                                .stroke(borderColorForLevel(index), lineWidth: 2)
+                        )
                 }
+                .buttonStyle(PlainButtonStyle())
             }
         }
+        .contextMenu(
+            onEdit: onEdit ?? {},
+            onDelete: onDelete ?? {},
+            onDuplicate: onDuplicate ?? {}
+        )
     }
     
     private func iconForLevel(_ index: Int) -> String {
         if index < 5 {
-            return level <= index ? "skull.fill" : "skull"
+            return "xmark.circle.fill"
         } else if index == 5 {
-            return level == index ? "circle.fill" : "circle"
+            return "circle.fill"
         } else {
-            return level > index ? "heart.fill" : "heart"
+            return "heart.fill"
         }
     }
     
     private func colorForLevel(_ index: Int) -> Color {
-        if index < 5 {
-            return .black
-        } else if index == 5 {
-            return .gray
+        if index < level {
+            if index < 5 {
+                return .white
+            } else if index == 5 {
+                return .white
+            } else {
+                return .white
+            }
         } else {
-            return .red
+            return .gray.opacity(0.3)
+        }
+    }
+    
+    private func backgroundColorForLevel(_ index: Int) -> Color {
+        if index < level {
+            if index < 5 {
+                return .black
+            } else if index == 5 {
+                return .gray
+            } else {
+                return .red
+            }
+        } else {
+            return .gray.opacity(0.1)
+        }
+    }
+    
+    private func borderColorForLevel(_ index: Int) -> Color {
+        if index < level {
+            if index < 5 {
+                return .black
+            } else if index == 5 {
+                return .gray
+            } else {
+                return .red
+            }
+        } else {
+            return .gray.opacity(0.3)
         }
     }
 }

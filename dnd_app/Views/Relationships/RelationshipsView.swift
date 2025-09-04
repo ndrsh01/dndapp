@@ -7,65 +7,71 @@ struct RelationshipsView: View {
     
     var body: some View {
         NavigationView {
-            VStack {
-                if viewModel.relationships.isEmpty {
-                    // Пустое состояние согласно изображению
-                    VStack(spacing: 24) {
-                        Spacer()
-                        
-                        // Иконка людей
-                        Image(systemName: "person.2")
-                            .font(.system(size: 80))
-                            .foregroundColor(.gray)
-                        
-                        // Заголовок
-                        Text("Нет персонажей")
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.primary)
-                        
-                        // Описание
-                        Text("Добавьте персонажей для отслеживания отношений")
-                            .font(.body)
-                            .foregroundColor(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 40)
-                        
-                        Spacer()
-                        
-                        // Кнопка добавления
-                        Button(action: {
-                            showAddRelationship = true
-                        }) {
-                            Text("Добавить персонажа")
-                                .font(.headline)
+            ZStack {
+                VStack {
+                    if viewModel.relationships.isEmpty {
+                        // Пустое состояние согласно изображению
+                        VStack(spacing: 24) {
+                            Spacer()
+                            
+                            // Иконка людей
+                            Image(systemName: "person.2")
+                                .font(.system(size: 80))
+                                .foregroundColor(.gray)
+                            
+                            // Заголовок
+                            Text("Нет персонажей")
+                                .font(.title2)
                                 .fontWeight(.semibold)
-                                .foregroundColor(.black)
-                                .padding(.horizontal, 32)
-                                .padding(.vertical, 16)
-                                .background(Color.gray.opacity(0.4))
-                                .cornerRadius(25)
-                        }
-                        .padding(.bottom, 50)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    List {
-                        ForEach(viewModel.relationships) { relationship in
-                            RelationshipCardView(relationship: relationship) { level in
-                                viewModel.updateRelationshipLevel(relationship, level: level)
+                                .foregroundColor(.primary)
+                            
+                            // Описание
+                            Text("Добавьте персонажей для отслеживания отношений")
+                                .font(.body)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 40)
+                            
+                            Spacer()
+                            
+                            // Кнопка добавления
+                            Button(action: {
+                                showAddRelationship = true
+                            }) {
+                                Text("Добавить персонажа")
+                                    .font(.headline)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.black)
+                                    .padding(.horizontal, 32)
+                                    .padding(.vertical, 16)
+                                    .background(Color.gray.opacity(0.4))
+                                    .cornerRadius(25)
                             }
-                            .contextMenu(
-                                onEdit: {
-                                    editingRelationship = relationship
-                                },
-                                onDelete: {
-                                    viewModel.deleteRelationship(relationship)
-                                },
-                                onDuplicate: {
-                                    viewModel.duplicateRelationship(relationship)
+                            .padding(.bottom, 50)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 12) {
+                                ForEach(viewModel.relationships) { relationship in
+                                    RelationshipCardView(relationship: relationship) { level in
+                                        viewModel.updateRelationshipLevel(relationship, level: level)
+                                    }
+                                    .contextMenu(
+                                        onEdit: {
+                                            editingRelationship = relationship
+                                        },
+                                        onDelete: {
+                                            viewModel.deleteRelationship(relationship)
+                                        },
+                                        onDuplicate: {
+                                            viewModel.duplicateRelationship(relationship)
+                                        }
+                                    )
                                 }
-                            )
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.top, 8)
                         }
                     }
                 }
@@ -102,47 +108,98 @@ struct RelationshipCardView: View {
     let onLevelChange: (Int) -> Void
     
     var body: some View {
-        CardView {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(relationship.name)
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        
-                        if !relationship.description.isEmpty {
-                            Text(relationship.description)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .lineLimit(2)
-                        }
-                    }
+        VStack(alignment: .leading, spacing: 16) {
+            // Header with name and status
+            HStack {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(relationship.name)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
                     
-                    Spacer()
-                    
-                    VStack {
-                        Image(systemName: relationship.isAlive ? "heart.fill" : "skull.fill")
-                            .foregroundColor(relationship.isAlive ? .red : .black)
-                            .font(.title2)
-                        
-                        Text(relationship.isAlive ? "Жив" : "Мертв")
-                            .font(.caption2)
+                    if !relationship.description.isEmpty {
+                        Text(relationship.description)
+                            .font(.subheadline)
                             .foregroundColor(.secondary)
+                            .lineLimit(2)
                     }
                 }
                 
-                // Relationship Level Indicator
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Отношение")
+                Spacer()
+                
+                // Status indicator - убираем лишний контейнер
+                HStack(spacing: 8) {
+                    Image(systemName: relationship.isAlive ? "heart.fill" : "skull.fill")
+                        .foregroundColor(relationship.isAlive ? .red : .black)
                         .font(.caption)
-                        .foregroundColor(.secondary)
                     
-                    RelationshipIndicator(level: relationship.relationshipLevel) { level in
-                        onLevelChange(level)
-                    }
+                    Text(relationship.isAlive ? "Жив" : "Мертв")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(relationship.isAlive ? .red : .black)
                 }
             }
-            .padding(16)
+            
+            // Relationship Level Indicator
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    Text("Уровень отношения")
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.primary)
+                    
+                    Spacer()
+                    
+                    Text(relationshipStatusText)
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(relationshipStatusColor)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(relationshipStatusColor.opacity(0.1))
+                        .cornerRadius(6)
+                }
+                
+                RelationshipIndicator(
+                    level: relationship.relationshipLevel,
+                    onTap: { level in
+                        onLevelChange(level)
+                    },
+                    onEdit: {
+                        // Редактирование отношения
+                    },
+                    onDelete: {
+                        // Удаление отношения
+                    },
+                    onDuplicate: {
+                        // Дублирование отношения
+                    }
+                )
+            }
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+    }
+    
+    private var relationshipStatusText: String {
+        if relationship.relationshipLevel >= 6 {
+            return "Друг"
+        } else if relationship.relationshipLevel <= 4 {
+            return "Враг"
+        } else {
+            return "Нейтрал"
+        }
+    }
+    
+    private var relationshipStatusColor: Color {
+        if relationship.relationshipLevel >= 6 {
+            return .green
+        } else if relationship.relationshipLevel <= 4 {
+            return .red
+        } else {
+            return .orange
         }
     }
 }
@@ -170,18 +227,35 @@ struct AddRelationshipView: View {
                 }
                 
                 Section("Отношение") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Уровень отношения")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        
-                        RelationshipIndicator(level: relationshipLevel) { level in
-                            relationshipLevel = level
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("Уровень отношения")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            
+                            Spacer()
+                            
+                            Text(relationshipStatusText)
+                                .font(.caption)
+                                .fontWeight(.semibold)
+                                .foregroundColor(relationshipStatusColor)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(relationshipStatusColor.opacity(0.1))
+                                .cornerRadius(6)
                         }
                         
-                        Text(relationshipStatusText)
-                            .font(.caption)
+                        RelationshipIndicator(
+                            level: relationshipLevel,
+                            onTap: { level in
+                                relationshipLevel = level
+                            }
+                        )
+                        
+                        Text("0-4: Враги (X) | 5: Нейтрал (круг) | 6-9: Друзья (сердечки)")
+                            .font(.caption2)
                             .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
                     }
                 }
             }
@@ -218,6 +292,16 @@ struct AddRelationshipView: View {
             return "Враг"
         } else {
             return "Нейтрал"
+        }
+    }
+    
+    private var relationshipStatusColor: Color {
+        if relationshipLevel >= 6 {
+            return .green
+        } else if relationshipLevel <= 4 {
+            return .red
+        } else {
+            return .orange
         }
     }
 }
@@ -260,9 +344,12 @@ struct EditRelationshipView: View {
                             .font(.caption)
                             .foregroundColor(.secondary)
                         
-                        RelationshipIndicator(level: relationshipLevel) { level in
-                            relationshipLevel = level
-                        }
+                        RelationshipIndicator(
+                            level: relationshipLevel,
+                            onTap: { level in
+                                relationshipLevel = level
+                            }
+                        )
                         
                         Text(relationshipStatusText)
                             .font(.caption)

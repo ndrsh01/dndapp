@@ -34,7 +34,8 @@ struct QuotesView: View {
                         // Цитата НАД изображением - меньше ширина
                         Text(quote.text)
                             .font(.title)
-                            .fontWeight(.medium)
+                            .fontWeight(.semibold)
+                            .italic()
                             .multilineTextAlignment(.center)
                             .foregroundColor(.black)
                             .frame(width: 280)
@@ -77,11 +78,10 @@ struct QuotesView: View {
                     viewModel.generateRandomQuote()
                 }) {
                     HStack(spacing: 12) {
-                        Image(systemName: "shuffle")
                             .font(.title3)
                         Text("Случайная цитата")
                     }
-                    .font(.title2)
+                    .font(.system(.headline, design: .rounded))
                     .fontWeight(.semibold)
                     .foregroundColor(.black)
                     .padding(.horizontal, 40)
@@ -92,6 +92,7 @@ struct QuotesView: View {
                 .padding(.top, 10)
                 .padding(.bottom, 30)
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(red: 0.98, green: 0.97, blue: 0.95))
             .navigationTitle("Цитаты")
             .navigationBarTitleDisplayMode(.large)
@@ -123,7 +124,7 @@ struct CategoryManagementView: View {
     
     var body: some View {
         NavigationView {
-            VStack {
+            ZStack {
                 // Список категорий как на изображении
                 ScrollView {
                     LazyVStack(spacing: 12) {
@@ -155,6 +156,7 @@ struct CategoryManagementView: View {
                     .padding(.top, 8)
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(red: 0.98, green: 0.97, blue: 0.95))
             .navigationTitle("Категории цитат")
             .navigationBarTitleDisplayMode(.inline)
@@ -171,10 +173,7 @@ struct CategoryManagementView: View {
                         showAddCategory = true
                     }) {
                         Image(systemName: "plus")
-                            .foregroundColor(.white)
-                            .frame(width: 32, height: 32)
-                            .background(Color.orange)
-                            .clipShape(Circle())
+                            .foregroundColor(.orange)
                     }
                 }
             }
@@ -328,12 +327,13 @@ struct QuotesListView: View {
     @Environment(\.dismiss) private var dismiss
     let category: String
     @ObservedObject var viewModel: QuotesViewModel
+    @ObservedObject private var dataService = DataService.shared
     @State private var showAddQuote = false
     @State private var showEditQuote = false
     @State private var editingQuote: Quote?
     
     var quotes: [Quote] {
-        viewModel.dataService.quotes?.quotes(for: category) ?? []
+        dataService.quotes?.quotes(for: category) ?? []
     }
     
     var body: some View {
@@ -350,25 +350,30 @@ struct QuotesListView: View {
                         }
                     )
                 } else {
-                    List {
-                        ForEach(quotes) { quote in
-                            QuoteCardView(quote: quote)
-                                .contextMenu(
-                                    onEdit: {
-                                        editingQuote = quote
-                                        showEditQuote = true
-                                    },
-                                    onDelete: {
-                                        viewModel.deleteQuote(quote)
-                                    },
-                                    onDuplicate: {
-                                        viewModel.duplicateQuote(quote)
-                                    }
-                                )
+                    ScrollView {
+                        LazyVStack(spacing: 12) {
+                            ForEach(quotes) { quote in
+                                QuoteCardView(quote: quote)
+                                    .contextMenu(
+                                        onEdit: {
+                                            editingQuote = quote
+                                            showEditQuote = true
+                                        },
+                                        onDelete: {
+                                            viewModel.deleteQuote(quote)
+                                        },
+                                        onDuplicate: {
+                                            viewModel.duplicateQuote(quote)
+                                        }
+                                    )
+                            }
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.top, 8)
                     }
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(red: 0.98, green: 0.97, blue: 0.95))
             .navigationTitle(category)
             .navigationBarTitleDisplayMode(.large)
@@ -385,10 +390,7 @@ struct QuotesListView: View {
                         showAddQuote = true
                     }) {
                         Image(systemName: "plus")
-                            .foregroundColor(.white)
-                            .frame(width: 32, height: 32)
-                            .background(Color.orange)
-                            .clipShape(Circle())
+                            .foregroundColor(.orange)
                     }
                 }
             }
@@ -401,7 +403,7 @@ struct QuotesListView: View {
         .sheet(isPresented: $showEditQuote) {
             if let quote = editingQuote {
                 EditQuoteView(quote: quote) { updatedQuote in
-                    viewModel.updateQuote(updatedQuote)
+                    viewModel.updateQuote(from: quote, to: updatedQuote)
                 }
             }
         }
@@ -419,7 +421,10 @@ struct QuoteCardView: View {
                 .foregroundColor(.primary)
                 .multilineTextAlignment(.leading)
         }
-        .padding(.vertical, 8)
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
     }
 }
 
@@ -508,3 +513,4 @@ struct EditQuoteView: View {
 #Preview {
     QuotesView()
 }
+

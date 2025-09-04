@@ -1,6 +1,24 @@
 import Foundation
 import Combine
 
+// MARK: - DataService Errors
+enum DataServiceError: Error, LocalizedError {
+    case fileNotFound(String)
+    case decodingError(String)
+    case cacheError(String)
+    
+    var errorDescription: String? {
+        switch self {
+        case .fileNotFound(let filename):
+            return "Файл не найден: \(filename)"
+        case .decodingError(let message):
+            return "Ошибка декодирования: \(message)"
+        case .cacheError(let message):
+            return "Ошибка кэша: \(message)"
+        }
+    }
+}
+
 class DataService: ObservableObject {
     static let shared = DataService()
     
@@ -16,6 +34,7 @@ class DataService: ObservableObject {
     // MARK: - Private Properties
     private var cancellables = Set<AnyCancellable>()
     private let userDefaults = UserDefaults.standard
+    private let cacheManager = CacheManager.shared
     
     // MARK: - Keys for UserDefaults
     private enum Keys {
@@ -27,56 +46,134 @@ class DataService: ObservableObject {
     }
     
     private init() {
-        loadData()
         loadPersistedData()
+        loadData()
     }
     
     // MARK: - Data Loading
     private func loadData() {
-        loadQuotes()
-        loadSpells()
-        loadFeats()
-        loadBackgrounds()
+        // Сначала пробуем загрузить из кэша синхронно
+        loadQuotesFromCache()
+        loadSpellsFromCache()
+        loadFeatsFromCache()
+        loadBackgroundsFromCache()
+        
+        // Затем обновляем асинхронно
+        Task {
+            await loadQuotes()
+            await loadSpells()
+            await loadFeats()
+            await loadBackgrounds()
+        }
     }
     
-    private func loadQuotes() {
-        guard let url = Bundle.main.url(forResource: "quotes", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let quotesData = try? JSONDecoder().decode(QuotesData.self, from: data) else {
-            print("Failed to load quotes.json")
-            return
+    // MARK: - Cache Loading (синхронно)
+    private func loadQuotesFromCache() {
+        if let cachedQuotes = cacheManager.get(QuotesData.self, forKey: .quotes) {
+            self.quotes = cachedQuotes
         }
-        self.quotes = quotesData
     }
     
-    private func loadSpells() {
-        guard let url = Bundle.main.url(forResource: "spells", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let spellsData = try? JSONDecoder().decode([Spell].self, from: data) else {
-            print("Failed to load spells.json")
-            return
+    private func loadSpellsFromCache() {
+        if let cachedSpells = cacheManager.get([Spell].self, forKey: .spells) {
+            self.spells = cachedSpells
         }
-        self.spells = spellsData
     }
     
-    private func loadFeats() {
-        guard let url = Bundle.main.url(forResource: "feats", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let featsData = try? JSONDecoder().decode([Feat].self, from: data) else {
-            print("Failed to load feats.json")
-            return
+    private func loadFeatsFromCache() {
+        if let cachedFeats = cacheManager.get([Feat].self, forKey: .feats) {
+            self.feats = cachedFeats
         }
-        self.feats = featsData
     }
     
-    private func loadBackgrounds() {
-        guard let url = Bundle.main.url(forResource: "backgrounds", withExtension: "json"),
-              let data = try? Data(contentsOf: url),
-              let backgroundsData = try? JSONDecoder().decode([Background].self, from: data) else {
-            print("Failed to load backgrounds.json")
-            return
+    private func loadBackgroundsFromCache() {
+        if let cachedBackgrounds = cacheManager.get([Background].self, forKey: .backgrounds) {
+            self.backgrounds = cachedBackgrounds
         }
-        self.backgrounds = backgroundsData
+    }
+    
+    private func loadQuotes() async {
+        do {
+            let quotesData = try await cacheManager.loadWithCache(
+                QuotesData.self,
+                forKey: .quotes
+            ) {
+                guard let url = Bundle.main.url(forResource: "quotes", withExtension: "json"),
+                      let data = try? Data(contentsOf: url) else {
+                    throw DataServiceError.fileNotFound("quotes.json")
+                }
+                return try JSONDecoder().decode(QuotesData.self, from: data)
+            }
+            
+            await MainActor.run {
+                self.quotes = quotesData
+            }
+        } catch {
+            print("Failed to load quotes: \(error)")
+        }
+    }
+    
+    private func loadSpells() async {
+        do {
+            let spellsData = try await cacheManager.loadWithCache(
+                [Spell].self,
+                forKey: .spells
+            ) {
+                guard let url = Bundle.main.url(forResource: "spells", withExtension: "json"),
+                      let data = try? Data(contentsOf: url) else {
+                    throw DataServiceError.fileNotFound("spells.json")
+                }
+                return try JSONDecoder().decode([Spell].self, from: data)
+            }
+            
+            await MainActor.run {
+                self.spells = spellsData
+            }
+        } catch {
+            print("Failed to load spells: \(error)")
+        }
+    }
+    
+    private func loadFeats() async {
+        do {
+            let featsData = try await cacheManager.loadWithCache(
+                [Feat].self,
+                forKey: .feats
+            ) {
+                guard let url = Bundle.main.url(forResource: "feats", withExtension: "json"),
+                      let data = try? Data(contentsOf: url) else {
+                    throw DataServiceError.fileNotFound("feats.json")
+                }
+                return try JSONDecoder().decode([Feat].self, from: data)
+            }
+            
+            await MainActor.run {
+                self.feats = featsData
+            }
+        } catch {
+            print("Failed to load feats: \(error)")
+        }
+    }
+    
+    private func loadBackgrounds() async {
+        do {
+            let backgroundsData = try await cacheManager.loadWithCache(
+                [Background].self,
+                forKey: .backgrounds
+            ) {
+                guard let url = Bundle.main.url(forResource: "backgrounds", withExtension: "json"),
+                      let data = try? Data(contentsOf: url) else {
+                    throw DataServiceError.fileNotFound("backgrounds.json")
+                }
+                return try JSONDecoder().decode([Background].self, from: data)
+            }
+            
+            await MainActor.run {
+                self.backgrounds = backgroundsData
+            }
+        } catch {
+            print("Failed to load backgrounds: \(error)")
+        }
     }
     
     // MARK: - Persistence
@@ -84,6 +181,23 @@ class DataService: ObservableObject {
         loadRelationships()
         loadNotes()
         loadCharacters()
+    }
+    
+    // MARK: - Cache Management
+    func clearCache() {
+        cacheManager.clearAll()
+    }
+    
+    func getCacheInfo() -> (memory: Int, disk: Int) {
+        return cacheManager.getCacheSize()
+    }
+    
+    func refreshData() {
+        Task {
+            // Очищаем кэш и перезагружаем данные
+            cacheManager.clearAll()
+            await loadData()
+        }
     }
     
     private func loadRelationships() {
@@ -327,5 +441,59 @@ class DataService: ObservableObject {
         
         // Сохраняем в UserDefaults (если нужно)
         // Здесь можно добавить сохранение в файл или базу данных
+    }
+    
+    // MARK: - Quote Management
+    func addQuote(_ quote: Quote) {
+        guard var quotesData = quotes else { return }
+        
+        var newCategories = quotesData.categories
+        if newCategories[quote.category] == nil {
+            newCategories[quote.category] = []
+        }
+        newCategories[quote.category]?.append(quote.text)
+        
+        let updatedQuotesData = QuotesData(categories: newCategories)
+        saveQuotesData(updatedQuotesData)
+    }
+    
+    func updateQuote(_ quote: Quote) {
+        // Для обновления цитаты нужно знать старый текст
+        // Пока что просто добавляем новую цитату
+        addQuote(quote)
+    }
+    
+    func updateQuote(from oldQuote: Quote, to newQuote: Quote) {
+        guard var quotesData = quotes else { return }
+        
+        var newCategories = quotesData.categories
+        if var categoryQuotes = newCategories[oldQuote.category] {
+            // Удаляем старую цитату
+            categoryQuotes.removeAll { $0 == oldQuote.text }
+            // Добавляем новую цитату
+            categoryQuotes.append(newQuote.text)
+            newCategories[oldQuote.category] = categoryQuotes
+        }
+        
+        let updatedQuotesData = QuotesData(categories: newCategories)
+        saveQuotesData(updatedQuotesData)
+    }
+    
+    func deleteQuote(_ quote: Quote) {
+        guard var quotesData = quotes else { return }
+        
+        var newCategories = quotesData.categories
+        if var categoryQuotes = newCategories[quote.category] {
+            categoryQuotes.removeAll { $0 == quote.text }
+            newCategories[quote.category] = categoryQuotes
+        }
+        
+        let updatedQuotesData = QuotesData(categories: newCategories)
+        saveQuotesData(updatedQuotesData)
+    }
+    
+    func duplicateQuote(_ quote: Quote) {
+        let duplicatedQuote = Quote(text: "\(quote.text) (копия)", category: quote.category)
+        addQuote(duplicatedQuote)
     }
 }

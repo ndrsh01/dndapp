@@ -46,6 +46,7 @@
 		27AF9E1C2E696FB7006311EC /* RelationshipsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DF42E696FB7006311EC /* RelationshipsView.swift */; };
 		27AF9E1D2E696FB7006311EC /* DataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DF62E696FB7006311EC /* DataService.swift */; };
 		27AF9E1E2E696FB7006311EC /* MonsterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DF72E696FB7006311EC /* MonsterService.swift */; };
+		27AF9E232E6989DC006311EC /* CacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9E222E6989DB006311EC /* CacheManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -89,6 +90,7 @@
 		27AF9DF42E696FB7006311EC /* RelationshipsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RelationshipsView.swift; sourceTree = "<group>"; };
 		27AF9DF62E696FB7006311EC /* DataService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataService.swift; sourceTree = "<group>"; };
 		27AF9DF72E696FB7006311EC /* MonsterService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MonsterService.swift; sourceTree = "<group>"; };
+		27AF9E222E6989DB006311EC /* CacheManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CacheManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -280,6 +282,7 @@
 			children = (
 				27AF9DF62E696FB7006311EC /* DataService.swift */,
 				27AF9DF72E696FB7006311EC /* MonsterService.swift */,
+				27AF9E222E6989DB006311EC /* CacheManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -374,6 +377,7 @@
 				27AF9E092E696FB7006311EC /* Spell.swift in Sources */,
 				27AF9E1D2E696FB7006311EC /* DataService.swift in Sources */,
 				27AF9E1B2E696FB7006311EC /* CompendiumView.swift in Sources */,
+				27AF9E232E6989DC006311EC /* CacheManager.swift in Sources */,
 				27AF9DF82E696FB7006311EC /* MainTabView.swift in Sources */,
 				27AF9E012E696FB7006311EC /* TabaxiImages.swift in Sources */,
 				27AF9DFD2E696FB7006311EC /* CharacterViewModel.swift in Sources */,
@@ -537,7 +541,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.alexanderaferenok.dndapp";
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexanderaferenok.dndapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
@@ -566,7 +570,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "com.alexanderaferenok.dndapp";
+				PRODUCT_BUNDLE_IDENTIFIER = com.alexanderaferenok.dndapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
