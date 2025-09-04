@@ -119,7 +119,7 @@ enum MonsterType: String, CaseIterable {
         case .beast: return "pawprint"
         case .dragon: return "flame"
         case .humanoid: return "person.2"
-        case .undead: return "skull"
+        case .undead: return "bone"
         case .fiend: return "exclamationmark.triangle"
         }
     }

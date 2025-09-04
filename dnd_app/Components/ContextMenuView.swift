@@ -98,72 +98,79 @@ struct ContextMenuModifier: ViewModifier {
     @State private var scale: CGFloat = 1.0
     @State private var borderColor: Color = .clear
     @State private var borderWidth: CGFloat = 0
-
+    
     func body(content: Content) -> some View {
-        ZStack {
-            content
-                .scaleEffect(scale)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(borderColor, lineWidth: borderWidth)
-                )
-                .gesture(
-                    LongPressGesture(minimumDuration: 0.5)
-                        .onEnded { _ in
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                                scale = 1.05
-                                borderColor = .orange.opacity(0.8)
-                                borderWidth = 2
-                            }
-                            // Haptic feedback
-                            let generator = UIImpactFeedbackGenerator(style: .medium)
-                            generator.impactOccurred()
-
-                            showMenu = true
+        content
+            .scaleEffect(scale)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(borderColor, lineWidth: borderWidth)
+            )
+            .gesture(
+                LongPressGesture(minimumDuration: 0.5)
+                    .onEnded { _ in
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                            scale = 1.05
+                            borderColor = .orange.opacity(0.8)
+                            borderWidth = 2
                         }
-                )
-                .onTapGesture {
-                    if showMenu {
-                        hideMenu()
-                    }
-                }
+                        // Haptic feedback
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
 
-            if showMenu {
-                // Background tap area to dismiss menu - covers entire screen
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        hideMenu()
+                        showMenu = true
                     }
-                    .zIndex(9999) // Higher zIndex to be above everything
-                
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        ContextMenuView(
-                            onEdit: {
-                                onEdit()
-                                hideMenu()
-                            },
-                            onDelete: {
-                                onDelete()
-                                hideMenu()
-                            },
-                            onDuplicate: {
-                                onDuplicate()
+            )
+            .onTapGesture {
+                if showMenu {
+                    hideMenu()
+                }
+            }
+            .overlay(
+                Group {
+                    if showMenu {
+                        // Background tap area to dismiss menu - covers entire screen
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {
                                 hideMenu()
                             }
-                        )
-                        .offset(y: 50) // Меню под элементом
-                        Spacer()
+                            .zIndex(9999999) // Higher zIndex to be above everything
+                            .allowsHitTesting(true)
+                            .ignoresSafeArea()
+                        
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                ContextMenuView(
+                                    onEdit: {
+                                        onEdit()
+                                        hideMenu()
+                                    },
+                                    onDelete: {
+                                        onDelete()
+                                        hideMenu()
+                                    },
+                                    onDuplicate: {
+                                        onDuplicate()
+                                        hideMenu()
+                                    }
+                                )
+                                .offset(y: 50) // Меню под элементом
+                                .zIndex(10000000) // Highest zIndex to be above everything
+                                .allowsHitTesting(true)
+                                Spacer()
+                            }
+                            Spacer()
+                        }
+                        .transition(.opacity)
+                        .zIndex(10000000) // Highest zIndex to be above everything
+                        .allowsHitTesting(true)
+                        .ignoresSafeArea()
                     }
-                    Spacer()
                 }
-                .transition(.opacity)
-                .zIndex(10000) // Highest zIndex to be above everything
-            }
-        }
+            )
     }
 
     private func hideMenu() {
@@ -288,78 +295,85 @@ struct RelationshipContextMenuModifier: ViewModifier {
     @State private var borderWidth: CGFloat = 0
 
     func body(content: Content) -> some View {
-        ZStack {
-            content
-                .scaleEffect(scale)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(borderColor, lineWidth: borderWidth)
-                )
-                .gesture(
-                    LongPressGesture(minimumDuration: 0.5)
-                        .onEnded { _ in
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                                scale = 1.05
-                                borderColor = .orange.opacity(0.8)
-                                borderWidth = 2
-                            }
-                            // Haptic feedback
-                            let generator = UIImpactFeedbackGenerator(style: .medium)
-                            generator.impactOccurred()
-
-                            showMenu = true
+        content
+            .scaleEffect(scale)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(borderColor, lineWidth: borderWidth)
+            )
+            .gesture(
+                LongPressGesture(minimumDuration: 0.5)
+                    .onEnded { _ in
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                            scale = 1.05
+                            borderColor = .orange.opacity(0.8)
+                            borderWidth = 2
                         }
-                )
-                .onTapGesture {
-                    if showMenu {
-                        hideMenu()
-                    }
-                }
+                        // Haptic feedback
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
 
-            if showMenu {
-                // Background tap area to dismiss menu - covers entire screen
-                Color.clear
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        hideMenu()
+                        showMenu = true
                     }
-                    .zIndex(9999) // Higher zIndex to be above everything
-                
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        RelationshipContextMenuView(
-                            onSetEnemy: {
-                                onSetEnemy()
-                                hideMenu()
-                            },
-                            onSetNeutral: {
-                                onSetNeutral()
-                                hideMenu()
-                            },
-                            onSetFriend: {
-                                onSetFriend()
-                                hideMenu()
-                            },
-                            onEdit: {
-                                onEdit()
-                                hideMenu()
-                            },
-                            onDelete: {
-                                onDelete()
+            )
+            .onTapGesture {
+                if showMenu {
+                    hideMenu()
+                }
+            }
+            .overlay(
+                Group {
+                    if showMenu {
+                        // Background tap area to dismiss menu - covers entire screen
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture {
                                 hideMenu()
                             }
-                        )
-                        .offset(y: 50) // Меню под элементом
-                        Spacer()
+                            .zIndex(9999999) // Higher zIndex to be above everything
+                            .allowsHitTesting(true)
+                            .ignoresSafeArea()
+                        
+                        VStack {
+                            Spacer()
+                            HStack {
+                                Spacer()
+                                RelationshipContextMenuView(
+                                    onSetEnemy: {
+                                        onSetEnemy()
+                                        hideMenu()
+                                    },
+                                    onSetNeutral: {
+                                        onSetNeutral()
+                                        hideMenu()
+                                    },
+                                    onSetFriend: {
+                                        onSetFriend()
+                                        hideMenu()
+                                    },
+                                    onEdit: {
+                                        onEdit()
+                                        hideMenu()
+                                    },
+                                    onDelete: {
+                                        onDelete()
+                                        hideMenu()
+                                    }
+                                )
+                                .offset(y: 50) // Меню под элементом
+                                .zIndex(10000000) // Highest zIndex to be above everything
+                                .allowsHitTesting(true)
+                                Spacer()
+                            }
+                            Spacer()
+                        }
+                        .transition(.opacity)
+                        .zIndex(10000000) // Highest zIndex to be above everything
+                        .allowsHitTesting(true)
+                        .ignoresSafeArea()
                     }
-                    Spacer()
                 }
-                .transition(.opacity)
-                .zIndex(10000) // Highest zIndex to be above everything
-            }
-        }
+            )
     }
 
     private func hideMenu() {

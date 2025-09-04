@@ -12,7 +12,7 @@ struct CompendiumView: View {
     @StateObject private var viewModel = CompendiumViewModel()
     @State private var selectedItem: Any?
     @State private var showSheet = false
-    @State private var sheetContent: SheetContent = .spells
+    @State private var sheetContent: SheetContent?
     
     var body: some View {
         NavigationView {
@@ -88,17 +88,19 @@ struct CompendiumView: View {
             .navigationBarTitleDisplayMode(.large)
         }
         .sheet(isPresented: $showSheet) {
-            switch sheetContent {
-            case .spells:
-                SpellsView()
-            case .backgrounds:
-                BackgroundsView()
-            case .feats:
-                FeatsView()
-            case .bestiary:
-                BestiaryView()
-            case .favorites:
-                FavoritesView()
+            if let content = sheetContent {
+                switch content {
+                case .spells:
+                    SpellsView()
+                case .backgrounds:
+                    BackgroundsView()
+                case .feats:
+                    FeatsView()
+                case .bestiary:
+                    BestiaryView()
+                case .favorites:
+                    FavoritesView()
+                }
             }
         }
     }

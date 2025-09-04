@@ -220,11 +220,18 @@ class DataService: ObservableObject {
         loadRelationships()
         loadNotes()
         loadCharacters()
+        loadCustomQuotesData()
     }
     
     // MARK: - Cache Management
     func clearCache() {
         cacheManager.clearAll()
+    }
+
+    func clearCustomQuotesData() {
+        let key = "custom_quotes_data"
+        userDefaults.removeObject(forKey: key)
+        print("Custom quotes data cleared from UserDefaults")
     }
     
     func getCacheInfo() -> (memory: Int, disk: Int) {
@@ -258,6 +265,30 @@ class DataService: ObservableObject {
         if let data = userDefaults.data(forKey: Keys.characters),
            let characters = try? JSONDecoder().decode([DnDCharacter].self, from: data) {
             self.characters = characters
+        }
+    }
+
+    private func loadCustomQuotesData() {
+        let key = "custom_quotes_data"
+        if let data = userDefaults.data(forKey: key),
+           let customQuotesData = try? JSONDecoder().decode(QuotesData.self, from: data) {
+            // Если есть сохраненные пользовательские данные, объединяем их с данными из bundle
+            if let existingQuotesData = self.quotes {
+                // Создаем новую структуру с объединенными категориями
+                var mergedCategories = existingQuotesData.categories
+                // Объединяем категории: пользовательские категории заменяют встроенные
+                for (category, quotes) in customQuotesData.categories {
+                    mergedCategories[category] = quotes
+                    print("Loaded custom category: \(category) with \(quotes.count) quotes")
+                }
+                self.quotes = QuotesData(categories: mergedCategories)
+            } else {
+                // Если встроенных данных нет, используем пользовательские
+                self.quotes = customQuotesData
+            }
+            print("Custom quotes data loaded from UserDefaults - \(customQuotesData.categories.count) categories")
+        } else {
+            print("No custom quotes data found in UserDefaults")
         }
     }
     
@@ -294,6 +325,11 @@ class DataService: ObservableObject {
     func addRelationship(_ relationship: Relationship) {
         relationships.append(relationship)
         saveRelationships()
+    }
+
+    var uniqueOrganizations: [String] {
+        let organizations = relationships.compactMap { $0.organization }
+        return Array(Set(organizations)).sorted()
     }
     
     func updateRelationship(_ relationship: Relationship) {
@@ -408,16 +444,17 @@ class DataService: ObservableObject {
     // MARK: - Quote Category Management
     func addQuoteCategory(_ name: String) {
         guard var quotesData = quotes else { return }
-        
+
         // Создаем новую категорию с пустым массивом цитат
         var newCategories = quotesData.categories
         newCategories[name] = []
-        
+
         // Создаем новый объект QuotesData с обновленными категориями
         let updatedQuotesData = QuotesData(categories: newCategories)
-        
+
         // Сохраняем обновленные данные
         saveQuotesData(updatedQuotesData)
+        print("Category '\(name)' added and saved")
     }
     
     func deleteQuoteCategory(_ name: String) {
@@ -475,23 +512,30 @@ class DataService: ObservableObject {
     private func saveQuotesData(_ quotesData: QuotesData) {
         // Обновляем локальную копию
         self.quotes = quotesData
-        
-        // Сохраняем в UserDefaults (если нужно)
-        // Здесь можно добавить сохранение в файл или базу данных
+
+        // Сохраняем в UserDefaults
+        let key = "custom_quotes_data"
+        if let data = try? JSONEncoder().encode(quotesData) {
+            userDefaults.set(data, forKey: key)
+            print("Quotes data saved to UserDefaults")
+        } else {
+            print("Failed to encode quotes data")
+        }
     }
     
     // MARK: - Quote Management
     func addQuote(_ quote: Quote) {
         guard var quotesData = quotes else { return }
-        
+
         var newCategories = quotesData.categories
         if newCategories[quote.category] == nil {
             newCategories[quote.category] = []
         }
         newCategories[quote.category]?.append(quote.text)
-        
+
         let updatedQuotesData = QuotesData(categories: newCategories)
         saveQuotesData(updatedQuotesData)
+        print("Quote added to category '\(quote.category)': \(quote.text.prefix(50))...")
     }
     
     func updateQuote(_ quote: Quote) {

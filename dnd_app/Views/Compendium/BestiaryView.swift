@@ -4,11 +4,10 @@ struct BestiaryView: View {
     @StateObject private var monsterService = MonsterService.shared
     @State private var searchText = ""
     @State private var selectedType: MonsterType = .all
-    @State private var selectedSize: String? = nil
-    @State private var selectedAlignment: String? = nil
     @State private var selectedChallengeRating: String? = nil
-    @State private var showFilters = false
+    @State private var showQuickFilters = false
     @State private var expandedMonsters: Set<UUID> = []
+    @State private var isLoading = true
     
     var filteredMonsters: [Monster] {
         var filtered = monsterService.searchMonsters(query: searchText)
@@ -20,28 +19,19 @@ struct BestiaryView: View {
                 case .all:
                     return true
                 case .beast:
-                    return monster.type.lowercased().contains("beast")
+                    return monster.type.lowercased().contains("beast") || monster.type.lowercased().contains("зверь")
                 case .dragon:
-                    return monster.type.lowercased().contains("dragon")
+                    return monster.type.lowercased().contains("dragon") || monster.type.lowercased().contains("дракон")
                 case .humanoid:
-                    return monster.type.lowercased().contains("humanoid")
+                    return monster.type.lowercased().contains("humanoid") || monster.type.lowercased().contains("гуманоид")
                 case .undead:
-                    return monster.type.lowercased().contains("undead")
+                    return monster.type.lowercased().contains("undead") || monster.type.lowercased().contains("нежить")
                 case .fiend:
-                    return monster.type.lowercased().contains("fiend")
+                    return monster.type.lowercased().contains("fiend") || monster.type.lowercased().contains("демон") || monster.type.lowercased().contains("devil") || monster.type.lowercased().contains("бес")
                 }
             }
         }
         
-        // Фильтр по размеру
-        if let size = selectedSize {
-            filtered = filtered.filter { $0.size == size }
-        }
-        
-        // Фильтр по мировоззрению
-        if let alignment = selectedAlignment {
-            filtered = filtered.filter { $0.alignment == alignment }
-        }
         
         // Фильтр по рейтингу опасности
         if let challengeRating = selectedChallengeRating {
@@ -51,141 +41,179 @@ struct BestiaryView: View {
         return filtered
     }
     
-    var availableSizes: [String] {
-        let sizes = monsterService.monsters.map { $0.size }
-        return Array(Set(sizes)).sorted()
-    }
-    
-    var availableAlignments: [String] {
-        let alignments = monsterService.monsters.map { $0.alignment }
-        return Array(Set(alignments)).sorted()
-    }
-    
-    var availableChallengeRatings: [String] {
-        let challengeRatings = monsterService.monsters.map { $0.challengeRating }
-        return Array(Set(challengeRatings)).sorted { first, second in
-            // Sort by numeric value if possible
-            if let firstNum = Double(first), let secondNum = Double(second) {
-                return firstNum < secondNum
-            }
-            return first < second
-        }
-    }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header with title and filter button
-            HStack {
-                Text("Бестиарий")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
+        ZStack {
+            if isLoading {
+                // Loading screen
+                VStack(spacing: 20) {
+                    Spacer()
+
+                    VStack(spacing: 16) {
+                        Image(systemName: "pawprint.circle.fill")
+                            .font(.system(size: 60))
+                            .foregroundColor(.orange)
+                            .symbolEffect(.pulse)
+
+                        Text("Загрузка бестиария...")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .orange))
+                            .scaleEffect(1.5)
+                    }
+
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+                .transition(.opacity)
+            } else {
+                // Main content
+                VStack(spacing: 0) {
+                    // Header with title and filter button
+                    HStack {
+                        Text("Бестиарий")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
                 
                 Spacer()
-                
-                Button(action: {
-                    showFilters = true
-                }) {
-                    Image(systemName: "line.3.horizontal.decrease")
-                        .font(.title2)
-                        .foregroundColor(.orange)
-                }
+
+                        Button(action: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                showQuickFilters.toggle()
+                            }
+                        }) {
+                            Image(systemName: showQuickFilters ? "chevron.up" : "line.3.horizontal.decrease")
+                                .font(.title2)
+                                .foregroundColor(.orange)
+                        }
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
-            .padding(.bottom, 16)
-            
-            // Search Bar
-            SearchBar(text: $searchText, placeholder: "Поиск монстров...")
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
-            
-            // Active Filters
-            if selectedType != .all || selectedSize != nil || selectedAlignment != nil || selectedChallengeRating != nil {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        if selectedType != .all {
-                            FilterTagView(
-                                text: selectedType.rawValue,
-                                onRemove: { selectedType = .all }
-                            )
+                    .padding(.bottom, 16)
+
+                    // Search Bar
+                    SearchBar(text: $searchText, placeholder: "Поиск монстров...")
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, showQuickFilters ? 8 : 16)
+
+                    // Quick Filters (expandable)
+                    if showQuickFilters {
+                        VStack(spacing: 12) {
+                            // Тип монстра
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach([MonsterType.all, .beast, .dragon, .humanoid, .undead, .fiend], id: \.self) { type in
+                                        FilterButton(
+                                            title: type.rawValue,
+                                            icon: type.icon,
+                                            isSelected: selectedType == type
+                                        ) {
+                                            selectedType = type
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                            }
+
+                            // Класс опасности
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    FilterButton(
+                                        title: "Все КО",
+                                        icon: "star",
+                                        isSelected: selectedChallengeRating == nil
+                                    ) {
+                                        selectedChallengeRating = nil
+                                    }
+
+                                    ForEach(["0", "1/8", "1/4", "1/2", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "30"], id: \.self) { rating in
+                                        FilterButton(
+                                            title: rating,
+                                            icon: "star.fill",
+                                            isSelected: selectedChallengeRating == rating
+                                        ) {
+                                            selectedChallengeRating = rating
+                                        }
+                                    }
+                                }
+                                .padding(.horizontal, 16)
+                            }
                         }
-                        
-                        if let size = selectedSize {
-                            FilterTagView(
-                                text: "Размер: \(size)",
-                                onRemove: { selectedSize = nil }
-                            )
-                        }
-                        
-                        if let alignment = selectedAlignment {
-                            FilterTagView(
-                                text: "Мировоззрение: \(alignment)",
-                                onRemove: { selectedAlignment = nil }
-                            )
-                        }
-                        
-                        if let challengeRating = selectedChallengeRating {
-                            FilterTagView(
-                                text: "Класс опасности: \(challengeRating)",
-                                onRemove: { selectedChallengeRating = nil }
-                            )
-                        }
+                        .padding(.bottom, 16)
+                        .transition(.move(edge: .top).combined(with: .opacity))
                     }
-                    .padding(.horizontal, 16)
-                }
-                .padding(.bottom, 16)
-            }
+
+                    // Active Filters
+                    if selectedType != .all || selectedChallengeRating != nil {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                if selectedType != .all {
+                                    FilterTagView(
+                                        text: selectedType.rawValue,
+                                        onRemove: { selectedType = .all }
+                                    )
+                                }
+
+                                if let challengeRating = selectedChallengeRating {
+                                    FilterTagView(
+                                        text: "КО: \(challengeRating)",
+                                        onRemove: { selectedChallengeRating = nil }
+                                    )
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                        }
+                        .padding(.bottom, 16)
+                    }
             
             // Monsters List
-            if filteredMonsters.isEmpty {
-                Spacer()
+                    if filteredMonsters.isEmpty {
+                        Spacer()
                 EmptyStateView(
                     icon: "pawprint",
-                    title: "Нет монстров",
-                    description: "Попробуйте изменить фильтры или поисковый запрос",
-                    actionTitle: nil,
-                    action: nil
-                )
-                Spacer()
+                            title: "Нет монстров",
+                            description: "Попробуйте изменить фильтры или поисковый запрос",
+                            actionTitle: nil,
+                            action: nil
+                        )
+                        Spacer()
             } else {
-                ScrollView {
-                    LazyVStack(spacing: 16) {
-                        ForEach(filteredMonsters) { monster in
-                            MonsterCardView(
-                                monster: monster,
-                                isExpanded: expandedMonsters.contains(monster.id)
-                            ) {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                    if expandedMonsters.contains(monster.id) {
-                                        expandedMonsters.remove(monster.id)
-                                    } else {
-                                        expandedMonsters.insert(monster.id)
+                        ScrollView {
+                            LazyVStack(spacing: 16) {
+                    ForEach(filteredMonsters) { monster in
+                        MonsterCardView(
+                            monster: monster,
+                            isExpanded: expandedMonsters.contains(monster.id)
+                        ) {
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                            if expandedMonsters.contains(monster.id) {
+                                                expandedMonsters.remove(monster.id)
+                                            } else {
+                                                expandedMonsters.insert(monster.id)
+                                            }
+                                        }
                                     }
                                 }
                             }
+                            .padding(.horizontal, 16)
+                            .padding(.bottom, 16)
                         }
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
-                }
             }
         }
         .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+        .animation(.easeInOut(duration: 0.3), value: isLoading)
         .onAppear {
             Task {
+                isLoading = true
                 await monsterService.loadMonsters()
+                // Добавляем небольшую задержку для плавности анимации
+                try? await Task.sleep(nanoseconds: 300_000_000) // 0.3 секунды
+                isLoading = false
             }
-        }
-        .sheet(isPresented: $showFilters) {
-            MonsterFiltersView(
-                selectedType: $selectedType,
-                selectedSize: $selectedSize,
-                selectedAlignment: $selectedAlignment,
-                selectedChallengeRating: $selectedChallengeRating,
-                availableSizes: availableSizes,
-                availableAlignments: availableAlignments,
-                availableChallengeRatings: availableChallengeRatings
-            )
         }
     }
 }
@@ -193,13 +221,13 @@ struct BestiaryView: View {
 struct FilterTagView: View {
     let text: String
     let onRemove: () -> Void
-    
+
     var body: some View {
         HStack(spacing: 4) {
             Text(text)
                 .font(.caption)
                 .foregroundColor(.orange)
-            
+
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.caption)
@@ -213,37 +241,85 @@ struct FilterTagView: View {
     }
 }
 
+struct FilterButton: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+
+                Text(title)
+                    .font(.system(size: 14, weight: .medium))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                isSelected
+                    ? Color.orange
+                    : Color.gray.opacity(0.2)
+            )
+            .foregroundColor(
+                isSelected
+                    ? .white
+                    : .primary
+            )
+            .cornerRadius(20)
+        }
+    }
+}
+
 struct MonsterCardView: View {
     let monster: Monster
     let isExpanded: Bool
     let onTap: () -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(monster.name)
-                        .font(.headline)
+            VStack(alignment: .leading, spacing: 12) {
+                // Header
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(monster.name)
+                            .font(.headline)
                         .fontWeight(.semibold)
-                    
-                    Text(monster.sizeTypeAlignment)
+
+                    Text("\(monster.size) \(monster.type)")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("КЗ \(monster.armorClass)")
-                        .font(.caption)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.8))
-                        .cornerRadius(6)
+
+                    if !monster.alignment.isEmpty {
+                        Text(monster.alignment)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    }
                     
-                    Text("КД \(monster.challengeRating)")
+                    Spacer()
+                    
+                VStack(alignment: .trailing, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text("КЗ \(monster.armorClass)")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.blue.opacity(0.8))
+                            .cornerRadius(6)
+
+                        Text("ХП \(monster.hitPoints)")
+                            .font(.caption)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.green.opacity(0.8))
+                            .cornerRadius(6)
+                    }
+
+                    Text("КО \(monster.challengeRating)")
                         .font(.caption)
                         .foregroundColor(.white)
                         .padding(.horizontal, 8)
@@ -255,17 +331,17 @@ struct MonsterCardView: View {
             
             // Stats
             HStack(spacing: 16) {
-                StatView(title: "ХП", value: "\(monster.hitPoints)")
                 StatView(title: "Скорость", value: monster.speed)
-                StatView(title: "Размер", value: monster.size)
+                StatView(title: "БМ", value: "+\(monster.proficiencyBonus)")
+                StatView(title: "ПВ", value: "\(monster.passivePerception)")
             }
             
             // Expandable Content
             if isExpanded {
                 VStack(alignment: .leading, spacing: 12) {
                     Divider()
-                    
-                    // Abilities
+                
+                // Abilities
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Характеристики")
                             .font(.subheadline)
@@ -279,30 +355,115 @@ struct MonsterCardView: View {
                             AbilityView(name: "МУД", score: monster.wisdom, modifier: monster.wisdomModifier)
                             AbilityView(name: "ХАР", score: monster.charisma, modifier: monster.charismaModifier)
                         }
-                    }
-                    
-                    // Skills
-                    if let skills = monster.skills, !skills.isEmpty {
+                        }
+                        
+                        // Skills
+                        if let skills = monster.skills, !skills.isEmpty {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Навыки")
+                                Text("Навыки")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
-                            
-                            Text(skills)
+
+                                Text(skills)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
                     }
-                    
-                    // Actions
-                    if let actions = monster.actions, !actions.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Действия")
+
+                    // Damage Vulnerabilities, Resistances, Immunities
+                    if let damageResistances = monster.damageResistances, !damageResistances.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Сопротивления урону")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
-                            
-                            ForEach(actions.prefix(3), id: \.name) { action in
-                                ActionView(action: action)
+
+                            Text(damageResistances)
+                                .font(.caption)
+                                .foregroundColor(.blue)
+                        }
+                    }
+
+                    if let damageImmunities = monster.damageImmunities, !damageImmunities.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Иммунитет к урону")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+
+                            Text(damageImmunities)
+                                .font(.caption)
+                                .foregroundColor(.green)
+                        }
+                    }
+
+                    if let conditionImmunities = monster.conditionImmunities, !conditionImmunities.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Иммунитет к состояниям")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+
+                            Text(conditionImmunities)
+                                .font(.caption)
+                                .foregroundColor(.purple)
+                        }
+                    }
+
+                    // Senses and Languages
+                    if let senses = monster.senses, !senses.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Чувства")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+
+                            Text(senses)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+
+                    if let languages = monster.languages, !languages.isEmpty {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Языки")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+
+                            Text(languages)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+
+                    // Legendary Actions
+                    if let legendaryActions = monster.legendaryActions, !legendaryActions.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Легендарные действия")
+                                .font(.subheadline)
+                                .fontWeight(.semibold)
+
+                            ForEach(legendaryActions.prefix(2), id: \.name) { action in
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(action.name)
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.orange)
+
+                                    Text(action.desc)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(3)
+                                }
+                            }
+                        }
+                        }
+                        
+                        // Actions
+                        if let actions = monster.actions, !actions.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Действия")
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                
+                                ForEach(actions.prefix(3), id: \.name) { action in
+                                    ActionView(action: action)
                             }
                         }
                     }

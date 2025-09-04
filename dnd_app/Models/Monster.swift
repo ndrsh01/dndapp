@@ -269,4 +269,37 @@ extension Monster {
     var intelligenceModifier: String { abilityModifier(intelligence) }
     var wisdomModifier: String { abilityModifier(wisdom) }
     var charismaModifier: String { abilityModifier(charisma) }
+
+    // Бонус мастерства на основе уровня опасности
+    var proficiencyBonus: Int {
+        switch challengeRating {
+        case "0", "1/8", "1/4", "1/2": return 2
+        case "1", "2": return 3
+        case "3", "4": return 4
+        case "5", "6", "7", "8": return 5
+        case "9", "10", "11", "12": return 6
+        case "13", "14", "15", "16": return 7
+        case "17", "18", "19", "20": return 8
+        default: return 2
+        }
+    }
+
+    // Пассивное восприятие
+    var passivePerception: Int {
+        let wisMod = (wisdom - 10) / 2
+        // Если есть навык Perception, добавляем бонус мастерства
+        if let skills = skills, skills.contains("Perception") {
+            // Ищем значение Perception в навыках
+            let skillComponents = skills.components(separatedBy: ", ")
+            for component in skillComponents {
+                if component.contains("Perception") {
+                    let parts = component.components(separatedBy: ": ")
+                    if parts.count > 1, let skillBonus = Int(parts[1]) {
+                        return 10 + skillBonus
+                    }
+                }
+            }
+        }
+        return 10 + wisMod
+    }
 }

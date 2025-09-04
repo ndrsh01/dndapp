@@ -7,7 +7,7 @@ struct NotesView: View {
     
     var body: some View {
         NavigationView {
-            VStack {
+            VStack(spacing: 0) {
                 // Search Bar
                 SearchBar(text: $viewModel.searchText, placeholder: "Поиск заметок...")
                     .padding(.horizontal, 16)
@@ -35,9 +35,11 @@ struct NotesView: View {
                     }
                     .padding(.horizontal, 16)
                 }
+                .padding(.bottom, 16)
                 
                 // Notes List
                 if viewModel.filteredNotes.isEmpty {
+                    Spacer()
                     EmptyStateView(
                         icon: "note.text",
                         title: "Нет заметок",
@@ -47,6 +49,7 @@ struct NotesView: View {
                             showAddNote = true
                         }
                     )
+                    Spacer()
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 16) {
