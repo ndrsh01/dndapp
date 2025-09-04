@@ -47,6 +47,7 @@
 		27AF9E1D2E696FB7006311EC /* DataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DF62E696FB7006311EC /* DataService.swift */; };
 		27AF9E1E2E696FB7006311EC /* MonsterService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DF72E696FB7006311EC /* MonsterService.swift */; };
 		27AF9E232E6989DC006311EC /* CacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9E222E6989DB006311EC /* CacheManager.swift */; };
+		27AF9E252E6998F6006311EC /* SpellsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9E242E6998F6006311EC /* SpellsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -91,6 +92,7 @@
 		27AF9DF62E696FB7006311EC /* DataService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataService.swift; sourceTree = "<group>"; };
 		27AF9DF72E696FB7006311EC /* MonsterService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MonsterService.swift; sourceTree = "<group>"; };
 		27AF9E222E6989DB006311EC /* CacheManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CacheManager.swift; sourceTree = "<group>"; };
+		27AF9E242E6998F6006311EC /* SpellsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SpellsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -263,6 +265,7 @@
 		27AF9DF02E696FB7006311EC /* Compendium */ = {
 			isa = PBXGroup;
 			children = (
+				27AF9E242E6998F6006311EC /* SpellsView.swift */,
 				27AF9DF12E696FB7006311EC /* BestiaryView.swift */,
 				27AF9DF22E696FB7006311EC /* CompendiumView.swift */,
 			);
@@ -373,6 +376,7 @@
 				27AF9E182E696FB7006311EC /* CharacterView.swift in Sources */,
 				27AF9DFB2E696FB7006311EC /* QuotesViewModel.swift in Sources */,
 				27AF9E192E696FB7006311EC /* NotesView.swift in Sources */,
+				27AF9E252E6998F6006311EC /* SpellsView.swift in Sources */,
 				27AF9E062E696FB7006311EC /* Quote.swift in Sources */,
 				27AF9E092E696FB7006311EC /* Spell.swift in Sources */,
 				27AF9E1D2E696FB7006311EC /* DataService.swift in Sources */,

@@ -127,7 +127,7 @@ struct NoteCardView: View {
                             Spacer()
                             
                             // Status Indicator
-                            Image(systemName: note.isAlive ? "heart.fill" : "skull.fill")
+                            Image(systemName: note.isAlive ? "heart.fill" : "xmark.circle.fill")
                                 .foregroundColor(note.isAlive ? .red : .black)
                                 .font(.caption)
                         }

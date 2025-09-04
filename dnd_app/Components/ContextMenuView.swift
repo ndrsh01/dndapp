@@ -61,14 +61,39 @@ struct ContextMenuView: View {
     }
 }
 
+// MARK: - Global Context Menu Manager
+class GlobalContextMenuManager: ObservableObject {
+    @Published var showContextMenu = false
+    @Published var highlightedElementFrame: CGRect = .zero
+    @Published var onEdit: (() -> Void)?
+    @Published var onDelete: (() -> Void)?
+    @Published var onDuplicate: (() -> Void)?
+    
+    static let shared = GlobalContextMenuManager()
+    
+    func showMenu(for elementFrame: CGRect, onEdit: @escaping () -> Void, onDelete: @escaping () -> Void, onDuplicate: @escaping () -> Void) {
+        self.highlightedElementFrame = elementFrame
+        self.onEdit = onEdit
+        self.onDelete = onDelete
+        self.onDuplicate = onDuplicate
+        self.showContextMenu = true
+    }
+    
+    func hideMenu() {
+        self.showContextMenu = false
+        self.onEdit = nil
+        self.onDelete = nil
+        self.onDuplicate = nil
+    }
+}
+
 // MARK: - Context Menu Modifier
 struct ContextMenuModifier: ViewModifier {
     let onEdit: () -> Void
     let onDelete: () -> Void
     let onDuplicate: () -> Void
-    @State private var showContextMenu = false
-    @State private var menuPosition: CGPoint = .zero
     @State private var elementFrame: CGRect = .zero
+    @StateObject private var globalManager = GlobalContextMenuManager.shared
     
     func body(content: Content) -> some View {
         content
@@ -84,47 +109,13 @@ struct ContextMenuModifier: ViewModifier {
                 }
             )
             .onLongPressGesture {
-                // Вычисляем позицию меню под элементом
-                menuPosition = CGPoint(
-                    x: elementFrame.midX,
-                    y: elementFrame.maxY + 10
+                globalManager.showMenu(
+                    for: elementFrame,
+                    onEdit: onEdit,
+                    onDelete: onDelete,
+                    onDuplicate: onDuplicate
                 )
-                showContextMenu = true
             }
-            .overlay(
-                Group {
-                    if showContextMenu {
-                        // Фон для закрытия меню
-                        Color.black.opacity(0.1)
-                            .ignoresSafeArea()
-                            .onTapGesture {
-                                showContextMenu = false
-                            }
-                            .zIndex(9998)
-                        
-                        // Само меню
-                        ContextMenuView(
-                            onEdit: {
-                                onEdit()
-                                showContextMenu = false
-                            },
-                            onDelete: {
-                                onDelete()
-                                showContextMenu = false
-                            },
-                            onDuplicate: {
-                                onDuplicate()
-                                showContextMenu = false
-                            }
-                        )
-                        .frame(width: 200) // Фиксированная ширина
-                        .position(menuPosition)
-                        .transition(.scale.combined(with: .opacity))
-                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showContextMenu)
-                        .zIndex(9999)
-                    }
-                }
-            )
     }
 }
 

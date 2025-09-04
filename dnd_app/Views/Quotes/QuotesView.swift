@@ -33,7 +33,7 @@ struct QuotesView: View {
                     VStack(spacing: 16) {
                         // Цитата НАД изображением - меньше ширина
                         Text(quote.text)
-                            .font(.title)
+                            .font(.title2)
                             .fontWeight(.semibold)
                             .italic()
                             .multilineTextAlignment(.center)
@@ -41,13 +41,13 @@ struct QuotesView: View {
                             .frame(width: 280)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 20)
-                            .background(Color.white)
+                            .background(Color(red: 0.95, green: 0.94, blue: 0.92))
                             .cornerRadius(16)
                             .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
                         
                         // Tabaxi Image без фона - максимальный размер
                         RandomTabaxiImageView()
-                            .frame(maxWidth: 500, maxHeight: 500)
+                            .frame(maxWidth: 600, maxHeight: 600)
                             .id(viewModel.currentImage)
                     }
                     .padding(.horizontal, 20)
@@ -77,10 +77,7 @@ struct QuotesView: View {
                 Button(action: {
                     viewModel.generateRandomQuote()
                 }) {
-                    HStack(spacing: 12) {
-                            .font(.title3)
-                        Text("Случайная цитата")
-                    }
+                    Text("Случайная цитата")
                     .font(.system(.headline, design: .rounded))
                     .fontWeight(.semibold)
                     .foregroundColor(.black)
@@ -121,6 +118,7 @@ struct CategoryManagementView: View {
     @State private var editingCategoryName = ""
     @State private var showQuotesList = false
     @State private var selectedCategoryForQuotes = ""
+    @StateObject private var globalContextMenu = GlobalContextMenuManager.shared
     
     var body: some View {
         NavigationView {
@@ -154,6 +152,57 @@ struct CategoryManagementView: View {
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
+                }
+                
+                // Глобальное контекстное меню поверх всего
+                if globalContextMenu.showContextMenu {
+                    // Затемненный фон
+                    Color.black.opacity(0.5)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            globalContextMenu.hideMenu()
+                        }
+                        .zIndex(9998)
+                    
+                    // Подсветка элемента (активный элемент)
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(
+                            width: globalContextMenu.highlightedElementFrame.width,
+                            height: globalContextMenu.highlightedElementFrame.height
+                        )
+                        .position(
+                            x: globalContextMenu.highlightedElementFrame.midX,
+                            y: globalContextMenu.highlightedElementFrame.midY
+                        )
+                        .zIndex(9999)
+                    
+                    // Само меню под элементом
+                    if let onEdit = globalContextMenu.onEdit,
+                       let onDelete = globalContextMenu.onDelete,
+                       let onDuplicate = globalContextMenu.onDuplicate {
+                        ContextMenuView(
+                            onEdit: {
+                                onEdit()
+                                globalContextMenu.hideMenu()
+                            },
+                            onDelete: {
+                                onDelete()
+                                globalContextMenu.hideMenu()
+                            },
+                            onDuplicate: {
+                                onDuplicate()
+                                globalContextMenu.hideMenu()
+                            }
+                        )
+                        .position(
+                            x: globalContextMenu.highlightedElementFrame.midX,
+                            y: globalContextMenu.highlightedElementFrame.maxY + 60
+                        )
+                        .transition(.scale.combined(with: .opacity))
+                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: globalContextMenu.showContextMenu)
+                        .zIndex(10000)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -236,7 +285,7 @@ struct CategoryCardView: View {
                 .foregroundColor(.gray)
         }
         .padding(16)
-        .background(Color.white)
+        .background(Color(red: 0.95, green: 0.94, blue: 0.92))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
         .onTapGesture {
@@ -331,6 +380,7 @@ struct QuotesListView: View {
     @State private var showAddQuote = false
     @State private var showEditQuote = false
     @State private var editingQuote: Quote?
+    @StateObject private var globalContextMenu = GlobalContextMenuManager.shared
     
     var quotes: [Quote] {
         dataService.quotes?.quotes(for: category) ?? []
@@ -338,8 +388,9 @@ struct QuotesListView: View {
     
     var body: some View {
         NavigationView {
-            VStack {
-                if quotes.isEmpty {
+            ZStack {
+                VStack {
+                    if quotes.isEmpty {
                     EmptyStateView(
                         icon: "quote.bubble",
                         title: "Нет цитат",
@@ -372,6 +423,58 @@ struct QuotesListView: View {
                         .padding(.top, 8)
                     }
                 }
+                }
+                
+                // Глобальное контекстное меню поверх всего
+                if globalContextMenu.showContextMenu {
+                    // Затемненный фон
+                    Color.black.opacity(0.5)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            globalContextMenu.hideMenu()
+                        }
+                        .zIndex(9998)
+                    
+                    // Подсветка элемента (активный элемент)
+                    Rectangle()
+                        .fill(Color.clear)
+                        .frame(
+                            width: globalContextMenu.highlightedElementFrame.width,
+                            height: globalContextMenu.highlightedElementFrame.height
+                        )
+                        .position(
+                            x: globalContextMenu.highlightedElementFrame.midX,
+                            y: globalContextMenu.highlightedElementFrame.midY
+                        )
+                        .zIndex(9999)
+                    
+                    // Само меню под элементом
+                    if let onEdit = globalContextMenu.onEdit,
+                       let onDelete = globalContextMenu.onDelete,
+                       let onDuplicate = globalContextMenu.onDuplicate {
+                        ContextMenuView(
+                            onEdit: {
+                                onEdit()
+                                globalContextMenu.hideMenu()
+                            },
+                            onDelete: {
+                                onDelete()
+                                globalContextMenu.hideMenu()
+                            },
+                            onDuplicate: {
+                                onDuplicate()
+                                globalContextMenu.hideMenu()
+                            }
+                        )
+                        .position(
+                            x: globalContextMenu.highlightedElementFrame.midX,
+                            y: globalContextMenu.highlightedElementFrame.maxY + 60
+                        )
+                        .transition(.scale.combined(with: .opacity))
+                        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: globalContextMenu.showContextMenu)
+                        .zIndex(10000)
+                    }
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color(red: 0.98, green: 0.97, blue: 0.95))
@@ -392,6 +495,14 @@ struct QuotesListView: View {
                         Image(systemName: "plus")
                             .foregroundColor(.orange)
                     }
+                }
+            }
+        }
+        .onAppear {
+            // Инициализируем данные при открытии
+            if dataService.quotes == nil {
+                Task {
+                    await dataService.loadQuotes()
                 }
             }
         }
@@ -422,7 +533,7 @@ struct QuoteCardView: View {
                 .multilineTextAlignment(.leading)
         }
         .padding(16)
-        .background(Color.white)
+        .background(Color(red: 0.95, green: 0.94, blue: 0.92))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
     }

@@ -53,7 +53,7 @@ struct RelationshipsView: View {
                     } else {
                         ScrollView {
                             LazyVStack(spacing: 12) {
-                                ForEach(viewModel.relationships) { relationship in
+                                ForEach(Array(viewModel.relationships.enumerated()), id: \.offset) { index, relationship in
                                     RelationshipCardView(relationship: relationship) { level in
                                         viewModel.updateRelationshipLevel(relationship, level: level)
                                     }
@@ -129,7 +129,7 @@ struct RelationshipCardView: View {
                 
                 // Status indicator - убираем лишний контейнер
                 HStack(spacing: 8) {
-                    Image(systemName: relationship.isAlive ? "heart.fill" : "skull.fill")
+                    Image(systemName: relationship.isAlive ? "heart.fill" : "xmark.circle.fill")
                         .foregroundColor(relationship.isAlive ? .red : .black)
                         .font(.caption)
                     

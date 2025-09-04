@@ -1,7 +1,7 @@
 import Foundation
 
 struct Relationship: Codable, Identifiable {
-    let id = UUID()
+    let id: UUID
     var name: String
     var description: String
     var relationshipLevel: Int // 0-10, где 0-4 враги, 5 нейтрал, 6-10 друзья
@@ -10,10 +10,22 @@ struct Relationship: Codable, Identifiable {
     var dateModified: Date
     
     init(name: String, description: String = "", relationshipLevel: Int = 5, isAlive: Bool = true) {
+        self.id = UUID()
         self.name = name
         self.description = description
         self.relationshipLevel = relationshipLevel
         self.isAlive = isAlive
+        self.dateCreated = Date()
+        self.dateModified = Date()
+    }
+    
+    // Инициализатор для дублирования с новым ID
+    init(duplicating relationship: Relationship) {
+        self.id = UUID() // Новый уникальный ID
+        self.name = "\(relationship.name) (копия)"
+        self.description = relationship.description
+        self.relationshipLevel = relationship.relationshipLevel
+        self.isAlive = relationship.isAlive
         self.dateCreated = Date()
         self.dateModified = Date()
     }
@@ -50,7 +62,7 @@ enum RelationshipStatus {
         switch self {
         case .friend: return "heart.fill"
         case .neutral: return "circle.fill"
-        case .enemy: return "skull.fill"
+        case .enemy: return "xmark.circle.fill"
         }
     }
     

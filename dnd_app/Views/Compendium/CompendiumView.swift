@@ -9,9 +9,7 @@ struct CompendiumView: View {
             ScrollView {
                 LazyVStack(spacing: 16) {
                     // Карточки категорий согласно изображению
-                    NavigationLink(destination: SpellsListView(spells: viewModel.filteredSpells) { spell in
-                        viewModel.toggleSpellFavorite(spell)
-                    }) {
+                    NavigationLink(destination: SpellsView()) {
                         CompendiumCategoryCard(
                             title: "Заклинания",
                             subtitle: "Магические заклинания и их описания",
@@ -59,104 +57,18 @@ struct CompendiumView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     
-                    NavigationLink(destination: FavoritesListView(
-                        spells: viewModel.spells.filter { $0.isFavorite },
-                        feats: viewModel.feats.filter { $0.isFavorite },
-                        backgrounds: viewModel.backgrounds.filter { $0.isFavorite }
-                    )) {
-                        CompendiumCategoryCard(
-                            title: "Избранное",
-                            subtitle: "Сохраненные элементы",
-                            icon: "heart",
-                            iconColor: .red,
-                            action: {}
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
             }
             .background(Color(red: 0.98, green: 0.97, blue: 0.95))
-            .navigationTitle("Компендиум")
+            .navigationTitle("Глоссарий")
             .navigationBarTitleDisplayMode(.large)
         }
     }
 }
 
-struct SpellsListView: View {
-    let spells: [Spell]
-    let onToggleFavorite: (Spell) -> Void
-    
-    var body: some View {
-        List {
-            ForEach(spells) { spell in
-                SpellCardView(spell: spell) {
-                    onToggleFavorite(spell)
-                }
-                .contextMenu(
-                    onEdit: {
-                        // TODO: Implement spell editing
-                    },
-                    onDelete: {
-                        // TODO: Implement spell deletion
-                    },
-                    onDuplicate: {
-                        // TODO: Implement spell duplication
-                    }
-                )
-            }
-        }
-    }
-}
 
-struct SpellCardView: View {
-    let spell: Spell
-    let onToggleFavorite: () -> Void
-    
-    var body: some View {
-        CardView {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(spell.название)
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        
-                        HStack {
-                            Text("Уровень \(spell.уровень)")
-                                .font(.caption)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(Color.blue.opacity(0.2))
-                                .cornerRadius(4)
-                            
-                            Text(spell.школа)
-                                .font(.caption)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
-                                .background(Color.purple.opacity(0.2))
-                                .cornerRadius(4)
-                        }
-                    }
-                    
-                    Spacer()
-                    
-                    Button(action: onToggleFavorite) {
-                        Image(systemName: spell.isFavorite ? "heart.fill" : "heart")
-                            .foregroundColor(spell.isFavorite ? .red : .gray)
-                    }
-                }
-                
-                Text(spell.описание)
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .lineLimit(3)
-            }
-            .padding(12)
-        }
-    }
-}
 
 struct FeatsListView: View {
     let feats: [Feat]
@@ -289,55 +201,6 @@ struct BackgroundCardView: View {
 }
 
 
-struct FavoritesListView: View {
-    let spells: [Spell]
-    let feats: [Feat]
-    let backgrounds: [Background]
-    
-    var body: some View {
-        List {
-            if !spells.isEmpty {
-                Section("Заклинания") {
-                    ForEach(spells) { spell in
-                        SpellCardView(spell: spell) {
-                            // TODO: Toggle favorite
-                        }
-                    }
-                }
-            }
-            
-            if !feats.isEmpty {
-                Section("Черты") {
-                    ForEach(feats) { feat in
-                        FeatCardView(feat: feat) {
-                            // TODO: Toggle favorite
-                        }
-                    }
-                }
-            }
-            
-            if !backgrounds.isEmpty {
-                Section("Предыстории") {
-                    ForEach(backgrounds) { background in
-                        BackgroundCardView(background: background) {
-                            // TODO: Toggle favorite
-                        }
-                    }
-                }
-            }
-            
-            if spells.isEmpty && feats.isEmpty && backgrounds.isEmpty {
-                Section {
-                    EmptyStateView(
-                        icon: "heart",
-                        title: "Нет избранного",
-                        description: "Добавьте элементы в избранное, нажав на сердечко"
-                    )
-                }
-            }
-        }
-    }
-}
 
 struct CompendiumCategoryCard: View {
     let title: String
@@ -377,7 +240,7 @@ struct CompendiumCategoryCard: View {
                     .foregroundColor(.gray)
             }
             .padding(16)
-            .background(Color.white)
+            .background(Color(red: 0.95, green: 0.94, blue: 0.92))
             .cornerRadius(12)
             .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
         }

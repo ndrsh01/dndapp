@@ -92,7 +92,7 @@ class DataService: ObservableObject {
         }
     }
     
-    private func loadQuotes() async {
+    func loadQuotes() async {
         do {
             let quotesData = try await cacheManager.loadWithCache(
                 QuotesData.self,
@@ -200,6 +200,7 @@ class DataService: ObservableObject {
         }
     }
     
+    
     private func loadRelationships() {
         if let data = userDefaults.data(forKey: Keys.relationships),
            let relationships = try? JSONDecoder().decode([Relationship].self, from: data) {
@@ -269,10 +270,7 @@ class DataService: ObservableObject {
     }
     
     func duplicateRelationship(_ relationship: Relationship) {
-        var newRelationship = relationship
-        newRelationship.name = "\(relationship.name) (копия)"
-        newRelationship.dateCreated = Date()
-        newRelationship.dateModified = Date()
+        let newRelationship = Relationship(duplicating: relationship)
         addRelationship(newRelationship)
     }
     
