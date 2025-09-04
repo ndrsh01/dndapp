@@ -306,6 +306,7 @@ struct FavoriteBestiarySection: View {
             if dataService.monsters.isEmpty {
                 Task {
                     await dataService.loadMonsters()
+                    ;print("Monsters loaded")
                 }
             }
         }

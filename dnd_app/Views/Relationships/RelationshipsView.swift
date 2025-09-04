@@ -184,9 +184,9 @@ struct RelationshipCardView: View {
     }
     
     private var relationshipStatusText: String {
-        if relationship.relationshipLevel >= 6 {
+        if relationship.relationshipLevel >= 3 {
             return "Друг"
-        } else if relationship.relationshipLevel == 5 {
+        } else if relationship.relationshipLevel == 2 {
             return "Нейтрал"
         } else {
             return "Враг"
@@ -194,9 +194,9 @@ struct RelationshipCardView: View {
     }
     
     private var relationshipStatusColor: Color {
-        if relationship.relationshipLevel >= 6 {
+        if relationship.relationshipLevel >= 3 {
             return .green
-        } else if relationship.relationshipLevel == 5 {
+        } else if relationship.relationshipLevel == 2 {
             return .orange
         } else {
             return .red
@@ -252,7 +252,7 @@ struct AddRelationshipView: View {
                             }
                         )
                         
-                        Text("0-4: Враги (X) | 5: Нейтрал (круг) | 6-10: Друзья (сердечки)")
+                        Text("0-1: Враги (X) | 2: Нейтрал (круг) | 3-10: Друзья (сердечки)")
                             .font(.caption2)
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
@@ -286,9 +286,9 @@ struct AddRelationshipView: View {
     }
     
     private var relationshipStatusText: String {
-        if relationshipLevel >= 6 {
+        if relationshipLevel >= 3 {
             return "Друг"
-        } else if relationshipLevel == 5 {
+        } else if relationshipLevel == 2 {
             return "Нейтрал"
         } else {
             return "Враг"
@@ -296,9 +296,9 @@ struct AddRelationshipView: View {
     }
 
     private var relationshipStatusColor: Color {
-        if relationshipLevel >= 6 {
+        if relationshipLevel >= 3 {
             return .green
-        } else if relationshipLevel == 5 {
+        } else if relationshipLevel == 2 {
             return .orange
         } else {
             return .red
@@ -384,9 +384,9 @@ struct EditRelationshipView: View {
     }
     
     private var relationshipStatusText: String {
-        if relationshipLevel >= 6 {
+        if relationshipLevel >= 3 {
             return "Друг"
-        } else if relationshipLevel == 5 {
+        } else if relationshipLevel == 2 {
             return "Нейтрал"
         } else {
             return "Враг"

@@ -129,8 +129,8 @@ struct SpellsView: View {
                 if dataService.spells.isEmpty {
                     print("Loading spells...")
                     Task {
-                        await dataService.loadSpells();
-                        print("Spells loaded, count: \(dataService.spells.count)")
+                        await dataService.loadSpells()
+                        ;()
                     }
                 }
             }

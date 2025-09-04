@@ -63,6 +63,7 @@ struct FeatsView: View {
                 if dataService.feats.isEmpty {
                     Task {
                         await dataService.loadFeats()
+                        ;print("Feats loaded")
                     }
                 }
             }

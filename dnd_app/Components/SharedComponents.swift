@@ -93,9 +93,9 @@ struct RelationshipIndicator: View {
     }
     
     private func iconForLevel(_ index: Int) -> String {
-        if index < 5 {
+        if index < 2 {
             return "xmark.circle.fill"
-        } else if index == 5 {
+        } else if index == 2 {
             return "circle.fill"
         } else {
             return "heart.fill"
@@ -104,9 +104,9 @@ struct RelationshipIndicator: View {
     
     private func colorForLevel(_ index: Int) -> Color {
         if index < level {
-            if index < 5 {
+            if index < 2 {
                 return .white
-            } else if index == 5 {
+            } else if index == 2 {
                 return .white
             } else {
                 return .white
@@ -118,9 +118,9 @@ struct RelationshipIndicator: View {
     
     private func backgroundColorForLevel(_ index: Int) -> Color {
         if index < level {
-            if index < 5 {
+            if index < 2 {
                 return .black
-            } else if index == 5 {
+            } else if index == 2 {
                 return .gray
             } else {
                 return .red
@@ -132,9 +132,9 @@ struct RelationshipIndicator: View {
     
     private func borderColorForLevel(_ index: Int) -> Color {
         if index < level {
-            if index < 5 {
+            if index < 2 {
                 return .black
-            } else if index == 5 {
+            } else if index == 2 {
                 return .gray
             } else {
                 return .red

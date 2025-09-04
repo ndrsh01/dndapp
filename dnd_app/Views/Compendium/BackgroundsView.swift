@@ -63,6 +63,7 @@ struct BackgroundsView: View {
                 if dataService.backgrounds.isEmpty {
                     Task {
                         await dataService.loadBackgrounds()
+                        ;print("Backgrounds loaded")
                     }
                 }
             }
