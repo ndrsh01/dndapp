@@ -1,203 +1,180 @@
 import SwiftUI
 
-// MARK: - Custom Button Style
-struct DnDButtonStyle: ButtonStyle {
-    let color: Color
-    let isSelected: Bool
-    
-    init(color: Color = .orange, isSelected: Bool = false) {
-        self.color = color
-        self.isSelected = isSelected
-    }
-    
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(isSelected ? color : Color(.systemGray6))
-            .foregroundColor(isSelected ? .white : .primary)
-            .cornerRadius(20)
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
-    }
-}
-
 // MARK: - Card View
 struct CardView<Content: View>: View {
     let content: Content
-    let backgroundColor: Color
-    let cornerRadius: CGFloat
-    let shadowRadius: CGFloat
     
-    init(
-        backgroundColor: Color = .white,
-        cornerRadius: CGFloat = 12,
-        shadowRadius: CGFloat = 4,
-        @ViewBuilder content: () -> Content
-    ) {
-        self.backgroundColor = backgroundColor
-        self.cornerRadius = cornerRadius
-        self.shadowRadius = shadowRadius
+    init(@ViewBuilder content: () -> Content) {
         self.content = content()
     }
     
     var body: some View {
         content
-            .background(backgroundColor)
-            .cornerRadius(cornerRadius)
-            .shadow(radius: shadowRadius)
+            .background(Color.white)
+            .cornerRadius(12)
+            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+    }
+}
+
+// MARK: - Tag View
+struct TagView: View {
+    let text: String
+    let color: Color
+    
+    var body: some View {
+        Text(text)
+            .font(.caption)
+            .fontWeight(.medium)
+            .foregroundColor(.black)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(color.opacity(0.2))
+            .cornerRadius(8)
+    }
+}
+
+// MARK: - Info Row
+struct InfoRow: View {
+    let icon: String
+    let text: String
+    
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundColor(.gray)
+                .frame(width: 16)
+            
+            Text(text)
+                .font(.caption)
+                .foregroundColor(.black)
+            
+            Spacer()
+        }
+    }
+}
+
+// MARK: - Empty State View
+struct EmptyStateView: View {
+    let icon: String
+    let title: String
+    let description: String
+    let actionTitle: String?
+    let action: (() -> Void)?
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 48))
+                .foregroundColor(.gray)
+            
+            VStack(spacing: 8) {
+                Text(title)
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                
+                Text(description)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            
+            if let actionTitle = actionTitle, let action = action {
+                Button(action: action) {
+                    Text(actionTitle)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 12)
+                        .background(Color.orange)
+                        .cornerRadius(8)
+                }
+            }
+        }
+        .padding(.horizontal, 32)
+    }
+}
+
+// MARK: - DnD Button Style
+struct DnDButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundColor(.white)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(Color.orange)
+            .cornerRadius(8)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 
 // MARK: - Relationship Indicator
 struct RelationshipIndicator: View {
-    let level: Int
-    let onTap: (Int) -> Void
-    let onEdit: (() -> Void)?
-    let onDelete: (() -> Void)?
-    let onDuplicate: (() -> Void)?
-    
-    init(level: Int, onTap: @escaping (Int) -> Void, onEdit: (() -> Void)? = nil, onDelete: (() -> Void)? = nil, onDuplicate: (() -> Void)? = nil) {
-        self.level = level
-        self.onTap = onTap
-        self.onEdit = onEdit
-        self.onDelete = onDelete
-        self.onDuplicate = onDuplicate
-    }
+    let relationshipLevel: Int
+    let maxLevel: Int = 10
     
     var body: some View {
-        HStack(spacing: 6) {
-            ForEach(0..<11, id: \.self) { index in
-                Button(action: {
-                    onTap(index)
-                }) {
-                    Image(systemName: iconForLevel(index))
-                        .foregroundColor(colorForLevel(index))
-                        .font(.system(size: 12, weight: .medium))
-                        .frame(width: 20, height: 20)
-                        .background(backgroundColorForLevel(index))
-                        .clipShape(Circle())
-                        .overlay(
-                            Circle()
-                                .stroke(borderColorForLevel(index), lineWidth: 2)
-                        )
-                }
-                .buttonStyle(PlainButtonStyle())
+        HStack(spacing: 4) {
+            ForEach(0..<maxLevel, id: \.self) { index in
+                Image(systemName: iconForLevel(index))
+                    .foregroundColor(colorForLevel(index))
+                    .font(.caption)
             }
         }
-        .contextMenu(
-            onEdit: onEdit ?? {},
-            onDelete: onDelete ?? {},
-            onDuplicate: onDuplicate ?? {}
-        )
     }
     
     private func iconForLevel(_ index: Int) -> String {
         if index < 2 {
             return "xmark.circle.fill"
         } else if index == 2 {
-            return "circle.fill"
+            return "heart.fill" // Neutral icon is now a friend icon
         } else {
             return "heart.fill"
         }
     }
     
     private func colorForLevel(_ index: Int) -> Color {
-        if index < level {
-            if index < 2 {
-                return .white
-            } else if index == 2 {
-                return .white
-            } else {
-                return .white
-            }
+        if index < 2 {
+            return .red
+        } else if index == 2 {
+            return .red
         } else {
-            return .gray.opacity(0.3)
+            return .red
         }
     }
     
     private func backgroundColorForLevel(_ index: Int) -> Color {
-        if index < level {
-            if index < 2 {
-                return .black
-            } else if index == 2 {
-                return .gray
-            } else {
-                return .red
-            }
+        if index < 2 {
+            return .red.opacity(0.1)
+        } else if index == 2 {
+            return .red.opacity(0.1)
         } else {
-            return .gray.opacity(0.1)
+            return .red.opacity(0.1)
         }
     }
     
     private func borderColorForLevel(_ index: Int) -> Color {
-        if index < level {
-            if index < 2 {
-                return .black
-            } else if index == 2 {
-                return .gray
-            } else {
-                return .red
-            }
+        if index < 2 {
+            return .red
+        } else if index == 2 {
+            return .red
         } else {
-            return .gray.opacity(0.3)
+            return .red
         }
     }
 }
 
-// MARK: - Importance Indicator
-struct ImportanceIndicator: View {
-    let importance: Int
-    let onTap: (Int) -> Void
-    
-    var body: some View {
-        HStack(spacing: 4) {
-            ForEach(1...5, id: \.self) { level in
-                Button(action: {
-                    onTap(level)
-                }) {
-                    Image(systemName: importance >= level ? "star.fill" : "star")
-                        .foregroundColor(.yellow)
-                        .font(.system(size: 16))
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Tabaxi Image Component
+// MARK: - Tabaxi Image View
 struct TabaxiImageView: View {
     let imageName: String
-
-    var body: some View {
-        GeometryReader { geometry in
-            Image(imageName)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(
-                    width: min(geometry.size.width, geometry.size.height * 0.8),
-                    height: min(geometry.size.height, geometry.size.width * 1.2)
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        }
-        .frame(minHeight: 200, maxHeight: .infinity)
-        .clipped()
-    }
-}
-
-// MARK: - Random Tabaxi Image
-struct RandomTabaxiImageView: View {
-    @State private var currentImageName: String = "tabaxi_pose1"
     
     var body: some View {
-        TabaxiImageView(imageName: currentImageName)
-            .onAppear {
-                generateRandomImage()
-            }
-    }
-    
-    private func generateRandomImage() {
-        currentImageName = TabaxiImages.getRandomImageName()
+        Image(imageName)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
     }
 }
 
@@ -213,15 +190,6 @@ struct SearchBar: View {
             
             TextField(placeholder, text: $text)
                 .textFieldStyle(PlainTextFieldStyle())
-            
-            if !text.isEmpty {
-                Button(action: {
-                    text = ""
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray)
-                }
-            }
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
@@ -230,59 +198,33 @@ struct SearchBar: View {
     }
 }
 
-// MARK: - Empty State View
-struct EmptyStateView: View {
-    let icon: String
-    let title: String
-    let description: String
-    let actionTitle: String?
-    let action: (() -> Void)?
-    
-    init(
-        icon: String,
-        title: String,
-        description: String,
-        actionTitle: String? = nil,
-        action: (() -> Void)? = nil
-    ) {
-        self.icon = icon
-        self.title = title
-        self.description = description
-        self.actionTitle = actionTitle
-        self.action = action
-    }
+// MARK: - Error View
+struct ErrorView: View {
+    let error: Error
+    let retryAction: (() -> Void)?
     
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: icon)
-                .font(.system(size: 60))
-                .foregroundColor(.gray)
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 48))
+                .foregroundColor(.red)
             
             VStack(spacing: 8) {
-                Text(title)
+                Text("Ошибка")
                     .font(.title2)
                     .fontWeight(.semibold)
-                    .foregroundColor(.primary)
                 
-                Text(description)
-                    .font(.body)
+                Text(error.localizedDescription)
+                    .font(.subheadline)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
             }
             
-            if let actionTitle = actionTitle, let action = action {
-                Button(action: action) {
-                    Text(actionTitle)
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.black)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
-                        .background(Color.gray.opacity(0.4))
-                        .cornerRadius(8)
-                }
+            if let retryAction = retryAction {
+                Button("Повторить", action: retryAction)
+                    .buttonStyle(DnDButtonStyle())
             }
         }
-        .padding(.horizontal, 40)
+        .padding(.horizontal, 32)
     }
 }

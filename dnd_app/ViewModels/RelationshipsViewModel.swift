@@ -42,6 +42,20 @@ class RelationshipsViewModel: ObservableObject {
         updateRelationship(updatedRelationship)
     }
     
+    func setRelationshipType(_ relationship: Relationship, type: RelationshipStatus) {
+        var updatedRelationship = relationship
+        switch type {
+        case .enemy:
+            updatedRelationship.relationshipLevel = 1
+        case .neutral:
+            updatedRelationship.relationshipLevel = 0
+        case .friend:
+            updatedRelationship.relationshipLevel = 2
+        }
+        updatedRelationship.dateModified = Date()
+        updateRelationship(updatedRelationship)
+    }
+    
     func showAddRelationshipView() {
         showAddRelationship = true
     }

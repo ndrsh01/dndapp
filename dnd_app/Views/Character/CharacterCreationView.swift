@@ -59,14 +59,14 @@ struct CharacterCreationView: View {
                                 }
                             }
                         }
-                        .buttonStyle(DnDButtonStyle(color: .orange))
+                        .buttonStyle(DnDButtonStyle())
                     } else {
                         Button("Создать") {
                             let character = viewModel.createCharacter()
                             onSave(character)
                             dismiss()
                         }
-                        .buttonStyle(DnDButtonStyle(color: .orange))
+                        .buttonStyle(DnDButtonStyle())
                         .disabled(!viewModel.isValid)
                     }
                 }

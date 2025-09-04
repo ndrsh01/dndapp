@@ -177,6 +177,7 @@ struct SpellsView: View {
         }
     }
 }
+
 // MARK: - Spell Card View
 struct SpellCardView: View {
     let spell: Spell
@@ -221,6 +222,10 @@ struct SpellCardView: View {
                 }
                 
                 TagView(text: spell.школа, color: .purple)
+                
+                if spell.концентрация {
+                    TagView(text: "Концентрация", color: .orange)
+                }
             }
             
             // Basic Info (always visible)
@@ -266,43 +271,6 @@ struct SpellCardView: View {
     }
 }
 
-// MARK: - Supporting Views
-struct TagView: View {
-    let text: String
-    let color: Color
-    
-    var body: some View {
-        Text(text)
-            .font(.caption)
-            .fontWeight(.medium)
-            .foregroundColor(.black)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
-            .background(color.opacity(0.2))
-            .cornerRadius(8)
-    }
-}
-
-struct InfoRow: View {
-    let icon: String
-    let text: String
-    
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.caption)
-                .foregroundColor(.gray)
-                .frame(width: 16)
-            
-            Text(text)
-                .font(.caption)
-                .foregroundColor(.black)
-            
-            Spacer()
-        }
-    }
-}
-
 // MARK: - Filters View
 struct FiltersView: View {
     @Environment(\.dismiss) private var dismiss
@@ -315,136 +283,115 @@ struct FiltersView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
-                // Level Filter
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Уровень заклинания")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.black)
+            List {
+                Section("Уровень заклинания") {
+                    HStack {
+                        Text("Все уровни")
+                        Spacer()
+                        if selectedLevel == nil {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.orange)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        selectedLevel = nil
+                    }
                     
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            FilterButton(
-                                title: "Все",
-                                isSelected: selectedLevel == nil,
-                                action: { selectedLevel = nil }
-                            )
-                            
-                            ForEach(availableLevels, id: \.self) { level in
-                                FilterButton(
-                                    title: level,
-                                    isSelected: selectedLevel == level,
-                                    action: { selectedLevel = level }
-                                )
+                    ForEach(availableLevels, id: \.self) { level in
+                        HStack {
+                            Text(level)
+                            Spacer()
+                            if selectedLevel == level {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.orange)
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectedLevel = level
+                        }
                     }
                 }
                 
-                // School Filter
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Школа магии")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.black)
+                Section("Школа магии") {
+                    HStack {
+                        Text("Все школы")
+                        Spacer()
+                        if selectedSchool == nil {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.orange)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        selectedSchool = nil
+                    }
                     
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            FilterButton(
-                                title: "Все",
-                                isSelected: selectedSchool == nil,
-                                action: { selectedSchool = nil }
-                            )
-                            
-                            ForEach(availableSchools, id: \.self) { school in
-                                FilterButton(
-                                    title: school,
-                                    isSelected: selectedSchool == school,
-                                    action: { selectedSchool = school }
-                                )
+                    ForEach(availableSchools, id: \.self) { school in
+                        HStack {
+                            Text(school)
+                            Spacer()
+                            if selectedSchool == school {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.orange)
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectedSchool = school
+                        }
                     }
                 }
                 
-                // Class Filter
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Класс персонажа")
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.black)
+                Section("Класс персонажа") {
+                    HStack {
+                        Text("Все классы")
+                        Spacer()
+                        if selectedClass == nil {
+                            Image(systemName: "checkmark")
+                                .foregroundColor(.orange)
+                        }
+                    }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        selectedClass = nil
+                    }
                     
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            FilterButton(
-                                title: "Все",
-                                isSelected: selectedClass == nil,
-                                action: { selectedClass = nil }
-                            )
-                            
-                            ForEach(availableClasses, id: \.self) { className in
-                                FilterButton(
-                                    title: className,
-                                    isSelected: selectedClass == className,
-                                    action: { selectedClass = className }
-                                )
+                    ForEach(availableClasses, id: \.self) { className in
+                        HStack {
+                            Text(className)
+                            Spacer()
+                            if selectedClass == className {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.orange)
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectedClass = className
+                        }
                     }
                 }
                 
-                Spacer()
-            }
-            .padding(.top, 20)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(red: 0.98, green: 0.97, blue: 0.95))
-            .navigationTitle("Фильтры")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Сбросить") {
+                Section {
+                    Button("Сбросить все фильтры") {
                         selectedLevel = nil
                         selectedSchool = nil
                         selectedClass = nil
                     }
-                    .foregroundColor(.orange)
+                    .foregroundColor(.red)
                 }
-                
+            }
+            .navigationTitle("Фильтры")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Готово") {
                         dismiss()
                     }
-                    .foregroundColor(.orange)
                 }
             }
-        }
-    }
-}
-
-// MARK: - Filter Button
-struct FilterButton: View {
-    let title: String
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            Text(title)
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .foregroundColor(isSelected ? .white : .black)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(isSelected ? Color.orange : Color.white)
-                .cornerRadius(20)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.orange, lineWidth: 1)
-                )
         }
     }
 }

@@ -48,21 +48,25 @@ struct NotesView: View {
                         }
                     )
                 } else {
-                    List {
-                        ForEach(viewModel.filteredNotes) { note in
-                            NoteCardView(note: note)
-                                .contextMenu(
-                                    onEdit: {
-                                        editingNote = note
-                                    },
-                                    onDelete: {
-                                        viewModel.deleteNote(note)
-                                    },
-                                    onDuplicate: {
-                                        viewModel.duplicateNote(note)
-                                    }
-                                )
+                    ScrollView {
+                        LazyVStack(spacing: 16) {
+                            ForEach(viewModel.filteredNotes) { note in
+                                NoteCardView(note: note)
+                                    .contextMenu(
+                                        onEdit: {
+                                            editingNote = note
+                                        },
+                                        onDelete: {
+                                            viewModel.deleteNote(note)
+                                        },
+                                        onDuplicate: {
+                                            viewModel.duplicateNote(note)
+                                        }
+                                    )
+                            }
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.bottom, 16)
                     }
                 }
             }
@@ -97,59 +101,56 @@ struct NoteCardView: View {
     let note: Note
     
     var body: some View {
-        CardView {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(note.title)
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                        
-                        HStack {
-                            // Category Badge
-                            HStack(spacing: 4) {
-                                Image(systemName: note.category.icon)
-                                    .font(.caption2)
-                                Text(note.category.rawValue)
-                                    .font(.caption2)
-                            }
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color(note.category.color))
-                            .cornerRadius(8)
-                            
-                            // Importance Indicator
-                            ImportanceIndicator(importance: note.importance) { _ in
-                                // TODO: Allow editing importance
-                            }
-                            
-                            Spacer()
-                            
-                            // Status Indicator
-                            Image(systemName: note.isAlive ? "heart.fill" : "xmark.circle.fill")
-                                .foregroundColor(note.isAlive ? .red : .black)
-                                .font(.caption)
-                        }
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(note.title)
+                        .font(.headline)
+                        .fontWeight(.semibold)
+                    
+                    if !note.description.isEmpty {
+                        Text(note.description)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .lineLimit(3)
                     }
                 }
                 
-                if !note.description.isEmpty {
-                    Text(note.description)
-                        .font(.body)
-                        .foregroundColor(.secondary)
-                        .lineLimit(3)
-                }
+                Spacer()
                 
-                HStack {
-                    Text(note.dateModified, style: .relative)
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(note.category.rawValue)
+                        .font(.caption)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(categoryColor.opacity(0.8))
+                        .cornerRadius(6)
                     
-                    Spacer()
+                    Text(note.dateCreated, style: .date)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                 }
             }
-            .padding(16)
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+    }
+    
+    private var categoryColor: Color {
+        switch note.category {
+        case .all:
+            return .blue
+        case .places:
+            return .green
+        case .people:
+            return .purple
+        case .enemies:
+            return .red
+        case .items:
+            return .orange
         }
     }
 }
@@ -157,10 +158,8 @@ struct NoteCardView: View {
 struct AddNoteView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var title = ""
-    @State private var description = ""
-    @State private var importance = 3
-    @State private var category: NoteCategory = .all
-    @State private var isAlive = true
+    @State private var content = ""
+    @State private var category: NoteCategory = .items
     
     let onSave: (Note) -> Void
     
@@ -169,8 +168,8 @@ struct AddNoteView: View {
             Form {
                 Section("Основная информация") {
                     TextField("Заголовок", text: $title)
-                    TextField("Описание", text: $description, axis: .vertical)
-                        .lineLimit(3...8)
+                    TextField("Содержание", text: $content, axis: .vertical)
+                        .lineLimit(5...10)
                 }
                 
                 Section("Категория") {
@@ -183,22 +182,6 @@ struct AddNoteView: View {
                             .tag(category)
                         }
                     }
-                }
-                
-                Section("Важность") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Уровень важности")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        
-                        ImportanceIndicator(importance: importance) { level in
-                            importance = level
-                        }
-                    }
-                }
-                
-                Section("Статус") {
-                    Toggle("Жив", isOn: $isAlive)
                 }
             }
             .navigationTitle("Новая заметка")
@@ -214,10 +197,8 @@ struct AddNoteView: View {
                     Button("Сохранить") {
                         let note = Note(
                             title: title,
-                            description: description,
-                            importance: importance,
-                            category: category,
-                            isAlive: isAlive
+                            description: content,
+                            category: category
                         )
                         onSave(note)
                         dismiss()
@@ -232,10 +213,8 @@ struct AddNoteView: View {
 struct EditNoteView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var title: String
-    @State private var description: String
-    @State private var importance: Int
+    @State private var content: String
     @State private var category: NoteCategory
-    @State private var isAlive: Bool
     
     let note: Note
     let onSave: (Note) -> Void
@@ -244,10 +223,8 @@ struct EditNoteView: View {
         self.note = note
         self.onSave = onSave
         self._title = State(initialValue: note.title)
-        self._description = State(initialValue: note.description)
-        self._importance = State(initialValue: note.importance)
+        self._content = State(initialValue: note.description)
         self._category = State(initialValue: note.category)
-        self._isAlive = State(initialValue: note.isAlive)
     }
     
     var body: some View {
@@ -255,8 +232,8 @@ struct EditNoteView: View {
             Form {
                 Section("Основная информация") {
                     TextField("Заголовок", text: $title)
-                    TextField("Описание", text: $description, axis: .vertical)
-                        .lineLimit(3...8)
+                    TextField("Содержание", text: $content, axis: .vertical)
+                        .lineLimit(5...10)
                 }
                 
                 Section("Категория") {
@@ -270,24 +247,8 @@ struct EditNoteView: View {
                         }
                     }
                 }
-                
-                Section("Важность") {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Уровень важности")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        
-                        ImportanceIndicator(importance: importance) { level in
-                            importance = level
-                        }
-                    }
-                }
-                
-                Section("Статус") {
-                    Toggle("Жив", isOn: $isAlive)
-                }
             }
-            .navigationTitle("Редактировать")
+            .navigationTitle("Редактировать заметку")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -300,10 +261,8 @@ struct EditNoteView: View {
                     Button("Сохранить") {
                         var updatedNote = note
                         updatedNote.title = title
-                        updatedNote.description = description
-                        updatedNote.importance = importance
+                        updatedNote.description = content
                         updatedNote.category = category
-                        updatedNote.isAlive = isAlive
                         updatedNote.dateModified = Date()
                         onSave(updatedNote)
                         dismiss()

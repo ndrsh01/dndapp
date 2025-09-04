@@ -1,12 +1,18 @@
 import SwiftUI
 
+enum SheetContent {
+    case spells
+    case backgrounds
+    case feats
+    case bestiary
+    case favorites
+}
+
 struct CompendiumView: View {
     @StateObject private var viewModel = CompendiumViewModel()
     @State private var selectedItem: Any?
-    @State private var showSpells = false
-    @State private var showBackgrounds = false
-    @State private var showFeats = false
-    @State private var showFavorites = false
+    @State private var showSheet = false
+    @State private var sheetContent: SheetContent = .spells
     
     var body: some View {
         NavigationView {
@@ -20,7 +26,8 @@ struct CompendiumView: View {
                         iconColor: .purple,
                         action: {
                             print("Spells button tapped")
-                            showSpells = true
+                            sheetContent = .spells
+                            showSheet = true
                         }
                     )
                     
@@ -31,7 +38,8 @@ struct CompendiumView: View {
                         iconColor: .blue,
                         action: {
                             print("Backgrounds button tapped")
-                            showBackgrounds = true
+                            sheetContent = .backgrounds
+                            showSheet = true
                         }
                     )
                     
@@ -42,20 +50,22 @@ struct CompendiumView: View {
                         iconColor: .orange,
                         action: {
                             print("Feats button tapped")
-                            showFeats = true
+                            sheetContent = .feats
+                            showSheet = true
                         }
                     )
                     
-                    NavigationLink(destination: BestiaryView()) {
-                        CompendiumCategoryCard(
-                            title: "Бестиарий",
-                            subtitle: "Монстры и существа",
-                            icon: "pawprint",
-                            iconColor: .green,
-                            action: {}
-                        )
-                    }
-                    .buttonStyle(PlainButtonStyle())
+                    CompendiumCategoryCard(
+                        title: "Бестиарий",
+                        subtitle: "Монстры и существа",
+                        icon: "pawprint",
+                        iconColor: .green,
+                        action: {
+                            print("Bestiary button tapped")
+                            sheetContent = .bestiary
+                            showSheet = true
+                        }
+                    )
                     
                     CompendiumCategoryCard(
                         title: "Избранное",
@@ -64,7 +74,8 @@ struct CompendiumView: View {
                         iconColor: .red,
                         action: {
                             print("Favorites button tapped")
-                            showFavorites = true
+                            sheetContent = .favorites
+                            showSheet = true
                         }
                     )
                     
@@ -76,17 +87,19 @@ struct CompendiumView: View {
             .navigationTitle("Глоссарий")
             .navigationBarTitleDisplayMode(.large)
         }
-        .sheet(isPresented: $showSpells) {
-            SpellsView()
-        }
-        .sheet(isPresented: $showBackgrounds) {
-            BackgroundsView()
-        }
-        .sheet(isPresented: $showFeats) {
-            FeatsView()
-        }
-        .sheet(isPresented: $showFavorites) {
-            FavoritesView()
+        .sheet(isPresented: $showSheet) {
+            switch sheetContent {
+            case .spells:
+                SpellsView()
+            case .backgrounds:
+                BackgroundsView()
+            case .feats:
+                FeatsView()
+            case .bestiary:
+                BestiaryView()
+            case .favorites:
+                FavoritesView()
+            }
         }
     }
 }

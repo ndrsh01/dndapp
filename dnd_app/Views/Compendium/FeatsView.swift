@@ -55,6 +55,7 @@ struct FeatsView: View {
                 }
                 .padding(.bottom, 20)
             }
+            .background(Color(red: 0.98, green: 0.97, blue: 0.95))
             .navigationTitle("Черты")
             .navigationBarTitleDisplayMode(.large)
             .onAppear {

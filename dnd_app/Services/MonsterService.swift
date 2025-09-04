@@ -9,7 +9,7 @@ class MonsterService: ObservableObject {
     @Published var error: String?
     
     private init() {
-        loadMonsters()
+        // Don't load automatically in init
     }
     
     func loadMonsters() {

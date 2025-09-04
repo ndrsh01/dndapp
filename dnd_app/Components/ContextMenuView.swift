@@ -96,75 +96,72 @@ struct ContextMenuModifier: ViewModifier {
     let onDuplicate: () -> Void
     @State private var showMenu = false
     @State private var scale: CGFloat = 1.0
+    @State private var borderColor: Color = .clear
+    @State private var borderWidth: CGFloat = 0
 
     func body(content: Content) -> some View {
-        GeometryReader { geometry in
-            ZStack {
-                // Элемент (без затемнения)
-                content
-                    .scaleEffect(scale)
-                    .gesture(
-                        LongPressGesture(minimumDuration: 0.5)
-                            .onEnded { _ in
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                                    scale = 1.02
-                                }
-                                // Haptic feedback
-                                let generator = UIImpactFeedbackGenerator(style: .medium)
-                                generator.impactOccurred()
-
-                                showMenu = true
+        ZStack {
+            content
+                .scaleEffect(scale)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(borderColor, lineWidth: borderWidth)
+                )
+                .gesture(
+                    LongPressGesture(minimumDuration: 0.5)
+                        .onEnded { _ in
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                scale = 1.05
+                                borderColor = .orange.opacity(0.8)
+                                borderWidth = 2
                             }
-                    )
+                            // Haptic feedback
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
+
+                            showMenu = true
+                        }
+                )
+                .onTapGesture {
+                    if showMenu {
+                        hideMenu()
+                    }
+                }
+
+            if showMenu {
+                // Background tap area to dismiss menu - covers entire screen
+                Color.clear
+                    .contentShape(Rectangle())
                     .onTapGesture {
-                        if showMenu {
-                            hideMenu()
-                        }
+                        hideMenu()
                     }
-                    .zIndex(2)
-
-                // Затемнение всего экрана (кроме элемента)
-                if showMenu {
-                    Color.black.opacity(0.4)
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .ignoresSafeArea()
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            hideMenu()
-                        }
-                        .transition(.opacity)
-                        .zIndex(1)
-                }
-
-                // Меню значительно ниже элемента
-                if showMenu {
-                    VStack {
+                    .zIndex(9999) // Higher zIndex to be above everything
+                
+                VStack {
+                    Spacer()
+                    HStack {
                         Spacer()
-                        HStack {
-                            Spacer()
-                            ContextMenuView(
-                                onEdit: {
-                                    onEdit()
-                                    hideMenu()
-                                },
-                                onDelete: {
-                                    onDelete()
-                                    hideMenu()
-                                },
-                                onDuplicate: {
-                                    onDuplicate()
-                                    hideMenu()
-                                }
-                            )
-                            .offset(y: 80) // Опускаем меню еще ниже
-                            Spacer()
-                        }
+                        ContextMenuView(
+                            onEdit: {
+                                onEdit()
+                                hideMenu()
+                            },
+                            onDelete: {
+                                onDelete()
+                                hideMenu()
+                            },
+                            onDuplicate: {
+                                onDuplicate()
+                                hideMenu()
+                            }
+                        )
+                        .offset(y: 50) // Меню под элементом
                         Spacer()
                     }
-                    .frame(width: geometry.size.width, height: geometry.size.height)
-                    .transition(.opacity)
-                    .zIndex(3)
+                    Spacer()
                 }
+                .transition(.opacity)
+                .zIndex(10000) // Highest zIndex to be above everything
             }
         }
     }
@@ -172,11 +169,210 @@ struct ContextMenuModifier: ViewModifier {
     private func hideMenu() {
         withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
             scale = 1.0
+            borderColor = .clear
+            borderWidth = 0
             showMenu = false
         }
     }
 }
 
+// MARK: - Relationship Context Menu
+struct RelationshipContextMenuView: View {
+    let onSetEnemy: () -> Void
+    let onSetNeutral: () -> Void
+    let onSetFriend: () -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            Button(action: onSetEnemy) {
+                HStack {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.red)
+                        .font(.system(size: 16))
+                    Text("Враг")
+                        .foregroundColor(.primary)
+                        .font(.system(size: 16))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            }
+            
+            Divider()
+                .background(Color.gray.opacity(0.3))
+            
+            Button(action: onSetNeutral) {
+                HStack {
+                    Image(systemName: "circle")
+                        .foregroundColor(.gray)
+                        .font(.system(size: 16))
+                    Text("Нейтрал")
+                        .foregroundColor(.primary)
+                        .font(.system(size: 16))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            }
+            
+            Divider()
+                .background(Color.gray.opacity(0.3))
+            
+            Button(action: onSetFriend) {
+                HStack {
+                    Image(systemName: "heart.fill")
+                        .foregroundColor(.red)
+                        .font(.system(size: 16))
+                    Text("Друг")
+                        .foregroundColor(.primary)
+                        .font(.system(size: 16))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            }
+            
+            Divider()
+                .background(Color.gray.opacity(0.3))
+            
+            Button(action: onEdit) {
+                HStack {
+                    Image(systemName: "pencil")
+                        .foregroundColor(.blue)
+                        .font(.system(size: 16))
+                    Text("Редактировать")
+                        .foregroundColor(.primary)
+                        .font(.system(size: 16))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            }
+            
+            Divider()
+                .background(Color.gray.opacity(0.3))
+            
+            Button(action: onDelete) {
+                HStack {
+                    Image(systemName: "trash")
+                        .foregroundColor(.red)
+                        .font(.system(size: 16))
+                    Text("Удалить")
+                        .foregroundColor(.red)
+                        .font(.system(size: 16))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+            }
+        }
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.3), radius: 10, x: 0, y: 5)
+        .frame(width: 220)
+    }
+}
+
+// MARK: - Relationship Context Menu Modifier
+struct RelationshipContextMenuModifier: ViewModifier {
+    let onSetEnemy: () -> Void
+    let onSetNeutral: () -> Void
+    let onSetFriend: () -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+    @State private var showMenu = false
+    @State private var scale: CGFloat = 1.0
+    @State private var borderColor: Color = .clear
+    @State private var borderWidth: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        ZStack {
+            content
+                .scaleEffect(scale)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(borderColor, lineWidth: borderWidth)
+                )
+                .gesture(
+                    LongPressGesture(minimumDuration: 0.5)
+                        .onEnded { _ in
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                                scale = 1.05
+                                borderColor = .orange.opacity(0.8)
+                                borderWidth = 2
+                            }
+                            // Haptic feedback
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
+
+                            showMenu = true
+                        }
+                )
+                .onTapGesture {
+                    if showMenu {
+                        hideMenu()
+                    }
+                }
+
+            if showMenu {
+                // Background tap area to dismiss menu - covers entire screen
+                Color.clear
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        hideMenu()
+                    }
+                    .zIndex(9999) // Higher zIndex to be above everything
+                
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        RelationshipContextMenuView(
+                            onSetEnemy: {
+                                onSetEnemy()
+                                hideMenu()
+                            },
+                            onSetNeutral: {
+                                onSetNeutral()
+                                hideMenu()
+                            },
+                            onSetFriend: {
+                                onSetFriend()
+                                hideMenu()
+                            },
+                            onEdit: {
+                                onEdit()
+                                hideMenu()
+                            },
+                            onDelete: {
+                                onDelete()
+                                hideMenu()
+                            }
+                        )
+                        .offset(y: 50) // Меню под элементом
+                        Spacer()
+                    }
+                    Spacer()
+                }
+                .transition(.opacity)
+                .zIndex(10000) // Highest zIndex to be above everything
+            }
+        }
+    }
+
+    private func hideMenu() {
+        withAnimation(.spring(response: 0.2, dampingFraction: 0.6)) {
+            scale = 1.0
+            borderColor = .clear
+            borderWidth = 0
+            showMenu = false
+        }
+    }
+}
+
+// MARK: - View Extensions
 extension View {
     func contextMenu(
         onEdit: @escaping () -> Void,
@@ -187,6 +383,22 @@ extension View {
             onEdit: onEdit,
             onDelete: onDelete,
             onDuplicate: onDuplicate
+        ))
+    }
+    
+    func relationshipContextMenu(
+        onSetEnemy: @escaping () -> Void,
+        onSetNeutral: @escaping () -> Void,
+        onSetFriend: @escaping () -> Void,
+        onEdit: @escaping () -> Void,
+        onDelete: @escaping () -> Void
+    ) -> some View {
+        self.modifier(RelationshipContextMenuModifier(
+            onSetEnemy: onSetEnemy,
+            onSetNeutral: onSetNeutral,
+            onSetFriend: onSetFriend,
+            onEdit: onEdit,
+            onDelete: onDelete
         ))
     }
 }

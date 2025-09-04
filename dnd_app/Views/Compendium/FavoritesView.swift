@@ -6,7 +6,7 @@ struct FavoritesView: View {
     
     var body: some View {
         NavigationView {
-            VStack(spacing: 0) {
+            VStack(spacing: 16) {
                 // Табы
                 Picker("Тип", selection: $selectedTab) {
                     Text("Заклинания").tag(0)
@@ -60,7 +60,9 @@ struct FavoriteSpellsSection: View {
                     EmptyStateView(
                         icon: "heart",
                         title: "Нет избранных заклинаний",
-                        description: "Добавьте заклинания в избранное, нажав на сердечко"
+                        description: "Добавьте заклинания в избранное, нажав на сердечко",
+                        actionTitle: nil,
+                        action: nil
                     )
                     .padding(.top, 50)
                 } else {
@@ -134,7 +136,9 @@ struct FavoriteBackgroundsSection: View {
                     EmptyStateView(
                         icon: "heart",
                         title: "Нет избранных предысторий",
-                        description: "Добавьте предыстории в избранное, нажав на сердечко"
+                        description: "Добавьте предыстории в избранное, нажав на сердечко",
+                        actionTitle: nil,
+                        action: nil
                     )
                     .padding(.top, 50)
                 } else {
@@ -208,7 +212,9 @@ struct FavoriteFeatsSection: View {
                     EmptyStateView(
                         icon: "heart",
                         title: "Нет избранных черт",
-                        description: "Добавьте черты в избранное, нажав на сердечко"
+                        description: "Добавьте черты в избранное, нажав на сердечко",
+                        actionTitle: nil,
+                        action: nil
                     )
                     .padding(.top, 50)
                 } else {
@@ -282,7 +288,9 @@ struct FavoriteBestiarySection: View {
                     EmptyStateView(
                         icon: "heart",
                         title: "Нет избранных монстров",
-                        description: "Добавьте монстров в избранное, нажав на сердечко"
+                        description: "Добавьте монстров в избранное, нажав на сердечко",
+                        actionTitle: nil,
+                        action: nil
                     )
                     .padding(.top, 50)
                 } else {
@@ -290,7 +298,7 @@ struct FavoriteBestiarySection: View {
                         MonsterCardView(
                             monster: monster,
                             isExpanded: expandedMonsters.contains(monster.id),
-                            onToggleExpansion: {
+                            onTap: {
                                 toggleExpanded(monster.id)
                             }
                         )
