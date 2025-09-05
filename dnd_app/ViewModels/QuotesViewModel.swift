@@ -41,6 +41,10 @@ class QuotesViewModel: ObservableObject {
         return dataService.quotes?.quotes(for: category).count ?? 0
     }
     
+    func quotes(for category: String) -> [Quote] {
+        return dataService.quotes?.quotes(for: category) ?? []
+    }
+    
     func selectCategory(_ category: String) {
         print("QuotesViewModel selectCategory - category: \(category)")
         selectedCategory = category

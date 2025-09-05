@@ -148,13 +148,10 @@ enum MonsterType: String, CaseIterable {
         case .celestial: return "star.circle"
         case .construct: return "gear"
         case .dragon: return "flame"
-<<<<<<< Updated upstream
         case .humanoid: return "person.2"
         case .undead: return "skull"
-=======
         case .elemental: return "wind"
         case .fey: return "sparkles"
->>>>>>> Stashed changes
         case .fiend: return "exclamationmark.triangle"
         case .giant: return "person.3"
         case .humanoid: return "person.2"

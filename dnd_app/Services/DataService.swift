@@ -505,11 +505,8 @@ class DataService: ObservableObject {
         loadRelationships()
         loadNotes()
         loadCharacters()
-<<<<<<< Updated upstream
-=======
         loadCharacterClasses()
         loadCustomQuotesData()
->>>>>>> Stashed changes
     }
     
     // MARK: - Cache Management
@@ -550,8 +547,6 @@ class DataService: ObservableObject {
             self.characters = characters
         }
     }
-<<<<<<< Updated upstream
-=======
     
     private func loadCharacterClasses() {
         guard let url = Bundle.main.url(forResource: "class_tables", withExtension: "json") else {
@@ -592,7 +587,6 @@ class DataService: ObservableObject {
             print("No custom quotes data found in UserDefaults")
         }
     }
->>>>>>> Stashed changes
     
     private func saveRelationships() {
         if let data = try? JSONEncoder().encode(relationships) {

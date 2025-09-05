@@ -9,42 +9,8 @@ struct BestiaryView: View {
     @State private var selectedChallengeRating: String? = nil
     @State private var showFilters = false
     @State private var expandedMonsters: Set<UUID> = []
-    
+
     var filteredMonsters: [Monster] {
-<<<<<<< Updated upstream
-        var filtered = monsterService.searchMonsters(query: searchText)
-        
-        // Фильтр по типу
-        if selectedType != .all {
-            filtered = filtered.filter { monster in
-                switch selectedType {
-                case .all:
-                    return true
-                case .beast:
-                    return monster.type.lowercased().contains("beast")
-                case .dragon:
-                    return monster.type.lowercased().contains("dragon")
-                case .humanoid:
-                    return monster.type.lowercased().contains("humanoid")
-                case .undead:
-                    return monster.type.lowercased().contains("undead")
-                case .fiend:
-                    return monster.type.lowercased().contains("fiend")
-                }
-            }
-        }
-        
-        // Фильтр по размеру
-        if let size = selectedSize {
-            filtered = filtered.filter { $0.size == size }
-        }
-        
-        // Фильтр по мировоззрению
-        if let alignment = selectedAlignment {
-            filtered = filtered.filter { $0.alignment == alignment }
-        }
-        
-=======
         let searchQuery = searchText.lowercased()
         var filtered = dataService.monsters
 
@@ -69,7 +35,16 @@ struct BestiaryView: View {
             }
         }
 
->>>>>>> Stashed changes
+        // Фильтр по размеру
+        if let size = selectedSize {
+            filtered = filtered.filter { $0.size == size }
+        }
+
+        // Фильтр по мировоззрению
+        if let alignment = selectedAlignment {
+            filtered = filtered.filter { $0.alignment == alignment }
+        }
+
         // Фильтр по рейтингу опасности
         if let challengeRating = selectedChallengeRating {
             filtered = filtered.filter { $0.challengeRating == challengeRating }
@@ -77,21 +52,26 @@ struct BestiaryView: View {
 
         return filtered
     }
-<<<<<<< Updated upstream
-    
+
     var availableSizes: [String] {
-        let sizes = monsterService.monsters.map { $0.size }
-        return Array(Set(sizes)).sorted()
+        let sizes = dataService.monsters.map { $0.size }
+        let uniqueSizes = Set(sizes)
+        let arrayFromSizes = [String](uniqueSizes)
+        return arrayFromSizes.sorted()
     }
-    
+
     var availableAlignments: [String] {
-        let alignments = monsterService.monsters.map { $0.alignment }
-        return Array(Set(alignments)).sorted()
+        let alignments = dataService.monsters.map { $0.alignment }
+        let uniqueAlignments = Set(alignments)
+        let arrayFromAlignments = [String](uniqueAlignments)
+        return arrayFromAlignments.sorted()
     }
-    
+
     var availableChallengeRatings: [String] {
-        let challengeRatings = monsterService.monsters.map { $0.challengeRating }
-        return Array(Set(challengeRatings)).sorted { first, second in
+        let challengeRatings = dataService.monsters.compactMap { $0.challengeRating }
+        let uniqueRatings = Set(challengeRatings)
+        let arrayFromSet = Array(uniqueRatings)
+        return arrayFromSet.sorted { (first, second) in
             // Sort by numeric value if possible
             if let firstNum = Double(first), let secondNum = Double(second) {
                 return firstNum < secondNum
@@ -99,38 +79,21 @@ struct BestiaryView: View {
             return first < second
         }
     }
-    
-    var body: some View {
-        VStack(spacing: 0) {
-            // Header with title and filter button
-=======
 
     var body: some View {
         VStack(spacing: 0) {
->>>>>>> Stashed changes
+            // Header with title and filter button
             HStack {
                 Text("Бестиарий")
                     .font(.largeTitle)
                     .fontWeight(.bold)
-<<<<<<< Updated upstream
-                
+
                 Spacer()
-                
+
                 Button(action: {
                     showFilters = true
                 }) {
                     Image(systemName: "line.3.horizontal.decrease")
-=======
-
-                Spacer()
-
-                Button(action: {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                        showQuickFilters.toggle()
-                    }
-                }) {
-                    Image(systemName: showQuickFilters ? "chevron.up" : "line.3.horizontal.decrease")
->>>>>>> Stashed changes
                         .font(.title2)
                         .foregroundColor(.orange)
                 }
@@ -138,13 +101,12 @@ struct BestiaryView: View {
             .padding(.horizontal, 16)
             .padding(.top, 8)
             .padding(.bottom, 16)
-<<<<<<< Updated upstream
-            
+
             // Search Bar
             SearchBar(text: $searchText, placeholder: "Поиск монстров...")
                 .padding(.horizontal, 16)
                 .padding(.bottom, 16)
-            
+
             // Active Filters
             if selectedType != .all || selectedSize != nil || selectedAlignment != nil || selectedChallengeRating != nil {
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -155,21 +117,21 @@ struct BestiaryView: View {
                                 onRemove: { selectedType = .all }
                             )
                         }
-                        
+
                         if let size = selectedSize {
                             FilterTagView(
                                 text: "Размер: \(size)",
                                 onRemove: { selectedSize = nil }
                             )
                         }
-                        
+
                         if let alignment = selectedAlignment {
                             FilterTagView(
                                 text: "Мировоззрение: \(alignment)",
                                 onRemove: { selectedAlignment = nil }
                             )
                         }
-                        
+
                         if let challengeRating = selectedChallengeRating {
                             FilterTagView(
                                 text: "Класс опасности: \(challengeRating)",
@@ -181,7 +143,7 @@ struct BestiaryView: View {
                 }
                 .padding(.bottom, 16)
             }
-            
+
             // Monsters List
             if filteredMonsters.isEmpty {
                 Spacer()
@@ -209,140 +171,29 @@ struct BestiaryView: View {
                                     }
                                 }
                             }
-=======
-
-            SearchBar(text: $searchText, placeholder: "Поиск монстров...")
-                .padding(.horizontal, 16)
-                .padding(.bottom, showQuickFilters ? 8 : 16)
-
-            if showQuickFilters {
-                VStack(spacing: 12) {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    ForEach(MonsterType.allCases, id: \.self) { type in
-                                        FilterButton(
-                                            title: type.rawValue,
-                                            icon: type.icon,
-                                            isSelected: selectedType == type
-                                        ) {
-                                            selectedType = type
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 16)
-                            }
-                            
-                            // Класс опасности
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    FilterButton(
-                                        title: "Все КО",
-                                        icon: "star",
-                                        isSelected: selectedChallengeRating == nil
-                                    ) {
-                                        selectedChallengeRating = nil
-                                    }
-                                    
-                                    ForEach(["0", "1/8", "1/4", "1/2", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "30"], id: \.self) { rating in
-                                        FilterButton(
-                                            title: rating,
-                                            icon: "star.fill",
-                                            isSelected: selectedChallengeRating == rating
-                                        ) {
-                                            selectedChallengeRating = rating
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 16)
-                            }
-                        }
-                        .padding(.bottom, 16)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-                    
-                    // Active Filters
-                    if selectedType != .all || selectedChallengeRating != nil {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                if selectedType != .all {
-                                    FilterTagView(
-                                        text: selectedType.rawValue,
-                                        onRemove: { selectedType = .all }
-                                    )
-                                }
-                                
-                                if selectedChallengeRating != nil {
-                                    FilterTagView(
-                                        text: "КО: \(selectedChallengeRating!)",
-                                        onRemove: { selectedChallengeRating = nil }
-                                    )
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                        }
-                        .padding(.bottom, 16)
-                    }
-                    
-                    // Monsters List
-                    if filteredMonsters.isEmpty {
-                        Spacer()
-                        EmptyStateView(
-                            icon: "pawprint",
-                            title: "Нет монстров",
-                            description: "Попробуйте изменить фильтры или поисковый запрос",
-                            actionTitle: nil,
-                            action: nil
-                        )
-                        Spacer()
-                    } else {
-                        ScrollView {
-                            LazyVStack(spacing: 16) {
-                                ForEach(filteredMonsters) { monster in
-                                    MonsterCardView(
-                                        monster: monster,
-                                        isExpanded: expandedMonsters.contains(monster.id)
-                                    ) {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                            if expandedMonsters.contains(monster.id) {
-                                                expandedMonsters.remove(monster.id)
-                                            } else {
-                                                expandedMonsters.insert(monster.id)
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.bottom, 16)
-                        }
-                    }
-                }
-                .background(Color(red: 0.98, green: 0.97, blue: 0.95))
-                .onAppear {
-                    print("=== BESTIARY VIEW APPEARED ===")
-                    print("DataService monsters count: \(dataService.monsters.count)")
-
-                    if dataService.monsters.isEmpty {
-                        print("WARNING: No monsters loaded! Attempting to reload...")
-                        Task {
-                            await dataService.loadMonsters()
-                            print("After reload attempt: \(dataService.monsters.count) monsters")
-                        }
-                    } else {
-                        print("Monsters are loaded. First 5 monsters:")
-                        for i in 0..<min(5, dataService.monsters.count) {
-                            print("  \(i+1). \(dataService.monsters[i].name)")
->>>>>>> Stashed changes
                         }
                     }
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
                 }
+            }
         }
         .background(Color(red: 0.98, green: 0.97, blue: 0.95))
         .onAppear {
-            Task {
-                await monsterService.loadMonsters()
+            print("=== BESTIARY VIEW APPEARED ===")
+            print("DataService monsters count: \(dataService.monsters.count)")
+
+            if dataService.monsters.isEmpty {
+                print("WARNING: No monsters loaded! Attempting to reload...")
+                Task {
+                    await dataService.loadMonsters()
+                    print("After reload attempt: \(dataService.monsters.count) monsters")
+                }
+            } else {
+                print("Monsters are loaded. First 5 monsters:")
+                for i in 0..<min(5, dataService.monsters.count) {
+                    print("  \(i+1). \(dataService.monsters[i].name)")
+                }
             }
         }
         .sheet(isPresented: $showFilters) {
@@ -357,17 +208,18 @@ struct BestiaryView: View {
             )
         }
     }
+}
 
 struct FilterTagView: View {
     let text: String
     let onRemove: () -> Void
-    
+
     var body: some View {
         HStack(spacing: 4) {
             Text(text)
                 .font(.caption)
                 .foregroundColor(.orange)
-            
+
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.caption)
@@ -385,24 +237,17 @@ struct MonsterCardView: View {
     let monster: Monster
     let isExpanded: Bool
     let onTap: () -> Void
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             // Header
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-<<<<<<< Updated upstream
-                    Text(monster.name)
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                    
-                    Text(monster.sizeTypeAlignment)
-=======
                     HStack(spacing: 8) {
                         Text(monster.name)
                             .font(.headline)
                             .fontWeight(.semibold)
-                        
+
                         if let url = monster.url, !url.isEmpty {
                             Button(action: {
                                 if let urlObject = URL(string: url) {
@@ -417,25 +262,13 @@ struct MonsterCardView: View {
                     }
 
                     Text("\(monster.size) \(monster.type)")
->>>>>>> Stashed changes
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
-                
+
                 Spacer()
-                
+
                 VStack(alignment: .trailing, spacing: 4) {
-<<<<<<< Updated upstream
-                    Text("КЗ \(monster.armorClass)")
-                        .font(.caption)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.blue.opacity(0.8))
-                        .cornerRadius(6)
-                    
-                    Text("КД \(monster.challengeRating)")
-=======
                     HStack(spacing: 8) {
                         Text("КЗ \(monster.armorClass ?? 10)")
                             .font(.caption)
@@ -455,7 +288,6 @@ struct MonsterCardView: View {
                     }
 
                     Text("КО \(monster.challengeRating ?? "1/8")")
->>>>>>> Stashed changes
                         .font(.caption)
                         .foregroundColor(.white)
                         .padding(.horizontal, 8)
@@ -464,30 +296,27 @@ struct MonsterCardView: View {
                         .cornerRadius(6)
                 }
             }
-            
+
             // Stats
             HStack(spacing: 16) {
-                StatView(title: "ХП", value: "\(monster.hitPoints)")
+                StatView(title: "ХП", value: "\(monster.hitPoints ?? 0)")
                 StatView(title: "Скорость", value: monster.speed)
-<<<<<<< Updated upstream
                 StatView(title: "Размер", value: monster.size)
-=======
                 StatView(title: "БМ", value: "+\(monster.proficiencyBonusValue)")
                 StatView(title: "ПВ", value: "\(monster.passivePerception)")
->>>>>>> Stashed changes
             }
-            
+
             // Expandable Content
             if isExpanded {
                 VStack(alignment: .leading, spacing: 12) {
                     Divider()
-                    
+
                     // Abilities
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Характеристики")
                             .font(.subheadline)
                             .fontWeight(.semibold)
-                        
+
                         HStack(spacing: 16) {
                             AbilityView(name: "СИЛ", score: monster.strength ?? 10, modifier: monster.strengthModifier)
                             AbilityView(name: "ЛОВ", score: monster.dexterity ?? 10, modifier: monster.dexterityModifier)
@@ -497,22 +326,19 @@ struct MonsterCardView: View {
                             AbilityView(name: "ХАР", score: monster.charisma ?? 10, modifier: monster.charismaModifier)
                         }
                     }
-                    
+
                     // Skills
                     if let skills = monster.skills, !skills.isEmpty {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Навыки")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
-                            
+
                             Text(skills)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
                     }
-<<<<<<< Updated upstream
-                    
-=======
 
                     // Damage Vulnerabilities, Resistances, Immunities
                     if let damageResistances = monster.damageResistances, !damageResistances.isEmpty {
@@ -611,20 +437,14 @@ struct MonsterCardView: View {
                         }
                     }
 
->>>>>>> Stashed changes
                     // Actions
                     if let actions = monster.actions, !actions.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Действия")
                                 .font(.subheadline)
                                 .fontWeight(.semibold)
-<<<<<<< Updated upstream
-                            
-                            ForEach(actions.prefix(3), id: \.name) { action in
-=======
 
                             ForEach(actions, id: \.name) { action in
->>>>>>> Stashed changes
                                 ActionView(action: action)
                             }
                         }
@@ -641,17 +461,18 @@ struct MonsterCardView: View {
             onTap()
         }
     }
+}
 
 struct StatView: View {
     let title: String
     let value: String
-    
+
     var body: some View {
         VStack(spacing: 2) {
             Text(title)
                 .font(.caption)
                 .foregroundColor(.secondary)
-            
+
             Text(value)
                 .font(.caption)
                 .fontWeight(.semibold)
@@ -663,17 +484,17 @@ struct AbilityView: View {
     let name: String
     let score: Int
     let modifier: String
-    
+
     var body: some View {
         VStack(spacing: 2) {
             Text(name)
                 .font(.caption2)
                 .foregroundColor(.secondary)
-            
+
             Text("\(score)")
                 .font(.caption)
                 .fontWeight(.semibold)
-            
+
             Text(modifier)
                 .font(.caption2)
                 .foregroundColor(.orange)
@@ -683,13 +504,13 @@ struct AbilityView: View {
 
 struct ActionView: View {
     let action: Action
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(action.name)
                 .font(.caption)
                 .fontWeight(.semibold)
-            
+
             Text(action.desc)
                 .font(.caption2)
                 .foregroundColor(.secondary)
@@ -703,11 +524,11 @@ struct MonsterFiltersView: View {
     @Binding var selectedAlignment: String?
     @Binding var selectedChallengeRating: String?
     @Environment(\.dismiss) private var dismiss
-    
+
     let availableSizes: [String]
     let availableAlignments: [String]
     let availableChallengeRatings: [String]
-    
+
     var body: some View {
         NavigationView {
             List {
@@ -717,11 +538,11 @@ struct MonsterFiltersView: View {
                             Image(systemName: type.icon)
                                 .foregroundColor(.orange)
                                 .frame(width: 24)
-                            
+
                             Text(type.rawValue)
-                            
+
                             Spacer()
-                            
+
                             if selectedType == type {
                                 Image(systemName: "checkmark")
                                     .foregroundColor(.orange)
@@ -733,7 +554,7 @@ struct MonsterFiltersView: View {
                         }
                     }
                 }
-                
+
                 Section("Размер") {
                     HStack {
                         Text("Все размеры")
@@ -747,7 +568,7 @@ struct MonsterFiltersView: View {
                     .onTapGesture {
                         selectedSize = nil
                     }
-                    
+
                     ForEach(availableSizes, id: \.self) { size in
                         HStack {
                             Text(size)
@@ -763,7 +584,7 @@ struct MonsterFiltersView: View {
                         }
                     }
                 }
-                
+
                 Section("Мировоззрение") {
                     HStack {
                         Text("Все мировоззрения")
@@ -777,7 +598,7 @@ struct MonsterFiltersView: View {
                     .onTapGesture {
                         selectedAlignment = nil
                     }
-                    
+
                     ForEach(availableAlignments, id: \.self) { alignment in
                         HStack {
                             Text(alignment)
@@ -793,7 +614,7 @@ struct MonsterFiltersView: View {
                         }
                     }
                 }
-                
+
                 Section("Класс опасности") {
                     HStack {
                         Text("Все классы опасности")
@@ -807,7 +628,7 @@ struct MonsterFiltersView: View {
                     .onTapGesture {
                         selectedChallengeRating = nil
                     }
-                    
+
                     ForEach(availableChallengeRatings, id: \.self) { challengeRating in
                         HStack {
                             Text(challengeRating)
@@ -823,7 +644,7 @@ struct MonsterFiltersView: View {
                         }
                     }
                 }
-                
+
                 Section {
                     Button("Сбросить все фильтры") {
                         selectedType = .all
@@ -845,9 +666,4 @@ struct MonsterFiltersView: View {
             }
         }
     }
-}
-}
-
-#Preview {
-    BestiaryView()
 }

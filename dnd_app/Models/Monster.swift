@@ -322,8 +322,6 @@ extension Monster {
     var intelligenceModifier: String { abilityModifier(intelligence) }
     var wisdomModifier: String { abilityModifier(wisdom) }
     var charismaModifier: String { abilityModifier(charisma) }
-<<<<<<< Updated upstream
-=======
 
     // Бонус мастерства на основе уровня опасности
     var proficiencyBonusValue: Int {
@@ -358,5 +356,4 @@ extension Monster {
         }
         return 10 + wisMod
     }
->>>>>>> Stashed changes
 }
