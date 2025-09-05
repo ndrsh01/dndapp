@@ -4,6 +4,7 @@ struct EditableCharacterHeader: View {
     @Binding var character: Character
     @State private var showingEditSheet = false
     @EnvironmentObject private var dataService: DataService
+    let onCharacterContextMenu: (() -> Void)?
     
     var body: some View {
         VStack(spacing: 12) {
@@ -206,12 +207,12 @@ struct EditCharacterHeaderView: View {
     }
     
     private var availableClasses: [String] {
-        return dataService.characterClasses.map { $0.className }
+        return dataService.dndClasses.map { $0.nameRu }
     }
     
     private var availableSubclasses: [String] {
-        if let selectedClass = dataService.characterClasses.first(where: { $0.className == characterClass }) {
-            return selectedClass.subclasses
+        if let selectedClass = dataService.dndClasses.first(where: { $0.nameRu == characterClass }) {
+            return selectedClass.subclassNames
         }
         return ["Нет подкласса"]
     }
@@ -236,13 +237,16 @@ struct EditCharacterHeaderView: View {
 }
 
 #Preview {
-    EditableCharacterHeader(character: .constant(Character(
-        name: "Абоба",
-        race: "Человек",
-        characterClass: "Монах",
-        background: "Чужеземец",
-        alignment: "Хаотично-нейтральный",
-        level: 8
-    )))
+    EditableCharacterHeader(
+        character: .constant(Character(
+            name: "Абоба",
+            race: "Человек",
+            characterClass: "Монах",
+            background: "Чужеземец",
+            alignment: "Хаотично-нейтральный",
+            level: 8
+        )),
+        onCharacterContextMenu: nil
+    )
     .environmentObject(DataService.shared)
 }

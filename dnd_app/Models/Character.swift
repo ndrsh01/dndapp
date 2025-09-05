@@ -1,5 +1,41 @@
 import Foundation
 
+enum Skill: String, CaseIterable {
+    case acrobatics = "Акробатика"
+    case animalHandling = "Обращение с животными"
+    case arcana = "Магия"
+    case athletics = "Атлетика"
+    case deception = "Обман"
+    case history = "История"
+    case insight = "Проницательность"
+    case intimidation = "Запугивание"
+    case investigation = "Расследование"
+    case medicine = "Медицина"
+    case nature = "Природа"
+    case perception = "Восприятие"
+    case performance = "Выступление"
+    case persuasion = "Убеждение"
+    case religion = "Религия"
+    case sleightOfHand = "Ловкость рук"
+    case stealth = "Скрытность"
+    case survival = "Выживание"
+    
+    var ability: AbilityScore {
+        switch self {
+        case .acrobatics, .sleightOfHand, .stealth:
+            return .dexterity
+        case .athletics:
+            return .strength
+        case .animalHandling, .insight, .medicine, .perception, .survival:
+            return .wisdom
+        case .arcana, .history, .investigation, .nature, .religion:
+            return .intelligence
+        case .deception, .intimidation, .performance, .persuasion:
+            return .charisma
+        }
+    }
+}
+
 struct Character: Codable, Identifiable {
     let id: UUID
     var name: String
@@ -9,6 +45,7 @@ struct Character: Codable, Identifiable {
     var background: String
     var alignment: String
     var level: Int
+    var avatarImageData: Data? // Данные изображения аватара
     
     // Основные характеристики
     var strength: Int
@@ -28,6 +65,7 @@ struct Character: Codable, Identifiable {
     
     // Навыки
     var skills: [String: Bool] // Название навыка: владеет ли
+    var skillsExpertise: [String: Bool] // Название навыка: есть ли компетенция (удваивает бонус владения)
     
     // Классовые умения
     var classAbilities: [String]
@@ -47,10 +85,13 @@ struct Character: Codable, Identifiable {
     // Особенности
     var features: [String]
     
+    // Ресурсы классов
+    var classResources: [String: ClassResource]
+    
     var dateCreated: Date
     var dateModified: Date
     
-    init(name: String, race: String, characterClass: String, background: String, alignment: String, level: Int = 1) {
+    init(name: String, race: String, characterClass: String, background: String, alignment: String, level: Int = 1, avatarImageData: Data? = nil) {
         self.id = UUID()
         self.name = name
         self.race = race
@@ -58,6 +99,7 @@ struct Character: Codable, Identifiable {
         self.background = background
         self.alignment = alignment
         self.level = level
+        self.avatarImageData = avatarImageData
         
         // Инициализация характеристик значениями по умолчанию
         self.strength = 10
@@ -77,6 +119,7 @@ struct Character: Codable, Identifiable {
         
         // Навыки
         self.skills = [:]
+        self.skillsExpertise = [:]
         
         // Классовые умения
         self.classAbilities = []
@@ -96,8 +139,66 @@ struct Character: Codable, Identifiable {
         // Особенности
         self.features = []
         
+        // Ресурсы классов
+        self.classResources = [:]
+        
         self.dateCreated = Date()
         self.dateModified = Date()
+    }
+    
+    // CodingKeys для кастомного декодирования
+    enum CodingKeys: String, CodingKey {
+        case id, name, race, characterClass, subclass, background, alignment, level, avatarImageData
+        case strength, dexterity, constitution, intelligence, wisdom, charisma
+        case armorClass, initiative, speed, hitPoints, maxHitPoints, proficiencyBonus
+        case skills, skillsExpertise, classAbilities, equipment, treasures
+        case personalityTraits, ideals, bonds, flaws, features, classResources, dateCreated, dateModified
+    }
+    
+    // Кастомный декодер для безопасного декодирования старых данных
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        race = try container.decode(String.self, forKey: .race)
+        characterClass = try container.decode(String.self, forKey: .characterClass)
+        subclass = try container.decodeIfPresent(String.self, forKey: .subclass)
+        background = try container.decode(String.self, forKey: .background)
+        alignment = try container.decode(String.self, forKey: .alignment)
+        level = try container.decode(Int.self, forKey: .level)
+        avatarImageData = try container.decodeIfPresent(Data.self, forKey: .avatarImageData)
+        
+        strength = try container.decode(Int.self, forKey: .strength)
+        dexterity = try container.decode(Int.self, forKey: .dexterity)
+        constitution = try container.decode(Int.self, forKey: .constitution)
+        intelligence = try container.decode(Int.self, forKey: .intelligence)
+        wisdom = try container.decode(Int.self, forKey: .wisdom)
+        charisma = try container.decode(Int.self, forKey: .charisma)
+        
+        armorClass = try container.decode(Int.self, forKey: .armorClass)
+        initiative = try container.decode(Int.self, forKey: .initiative)
+        speed = try container.decode(Int.self, forKey: .speed)
+        hitPoints = try container.decode(Int.self, forKey: .hitPoints)
+        maxHitPoints = try container.decode(Int.self, forKey: .maxHitPoints)
+        proficiencyBonus = try container.decode(Int.self, forKey: .proficiencyBonus)
+        
+        skills = try container.decode([String: Bool].self, forKey: .skills)
+        // Безопасное декодирование нового поля skillsExpertise
+        skillsExpertise = try container.decodeIfPresent([String: Bool].self, forKey: .skillsExpertise) ?? [:]
+        
+        classAbilities = try container.decode([String].self, forKey: .classAbilities)
+        equipment = try container.decode([String].self, forKey: .equipment)
+        treasures = try container.decode([String].self, forKey: .treasures)
+        personalityTraits = try container.decode(String.self, forKey: .personalityTraits)
+        ideals = try container.decode(String.self, forKey: .ideals)
+        bonds = try container.decode(String.self, forKey: .bonds)
+        flaws = try container.decode(String.self, forKey: .flaws)
+        features = try container.decode([String].self, forKey: .features)
+        // Безопасное декодирование нового поля classResources
+        classResources = try container.decodeIfPresent([String: ClassResource].self, forKey: .classResources) ?? [:]
+        dateCreated = try container.decode(Date.self, forKey: .dateCreated)
+        dateModified = try container.decode(Date.self, forKey: .dateModified)
     }
     
     // Вычисляемые свойства для модификаторов
@@ -158,5 +259,23 @@ struct Character: Codable, Identifiable {
     
     func formatModifier(_ modifier: Int) -> String {
         return modifier >= 0 ? "+\(modifier)" : "\(modifier)"
+    }
+}
+
+struct ClassResource: Codable {
+    let name: String
+    let icon: String
+    let maxValue: Int
+    var currentValue: Int
+    let type: ResourceType
+    
+    enum ResourceType: String, Codable {
+        case rage = "rage"
+        case spellSlot = "spell_slot"
+        case bardInspiration = "bard_inspiration"
+        case ki = "ki"
+        case sorceryPoints = "sorcery_points"
+        case eldritchInvocations = "eldritch_invocations"
+        case other = "other"
     }
 }

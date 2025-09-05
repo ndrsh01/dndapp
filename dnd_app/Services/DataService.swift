@@ -31,7 +31,8 @@ class DataService: ObservableObject {
     @Published var relationships: [Relationship] = []
     @Published var notes: [Note] = []
     @Published var characters: [Character] = []
-    @Published var characterClasses: [CharacterClass] = []
+    @Published var dndClasses: [DnDClass] = []
+    @Published var classTables: [ClassTable] = []
     
     // MARK: - Private Properties
     private var cancellables = Set<AnyCancellable>()
@@ -48,32 +49,32 @@ class DataService: ObservableObject {
     }
     
     private init() {
+        // Сначала загружаем персистентные данные
         loadPersistedData()
-        loadData()
-        // Убеждаемся что цитаты загружены синхронно при старте
+        
+        // Затем синхронно загружаем критически важные данные
         loadQuotesSynchronously()
-        // Убеждаемся что монстры загружены синхронно при старте
+        loadSpellsSynchronously()
+        loadFeatsSynchronously()
+        loadBackgroundsSynchronously()
         loadMonstersSynchronously()
+        loadDnDClasses()
+        loadClassTables()
+        
+        // Затем асинхронно обновляем данные в фоне
+        Task {
+            await refreshDataInBackground()
+        }
     }
     
-    // MARK: - Data Loading
-    private func loadData() {
-        // Сначала пробуем загрузить из кэша синхронно
-        loadQuotesFromCache()
-        loadCustomQuotesData() // Загружаем пользовательские цитаты
-        loadSpellsFromCache()
-        loadFeatsFromCache()
-        loadBackgroundsFromCache()
-        loadMonstersFromCache()
-
-        // Затем обновляем асинхронно
-        Task {
-            await loadQuotes()
-            await loadSpells()
-            await loadFeats()
-            await loadBackgrounds()
-            await loadMonsters()
-        }
+    // MARK: - Background Data Refresh
+    private func refreshDataInBackground() async {
+        // Обновляем данные в фоне только если нужно
+        await loadQuotes()
+        await loadSpells()
+        await loadFeats()
+        await loadBackgrounds()
+        await loadMonsters()
     }
     
     // MARK: - Cache Loading (синхронно)
@@ -101,6 +102,51 @@ class DataService: ObservableObject {
 
         // Загружаем пользовательские цитаты
         loadCustomQuotesData()
+    }
+    
+    private func loadSpellsSynchronously() {
+        if !spells.isEmpty {
+            return
+        }
+        
+        if let url = Bundle.main.url(forResource: "spells", withExtension: "json"),
+           let data = try? Data(contentsOf: url),
+           let spellsData = try? JSONDecoder().decode([Spell].self, from: data) {
+            self.spells = spellsData
+            print("Spells loaded synchronously: \(spellsData.count)")
+        } else {
+            print("Failed to load spells synchronously")
+        }
+    }
+    
+    private func loadFeatsSynchronously() {
+        if !feats.isEmpty {
+            return
+        }
+        
+        if let url = Bundle.main.url(forResource: "feats", withExtension: "json"),
+           let data = try? Data(contentsOf: url),
+           let featsData = try? JSONDecoder().decode([Feat].self, from: data) {
+            self.feats = featsData
+            print("Feats loaded synchronously: \(featsData.count)")
+        } else {
+            print("Failed to load feats synchronously")
+        }
+    }
+    
+    private func loadBackgroundsSynchronously() {
+        if !backgrounds.isEmpty {
+            return
+        }
+        
+        if let url = Bundle.main.url(forResource: "backgrounds", withExtension: "json"),
+           let data = try? Data(contentsOf: url),
+           let backgroundsData = try? JSONDecoder().decode([Background].self, from: data) {
+            self.backgrounds = backgroundsData
+            print("Backgrounds loaded synchronously: \(backgroundsData.count)")
+        } else {
+            print("Failed to load backgrounds synchronously")
+        }
     }
 
     private func loadMonstersSynchronously() {
@@ -505,7 +551,6 @@ class DataService: ObservableObject {
         loadRelationships()
         loadNotes()
         loadCharacters()
-        loadCharacterClasses()
         loadCustomQuotesData()
     }
     
@@ -522,7 +567,7 @@ class DataService: ObservableObject {
         Task {
             // Очищаем кэш и перезагружаем данные
             cacheManager.clearAll()
-            loadData()
+            await refreshDataInBackground()
         }
     }
     
@@ -548,7 +593,24 @@ class DataService: ObservableObject {
         }
     }
     
-    private func loadCharacterClasses() {
+    
+    private func loadDnDClasses() {
+        guard let url = Bundle.main.url(forResource: "classes", withExtension: "json") else {
+            print("classes.json not found in bundle")
+            return
+        }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            let classesData = try JSONDecoder().decode(DnDClassesData.self, from: data)
+            self.dndClasses = classesData.classes
+            print("Loaded \(classesData.classes.count) D&D classes")
+        } catch {
+            print("Error loading D&D classes: \(error)")
+        }
+    }
+    
+    private func loadClassTables() {
         guard let url = Bundle.main.url(forResource: "class_tables", withExtension: "json") else {
             print("class_tables.json not found in bundle")
             return
@@ -556,11 +618,11 @@ class DataService: ObservableObject {
         
         do {
             let data = try Data(contentsOf: url)
-            let classes = try JSONDecoder().decode([CharacterClass].self, from: data)
-            self.characterClasses = classes
-            print("Loaded \(classes.count) character classes")
+            let classTablesData = try JSONDecoder().decode(ClassTablesData.self, from: data)
+            self.classTables = classTablesData
+            print("Loaded \(classTablesData.count) class tables")
         } catch {
-            print("Error loading character classes: \(error)")
+            print("Error loading class tables: \(error)")
         }
     }
 
@@ -621,6 +683,11 @@ class DataService: ObservableObject {
     func addRelationship(_ relationship: Relationship) {
         relationships.append(relationship)
         saveRelationships()
+    }
+
+    var uniqueOrganizations: [String] {
+        let organizations = relationships.compactMap { $0.organization }
+        return Array(Set(organizations)).sorted()
     }
     
     func updateRelationship(_ relationship: Relationship) {
@@ -734,7 +801,7 @@ class DataService: ObservableObject {
     
     // MARK: - Quote Category Management
     func addQuoteCategory(_ name: String) {
-        guard var quotesData = quotes else { return }
+        guard let quotesData = quotes else { return }
         
         // Создаем новую категорию с пустым массивом цитат
         var newCategories = quotesData.categories
@@ -748,7 +815,7 @@ class DataService: ObservableObject {
     }
     
     func deleteQuoteCategory(_ name: String) {
-        guard var quotesData = quotes else { return }
+        guard let quotesData = quotes else { return }
         
         // Удаляем категорию
         var newCategories = quotesData.categories
@@ -762,7 +829,7 @@ class DataService: ObservableObject {
     }
     
     func renameQuoteCategory(from oldName: String, to newName: String) {
-        guard var quotesData = quotes else { return }
+        guard let quotesData = quotes else { return }
         
         // Получаем цитаты из старой категории
         if let quotes = quotesData.categories[oldName] {
@@ -782,7 +849,7 @@ class DataService: ObservableObject {
     }
     
     func duplicateQuoteCategory(from sourceName: String, to newName: String) {
-        guard var quotesData = quotes else { return }
+        guard let quotesData = quotes else { return }
         
         // Получаем цитаты из исходной категории
         if let sourceQuotes = quotesData.categories[sourceName] {
@@ -809,7 +876,7 @@ class DataService: ObservableObject {
     
     // MARK: - Quote Management
     func addQuote(_ quote: Quote) {
-        guard var quotesData = quotes else { return }
+        guard let quotesData = quotes else { return }
         
         var newCategories = quotesData.categories
         if newCategories[quote.category] == nil {
@@ -828,7 +895,7 @@ class DataService: ObservableObject {
     }
     
     func updateQuote(from oldQuote: Quote, to newQuote: Quote) {
-        guard var quotesData = quotes else { return }
+        guard let quotesData = quotes else { return }
         
         var newCategories = quotesData.categories
         if var categoryQuotes = newCategories[oldQuote.category] {
@@ -844,7 +911,7 @@ class DataService: ObservableObject {
     }
     
     func deleteQuote(_ quote: Quote) {
-        guard var quotesData = quotes else { return }
+        guard let quotesData = quotes else { return }
         
         var newCategories = quotesData.categories
         if var categoryQuotes = newCategories[quote.category] {

@@ -19,11 +19,13 @@ struct CharacterSelectionView: View {
                     // Заголовок
                     headerSection
                     
-                    // Статистика
-                    statisticsSection
-                    
                     // Список персонажей
                     charactersSection
+                    
+                    // Кнопка "Играть за X" (если есть выбранный персонаж)
+                    if let selectedCharacter = characterManager.selectedCharacter {
+                        playButton(for: selectedCharacter)
+                    }
                     
                     // Кнопки действий
                     actionButtonsSection
@@ -41,11 +43,11 @@ struct CharacterSelectionView: View {
             .sheet(isPresented: $showingImportSheet) {
                 DocumentPicker { data in
                     // Сначала пробуем импортировать как внешний формат
-                    if let character = characterManager.importExternalCharacter(from: data) {
+                    if let character = characterManager.importExternalCharacterFromData(data) {
                         characterManager.addCharacter(character)
                         alertMessage = "Персонаж успешно импортирован из внешнего формата!"
                         showingAlert = true
-                    } else if let character = characterManager.importCharacter(from: data) {
+                    } else if let character = characterManager.importCharacterFromData(data) {
                         // Если не получилось, пробуем внутренний формат
                         characterManager.addCharacter(character)
                         alertMessage = "Персонаж успешно импортирован!"
@@ -86,6 +88,24 @@ struct CharacterSelectionView: View {
                 }
             }
         }
+    }
+    
+    private func playButton(for character: Character) -> some View {
+        Button(action: {
+            characterManager.selectCharacter(character)
+        }) {
+            HStack {
+                Image(systemName: "play.fill")
+                Text("Играть за \(character.name)")
+            }
+            .font(.headline)
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(Color.orange)
+            .cornerRadius(12)
+        }
+        .padding(.horizontal)
     }
     
     private var headerSection: some View {
@@ -323,10 +343,6 @@ struct CharacterCard: View {
                         .cornerRadius(6)
                     
                     Spacer()
-                    
-                    Text(character.dateModified, style: .relative)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
                 }
             }
             

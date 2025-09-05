@@ -6,9 +6,9 @@ struct SpellsView: View {
     @State private var expandedSpells: Set<UUID> = []
     @State private var favoriteSpells: Set<UUID> = []
     @State private var showFilters = false
-    @State private var selectedLevel: String? = nil
-    @State private var selectedSchool: String? = nil
-    @State private var selectedClass: String? = nil
+    @State private var selectedLevels: Set<String> = []
+    @State private var selectedSchools: Set<String> = []
+    @State private var selectedClasses: Set<String> = []
     
     var filteredSpells: [Spell] {
         let spells = dataService.spells
@@ -25,27 +25,25 @@ struct SpellsView: View {
         }
         
         // Фильтр по уровню
-        if let level = selectedLevel {
+        if !selectedLevels.isEmpty {
             filtered = filtered.filter { spell in
-                if level == "Заговор" {
-                    return spell.уровень == "Заговор"
-                } else {
-                    return spell.уровень == level
-                }
+                selectedLevels.contains(spell.уровень)
             }
         }
         
         // Фильтр по школе
-        if let school = selectedSchool {
+        if !selectedSchools.isEmpty {
             filtered = filtered.filter { spell in
-                spell.школа == school
+                selectedSchools.contains(spell.школа)
             }
         }
         
         // Фильтр по классу
-        if let className = selectedClass {
+        if !selectedClasses.isEmpty {
             filtered = filtered.filter { spell in
-                spell.классы.contains(className)
+                selectedClasses.contains { className in
+                    spell.классы.contains(className)
+                }
             }
         }
         
@@ -90,22 +88,63 @@ struct SpellsView: View {
                         .padding(.horizontal, 16)
                         .padding(.top, 8)
 
-                    // All Spells
-                    ForEach(allSpellsList) { spell in
-                        SpellCardView(
-                            spell: spell,
-                            isExpanded: expandedSpells.contains(spell.id),
-                            isFavorite: favoriteSpells.contains(spell.id),
-                            onToggleExpanded: {
-                                toggleExpanded(spell.id)
-                            },
-                            onToggleFavorite: {
-                                toggleFavorite(spell.id)
+                    // Active Filters
+                    if !selectedLevels.isEmpty || !selectedSchools.isEmpty || !selectedClasses.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(Array(selectedLevels), id: \.self) { level in
+                                    SpellFilterTagView(
+                                        text: "Уровень: \(level)",
+                                        onRemove: { selectedLevels.remove(level) }
+                                    )
+                                }
+
+                                ForEach(Array(selectedSchools), id: \.self) { school in
+                                    SpellFilterTagView(
+                                        text: "Школа: \(school)",
+                                        onRemove: { selectedSchools.remove(school) }
+                                    )
+                                }
+
+                                ForEach(Array(selectedClasses), id: \.self) { className in
+                                    SpellFilterTagView(
+                                        text: "Класс: \(className)",
+                                        onRemove: { selectedClasses.remove(className) }
+                                    )
+                                }
                             }
-                        )
-                        .padding(.horizontal, 16)
+                            .padding(.horizontal, 16)
+                        }
+                        .padding(.bottom, 8)
                     }
-                    .padding(.bottom, 20)
+
+                    // Loading indicator or spells
+                    if allSpellsList.isEmpty {
+                        VStack(spacing: 16) {
+                            ProgressView()
+                                .scaleEffect(1.5)
+                            Text("Загрузка заклинаний...")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: 200)
+                    } else {
+                        ForEach(allSpellsList) { spell in
+                            SpellCardView(
+                                spell: spell,
+                                isExpanded: expandedSpells.contains(spell.id),
+                                isFavorite: favoriteSpells.contains(spell.id),
+                                onToggleExpanded: {
+                                    toggleExpanded(spell.id)
+                                },
+                                onToggleFavorite: {
+                                    toggleFavorite(spell.id)
+                                }
+                            )
+                            .padding(.horizontal, 16)
+                        }
+                        .padding(.bottom, 20)
+                    }
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -135,10 +174,10 @@ struct SpellsView: View {
                 }
             }
             .sheet(isPresented: $showFilters) {
-                FiltersView(
-                    selectedLevel: $selectedLevel,
-                    selectedSchool: $selectedSchool,
-                    selectedClass: $selectedClass,
+                SpellFiltersView(
+                    selectedLevels: $selectedLevels,
+                    selectedSchools: $selectedSchools,
+                    selectedClasses: $selectedClasses,
                     availableLevels: availableLevels,
                     availableSchools: availableSchools,
                     availableClasses: availableClasses
@@ -268,12 +307,12 @@ struct SpellCardView: View {
     }
 }
 
-// MARK: - Filters View
-struct FiltersView: View {
+// MARK: - Spell Filters View
+struct SpellFiltersView: View {
     @Environment(\.dismiss) private var dismiss
-    @Binding var selectedLevel: String?
-    @Binding var selectedSchool: String?
-    @Binding var selectedClass: String?
+    @Binding var selectedLevels: Set<String>
+    @Binding var selectedSchools: Set<String>
+    @Binding var selectedClasses: Set<String>
     let availableLevels: [String]
     let availableSchools: [String]
     let availableClasses: [String]
@@ -282,100 +321,73 @@ struct FiltersView: View {
         NavigationView {
             List {
                 Section("Уровень заклинания") {
-                    HStack {
-                        Text("Все уровни")
-                        Spacer()
-                        if selectedLevel == nil {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.orange)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedLevel = nil
-                    }
-                    
                     ForEach(availableLevels, id: \.self) { level in
                         HStack {
                             Text(level)
                             Spacer()
-                            if selectedLevel == level {
+                            if selectedLevels.contains(level) {
                                 Image(systemName: "checkmark")
                                     .foregroundColor(.orange)
                             }
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            selectedLevel = level
+                            if selectedLevels.contains(level) {
+                                selectedLevels.remove(level)
+                            } else {
+                                selectedLevels.insert(level)
+                            }
                         }
                     }
                 }
                 
                 Section("Школа магии") {
-                    HStack {
-                        Text("Все школы")
-                        Spacer()
-                        if selectedSchool == nil {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.orange)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedSchool = nil
-                    }
-                    
                     ForEach(availableSchools, id: \.self) { school in
                         HStack {
                             Text(school)
                             Spacer()
-                            if selectedSchool == school {
+                            if selectedSchools.contains(school) {
                                 Image(systemName: "checkmark")
                                     .foregroundColor(.orange)
                             }
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            selectedSchool = school
+                            if selectedSchools.contains(school) {
+                                selectedSchools.remove(school)
+                            } else {
+                                selectedSchools.insert(school)
+                            }
                         }
                     }
                 }
                 
                 Section("Класс персонажа") {
-                    HStack {
-                        Text("Все классы")
-                        Spacer()
-                        if selectedClass == nil {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.orange)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedClass = nil
-                    }
-                    
                     ForEach(availableClasses, id: \.self) { className in
                         HStack {
                             Text(className)
                             Spacer()
-                            if selectedClass == className {
+                            if selectedClasses.contains(className) {
                                 Image(systemName: "checkmark")
                                     .foregroundColor(.orange)
                             }
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            selectedClass = className
+                            if selectedClasses.contains(className) {
+                                selectedClasses.remove(className)
+                            } else {
+                                selectedClasses.insert(className)
+                            }
                         }
                     }
                 }
                 
                 Section {
                     Button("Сбросить все фильтры") {
-                        selectedLevel = nil
-                        selectedSchool = nil
-                        selectedClass = nil
+                        selectedLevels.removeAll()
+                        selectedSchools.removeAll()
+                        selectedClasses.removeAll()
                     }
                     .foregroundColor(.red)
                 }
@@ -390,6 +402,29 @@ struct FiltersView: View {
                 }
             }
         }
+    }
+}
+
+struct SpellFilterTagView: View {
+    let text: String
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Text(text)
+                .font(.caption)
+                .foregroundColor(.orange)
+
+            Button(action: onRemove) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.caption)
+                    .foregroundColor(.orange)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Color.orange.opacity(0.1))
+        .cornerRadius(8)
     }
 }
 

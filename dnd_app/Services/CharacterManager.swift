@@ -143,7 +143,37 @@ class CharacterManager: ObservableObject {
         decoder.dateDecodingStrategy = .iso8601
         
         do {
-            let character = try decoder.decode(Character.self, from: data)
+            // Сначала пробуем декодировать как полный Character
+            let character: Character
+            do {
+                character = try decoder.decode(Character.self, from: data)
+            } catch {
+                print("Не удалось декодировать как полный Character, пробуем упрощенную версию: \(error)")
+                // Если не получилось, пробуем декодировать как словарь и создать Character вручную
+                guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] else {
+                    return nil
+                }
+                
+                guard let name = json["name"] as? String,
+                      let race = json["race"] as? String,
+                      let characterClass = json["characterClass"] as? String,
+                      let background = json["background"] as? String,
+                      let alignment = json["alignment"] as? String else {
+                    print("Отсутствуют обязательные поля в JSON")
+                    return nil
+                }
+                
+                let level = json["level"] as? Int ?? 1
+                character = Character(
+                    name: name,
+                    race: race,
+                    characterClass: characterClass,
+                    background: background,
+                    alignment: alignment,
+                    level: level
+                )
+            }
+            
             // Создаем новый персонаж с новым ID для импорта
             let importedCharacter = Character(
                 name: character.name,
@@ -234,6 +264,18 @@ class CharacterManager: ObservableObject {
         }
     }
     
+    // Импорт персонажа из данных (Data)
+    func importCharacterFromData(_ data: Data) -> Character? {
+        guard let jsonString = String(data: data, encoding: .utf8) else { return nil }
+        return importCharacter(from: jsonString)
+    }
+    
+    // Импорт из внешнего формата (Data)
+    func importExternalCharacterFromData(_ data: Data) -> Character? {
+        guard let jsonString = String(data: data, encoding: .utf8) else { return nil }
+        return importExternalCharacter(from: jsonString)
+    }
+    
     // Импорт из внешнего формата (как в JSON файле)
     func importExternalCharacter(from jsonString: String) -> Character? {
         guard let data = jsonString.data(using: .utf8) else { return nil }
@@ -245,8 +287,18 @@ class CharacterManager: ObservableObject {
             let externalCharacter: ExternalCharacter = try decoder.decode(ExternalCharacter.self, from: data)
             
             // Парсим внутренние данные
-            guard let characterData = externalCharacter.data.data(using: String.Encoding.utf8) else { return nil }
-            let characterDataObj: ExternalCharacterData = try decoder.decode(ExternalCharacterData.self, from: characterData)
+            guard let characterData = externalCharacter.data.data(using: String.Encoding.utf8) else { 
+                print("Не удалось преобразовать data в UTF8")
+                return nil 
+            }
+            
+            let characterDataObj: ExternalCharacterData
+            do {
+                characterDataObj = try decoder.decode(ExternalCharacterData.self, from: characterData)
+            } catch {
+                print("Ошибка декодирования внутренних данных персонажа: \(error)")
+                return nil
+            }
             
             // Создаем персонаж из внешних данных
             let character = Character(

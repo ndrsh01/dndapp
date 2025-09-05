@@ -6,61 +6,40 @@ struct EditAbilityPopupView: View {
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 16) {
             Text(ability.displayName)
-                .font(.title2)
-                .fontWeight(.bold)
+                .font(.headline)
+                .fontWeight(.semibold)
             
-            HStack(spacing: 20) {
-                Button(action: {
-                    if value > 1 {
-                        value -= 1
-                    }
-                }) {
-                    Image(systemName: "minus.circle.fill")
-                        .font(.title)
-                        .foregroundColor(.red)
-                }
-                .disabled(value <= 1)
-                
-                Text("\(value)")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-                    .frame(minWidth: 60)
-                
-                Button(action: {
-                    if value < 30 {
-                        value += 1
-                    }
-                }) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.title)
-                        .foregroundColor(.green)
-                }
-                .disabled(value >= 30)
+            HStack {
+                TextField("", value: $value, format: .number)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .frame(width: 80)
+                    .multilineTextAlignment(.center)
+                    .keyboardType(.numberPad)
             }
             
             Text("Модификатор: \(abilityModifier)")
-                .font(.headline)
+                .font(.caption)
                 .foregroundColor(.secondary)
             
-            HStack(spacing: 20) {
+            HStack(spacing: 16) {
                 Button("Отмена") {
                     dismiss()
                 }
-                .foregroundColor(.secondary)
+                .buttonStyle(.bordered)
                 
-                Button("Готово") {
+                Button("Сохранить") {
                     dismiss()
                 }
-                .foregroundColor(.blue)
-                .fontWeight(.semibold)
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
             }
         }
-        .padding(30)
-        .background(Color.white)
-        .cornerRadius(20)
-        .shadow(radius: 10)
+        .padding(20)
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.1), radius: 8)
     }
     
     private var abilityModifier: String {

@@ -34,14 +34,13 @@ struct MainTabView: View {
                         Text("Заметки")
                     }
                 
-                CharacterTabView()
+                CharacterTabView(onCharacterContextMenu: {
+                        showCharacterContextMenu()
+                    })
                     .environmentObject(characterManager)
                     .tabItem {
                         Image(systemName: "person")
                         Text("Персонаж")
-                    }
-                    .onLongPressGesture {
-                        showCharacterContextMenu()
                     }
             }
             .accentColor(.orange)
@@ -127,14 +126,14 @@ struct MainTabView: View {
         })
         
         if characterManager.selectedCharacter != nil {
-            alert.addAction(UIAlertAction(title: "Редактировать персонажа", style: .default) { _ in
-                showingCharacterEdit = true
-            })
-            
             alert.addAction(UIAlertAction(title: "Выбрать другого", style: .default) { _ in
                 showingCharacterSelection = true
             })
         }
+        
+        alert.addAction(UIAlertAction(title: "Настройки", style: .default) { _ in
+            // TODO: Открыть настройки
+        })
         
         alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
         

@@ -20,8 +20,8 @@ struct CharacterEditView: View {
                     TextField("Раса", text: $character.race)
                     
                     Picker("Класс", selection: $character.characterClass) {
-                        ForEach(dataService.characterClasses, id: \.className) { characterClass in
-                            Text(characterClass.className).tag(characterClass.className)
+                        ForEach(dataService.dndClasses, id: \.nameRu) { dndClass in
+                            Text(dndClass.nameRu).tag(dndClass.nameRu)
                         }
                     }
                     
@@ -161,8 +161,8 @@ struct CharacterEditView: View {
     }
     
     private var availableSubclasses: [String] {
-        if let selectedClass = dataService.characterClasses.first(where: { $0.className == character.characterClass }) {
-            return selectedClass.subclasses ?? ["Нет подкласса"]
+        if let selectedClass = dataService.dndClasses.first(where: { $0.nameRu == character.characterClass }) {
+            return selectedClass.subclassNames
         }
         return ["Нет подкласса"]
     }

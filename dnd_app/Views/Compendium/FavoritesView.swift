@@ -38,6 +38,7 @@ struct FavoritesView: View {
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
+            .background(Color(UIColor.systemGroupedBackground))
             .navigationTitle("Избранное")
             .navigationBarTitleDisplayMode(.large)
         }

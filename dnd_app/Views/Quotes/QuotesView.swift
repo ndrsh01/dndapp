@@ -33,7 +33,17 @@ struct QuotesView: View {
                 Spacer()
                 
                 // Quote Card - большая карточка по центру
-                if let quote = viewModel.currentQuote {
+                if viewModel.availableCategories.isEmpty {
+                    // Показываем индикатор загрузки если данные еще не загружены
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                        Text("Загрузка цитат...")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else if let quote = viewModel.currentQuote {
                     VStack(spacing: 16) {
                         // Цитата НАД изображением - меньше ширина
                         Text(quote.text)

@@ -3,10 +3,8 @@ import SwiftUI
 struct BestiaryView: View {
     @StateObject private var dataService = DataService.shared
     @State private var searchText = ""
-    @State private var selectedType: MonsterType = .all
-    @State private var selectedSize: String? = nil
-    @State private var selectedAlignment: String? = nil
-    @State private var selectedChallengeRating: String? = nil
+    @State private var selectedTypes: Set<MonsterType> = []
+    @State private var selectedChallengeRatings: Set<String> = []
     @State private var showFilters = false
     @State private var expandedMonsters: Set<UUID> = []
 
@@ -19,53 +17,36 @@ struct BestiaryView: View {
             filtered = filtered.filter { monster in
                 let name = monster.name.lowercased()
                 let type = monster.type.lowercased()
-                let alignment = monster.alignment.lowercased()
 
                 return name.hasPrefix(searchQuery) || type.hasPrefix(searchQuery) ||
-                       alignment.hasPrefix(searchQuery) || name.contains(searchQuery) ||
-                       type.contains(searchQuery) || alignment.contains(searchQuery)
+                       name.contains(searchQuery) || type.contains(searchQuery)
             }
         }
 
         // Фильтр по типу
-        if selectedType != .all {
-            let typeString = selectedType.rawValue.lowercased()
+        if !selectedTypes.isEmpty {
             filtered = filtered.filter { monster in
-                monster.type.lowercased().contains(typeString)
+                selectedTypes.contains { type in
+                    if type == .all {
+                        return true
+                    } else {
+                        return monster.type.lowercased().contains(type.rawValue.lowercased())
+                    }
+                }
             }
         }
 
-        // Фильтр по размеру
-        if let size = selectedSize {
-            filtered = filtered.filter { $0.size == size }
-        }
-
-        // Фильтр по мировоззрению
-        if let alignment = selectedAlignment {
-            filtered = filtered.filter { $0.alignment == alignment }
-        }
-
         // Фильтр по рейтингу опасности
-        if let challengeRating = selectedChallengeRating {
-            filtered = filtered.filter { $0.challengeRating == challengeRating }
+        if !selectedChallengeRatings.isEmpty {
+            filtered = filtered.filter { monster in
+                guard let challengeRating = monster.challengeRating else { return false }
+                return selectedChallengeRatings.contains(challengeRating)
+            }
         }
 
         return filtered
     }
 
-    var availableSizes: [String] {
-        let sizes = dataService.monsters.map { $0.size }
-        let uniqueSizes = Set(sizes)
-        let arrayFromSizes = [String](uniqueSizes)
-        return arrayFromSizes.sorted()
-    }
-
-    var availableAlignments: [String] {
-        let alignments = dataService.monsters.map { $0.alignment }
-        let uniqueAlignments = Set(alignments)
-        let arrayFromAlignments = [String](uniqueAlignments)
-        return arrayFromAlignments.sorted()
-    }
 
     var availableChallengeRatings: [String] {
         let challengeRatings = dataService.monsters.compactMap { $0.challengeRating }
@@ -108,34 +89,20 @@ struct BestiaryView: View {
                 .padding(.bottom, 16)
 
             // Active Filters
-            if selectedType != .all || selectedSize != nil || selectedAlignment != nil || selectedChallengeRating != nil {
+            if !selectedTypes.isEmpty || !selectedChallengeRatings.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        if selectedType != .all {
+                        ForEach(Array(selectedTypes.filter { $0 != .all }), id: \.self) { type in
                             FilterTagView(
-                                text: selectedType.rawValue,
-                                onRemove: { selectedType = .all }
+                                text: type.rawValue,
+                                onRemove: { selectedTypes.remove(type) }
                             )
                         }
 
-                        if let size = selectedSize {
-                            FilterTagView(
-                                text: "Размер: \(size)",
-                                onRemove: { selectedSize = nil }
-                            )
-                        }
-
-                        if let alignment = selectedAlignment {
-                            FilterTagView(
-                                text: "Мировоззрение: \(alignment)",
-                                onRemove: { selectedAlignment = nil }
-                            )
-                        }
-
-                        if let challengeRating = selectedChallengeRating {
+                        ForEach(Array(selectedChallengeRatings), id: \.self) { challengeRating in
                             FilterTagView(
                                 text: "Класс опасности: \(challengeRating)",
-                                onRemove: { selectedChallengeRating = nil }
+                                onRemove: { selectedChallengeRatings.remove(challengeRating) }
                             )
                         }
                     }
@@ -198,12 +165,8 @@ struct BestiaryView: View {
         }
         .sheet(isPresented: $showFilters) {
             MonsterFiltersView(
-                selectedType: $selectedType,
-                selectedSize: $selectedSize,
-                selectedAlignment: $selectedAlignment,
-                selectedChallengeRating: $selectedChallengeRating,
-                availableSizes: availableSizes,
-                availableAlignments: availableAlignments,
+                selectedTypes: $selectedTypes,
+                selectedChallengeRatings: $selectedChallengeRatings,
                 availableChallengeRatings: availableChallengeRatings
             )
         }
@@ -519,21 +482,17 @@ struct ActionView: View {
 }
 
 struct MonsterFiltersView: View {
-    @Binding var selectedType: MonsterType
-    @Binding var selectedSize: String?
-    @Binding var selectedAlignment: String?
-    @Binding var selectedChallengeRating: String?
+    @Binding var selectedTypes: Set<MonsterType>
+    @Binding var selectedChallengeRatings: Set<String>
     @Environment(\.dismiss) private var dismiss
 
-    let availableSizes: [String]
-    let availableAlignments: [String]
     let availableChallengeRatings: [String]
 
     var body: some View {
         NavigationView {
             List {
                 Section("Тип монстра") {
-                    ForEach(MonsterType.allCases, id: \.self) { type in
+                    ForEach(MonsterType.allCases.filter { $0 != .all }, id: \.self) { type in
                         HStack {
                             Image(systemName: type.icon)
                                 .foregroundColor(.orange)
@@ -543,114 +502,47 @@ struct MonsterFiltersView: View {
 
                             Spacer()
 
-                            if selectedType == type {
+                            if selectedTypes.contains(type) {
                                 Image(systemName: "checkmark")
                                     .foregroundColor(.orange)
                             }
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            selectedType = type
-                        }
-                    }
-                }
-
-                Section("Размер") {
-                    HStack {
-                        Text("Все размеры")
-                        Spacer()
-                        if selectedSize == nil {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.orange)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedSize = nil
-                    }
-
-                    ForEach(availableSizes, id: \.self) { size in
-                        HStack {
-                            Text(size)
-                            Spacer()
-                            if selectedSize == size {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.orange)
+                            if selectedTypes.contains(type) {
+                                selectedTypes.remove(type)
+                            } else {
+                                selectedTypes.insert(type)
                             }
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            selectedSize = size
-                        }
-                    }
-                }
-
-                Section("Мировоззрение") {
-                    HStack {
-                        Text("Все мировоззрения")
-                        Spacer()
-                        if selectedAlignment == nil {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.orange)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedAlignment = nil
-                    }
-
-                    ForEach(availableAlignments, id: \.self) { alignment in
-                        HStack {
-                            Text(alignment)
-                            Spacer()
-                            if selectedAlignment == alignment {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.orange)
-                            }
-                        }
-                        .contentShape(Rectangle())
-                        .onTapGesture {
-                            selectedAlignment = alignment
                         }
                     }
                 }
 
                 Section("Класс опасности") {
-                    HStack {
-                        Text("Все классы опасности")
-                        Spacer()
-                        if selectedChallengeRating == nil {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.orange)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        selectedChallengeRating = nil
-                    }
-
                     ForEach(availableChallengeRatings, id: \.self) { challengeRating in
                         HStack {
                             Text(challengeRating)
                             Spacer()
-                            if selectedChallengeRating == challengeRating {
+                            if selectedChallengeRatings.contains(challengeRating) {
                                 Image(systemName: "checkmark")
                                     .foregroundColor(.orange)
                             }
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            selectedChallengeRating = challengeRating
+                            if selectedChallengeRatings.contains(challengeRating) {
+                                selectedChallengeRatings.remove(challengeRating)
+                            } else {
+                                selectedChallengeRatings.insert(challengeRating)
+                            }
                         }
                     }
                 }
 
                 Section {
                     Button("Сбросить все фильтры") {
-                        selectedType = .all
-                        selectedSize = nil
-                        selectedAlignment = nil
-                        selectedChallengeRating = nil
+                        selectedTypes.removeAll()
+                        selectedChallengeRatings.removeAll()
                     }
                     .foregroundColor(.red)
                 }

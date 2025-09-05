@@ -62,6 +62,7 @@
 		27BFB5F82E6AF82A00149C08 /* EditAbilityPopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27BFB5F62E6AF82A00149C08 /* EditAbilityPopupView.swift */; };
 		27BFB5FA2E6AF85300149C08 /* EditHitPointsPopupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27BFB5F92E6AF85200149C08 /* EditHitPointsPopupView.swift */; };
 		27BFB5FC2E6AF85300149C08 /* ExternalCharacterFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27BFB5FB2E6AF85300149C08 /* ExternalCharacterFormat.swift */; };
+		27DD686A2E6B522500621182 /* ImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27DD68692E6B522500621182 /* ImagePicker.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -121,6 +122,7 @@
 		27BFB5F62E6AF82A00149C08 /* EditAbilityPopupView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EditAbilityPopupView.swift; sourceTree = "<group>"; };
 		27BFB5F92E6AF85200149C08 /* EditHitPointsPopupView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = EditHitPointsPopupView.swift; sourceTree = "<group>"; };
 		27BFB5FB2E6AF85300149C08 /* ExternalCharacterFormat.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExternalCharacterFormat.swift; sourceTree = "<group>"; };
+		27DD68692E6B522500621182 /* ImagePicker.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImagePicker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -217,6 +219,7 @@
 			isa = PBXGroup;
 			children = (
 				27AF9DDA2E696FB7006311EC /* SharedComponents.swift */,
+				27DD68692E6B522500621182 /* ImagePicker.swift */,
 				27AF9DDB2E696FB7006311EC /* ContextMenuView.swift */,
 			);
 			path = Components;
@@ -423,6 +426,7 @@
 				27BFB5E62E6AE7C900149C08 /* CharacterTabView.swift in Sources */,
 				27AF9DFB2E696FB7006311EC /* QuotesViewModel.swift in Sources */,
 				27AF9E192E696FB7006311EC /* NotesView.swift in Sources */,
+				27DD686A2E6B522500621182 /* ImagePicker.swift in Sources */,
 				27AF9E252E6998F6006311EC /* SpellsView.swift in Sources */,
 				27AF9E062E696FB7006311EC /* Quote.swift in Sources */,
 				27AF9E092E696FB7006311EC /* Spell.swift in Sources */,

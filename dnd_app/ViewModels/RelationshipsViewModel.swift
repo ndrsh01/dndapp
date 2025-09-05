@@ -46,11 +46,11 @@ class RelationshipsViewModel: ObservableObject {
         var updatedRelationship = relationship
         switch type {
         case .enemy:
-            updatedRelationship.relationshipLevel = 1
+            updatedRelationship.relationshipLevel = 1 // Уровень для врага
         case .neutral:
-            updatedRelationship.relationshipLevel = 0
+            updatedRelationship.relationshipLevel = 5 // Уровень для нейтрала
         case .friend:
-            updatedRelationship.relationshipLevel = 2
+            updatedRelationship.relationshipLevel = 6 // Минимальный уровень для друга
         }
         updatedRelationship.dateModified = Date()
         updateRelationship(updatedRelationship)

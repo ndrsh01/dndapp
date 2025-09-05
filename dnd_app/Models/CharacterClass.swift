@@ -1,12 +1,134 @@
 import Foundation
 
-struct CharacterClass: Codable, Identifiable {
+// Новая модель для classes.json
+struct DnDClass: Codable, Identifiable {
+    let id = UUID()
+    let nameRu: String
+    let nameEn: String
+    let hitDice: String
+    let proficiencies: Proficiencies
+    let equipment: Equipment
+    let levelProgression: [LevelProgression]
+    let subclasses: [DnDSubclass]
+    
+    enum CodingKeys: String, CodingKey {
+        case nameRu = "name_ru"
+        case nameEn = "name_en"
+        case hitDice = "hit_dice"
+        case proficiencies
+        case equipment
+        case levelProgression = "level_progression"
+        case subclasses
+    }
+    
+    // Получаем названия подклассов
+    var subclassNames: [String] {
+        return subclasses.map { $0.nameRu }
+    }
+}
+
+struct Proficiencies: Codable {
+    let savingThrows: [String]
+    let skills: String
+    let weapons: [String]
+    let armor: [String]
+    
+    enum CodingKeys: String, CodingKey {
+        case savingThrows = "saving_throws"
+        case skills
+        case weapons
+        case armor
+    }
+}
+
+struct Equipment: Codable {
+    let optionA: [String]
+    let optionB: [String]
+    
+    enum CodingKeys: String, CodingKey {
+        case optionA = "option_a"
+        case optionB = "option_b"
+    }
+}
+
+struct LevelProgression: Codable {
+    let level: Int
+    let proficiencyBonus: String
+    let features: [ClassFeature]?
+    
+    // Дополнительные поля для разных классов (опциональные)
+    let rages: Int?
+    let rageDamage: String?
+    let weaponMastery: Int?
+    let spellSlots: SpellSlots?
+    
+    enum CodingKeys: String, CodingKey {
+        case level
+        case proficiencyBonus = "proficiency_bonus"
+        case features
+        case rages
+        case rageDamage = "rage_damage"
+        case weaponMastery = "weapon_mastery"
+        case spellSlots = "spell_slots"
+    }
+}
+
+struct SpellSlots: Codable {
+    let cantripsKnown: Int?
+    let spellsKnown: Int?
+    let firstLevel: Int?
+    let secondLevel: Int?
+    let thirdLevel: Int?
+    let fourthLevel: Int?
+    let fifthLevel: Int?
+    let sixthLevel: Int?
+    let seventhLevel: Int?
+    let eighthLevel: Int?
+    let ninthLevel: Int?
+    
+    enum CodingKeys: String, CodingKey {
+        case cantripsKnown = "cantrips_known"
+        case spellsKnown = "spells_known"
+        case firstLevel = "1st_level"
+        case secondLevel = "2nd_level"
+        case thirdLevel = "3rd_level"
+        case fourthLevel = "4th_level"
+        case fifthLevel = "5th_level"
+        case sixthLevel = "6th_level"
+        case seventhLevel = "7th_level"
+        case eighthLevel = "8th_level"
+        case ninthLevel = "9th_level"
+    }
+}
+
+struct ClassFeature: Codable {
+    let name: String
+    let description: String
+}
+
+struct DnDSubclass: Codable, Identifiable {
+    let id = UUID()
+    let nameRu: String
+    let nameEn: String
+    
+    enum CodingKeys: String, CodingKey {
+        case nameRu = "name_ru"
+        case nameEn = "name_en"
+    }
+}
+
+struct DnDClassesData: Codable {
+    let classes: [DnDClass]
+}
+
+// Модель для class_tables.json
+struct ClassTable: Codable, Identifiable {
     let id = UUID()
     let className: String
     let slug: String
     let sourceUrl: String
     let columns: [String]
-    let rows: [ClassLevel]
+    let rows: [ClassTableRow]
     
     enum CodingKeys: String, CodingKey {
         case className = "class"
@@ -15,46 +137,13 @@ struct CharacterClass: Codable, Identifiable {
         case columns
         case rows
     }
-    
-    // Получаем подклассы для данного класса
-    var subclasses: [String] {
-        // Пока возвращаем базовые подклассы, позже можно расширить
-        switch className.lowercased() {
-        case "варвар":
-            return ["Путь берсерка", "Путь тотема"]
-        case "бард":
-            return ["Колледж знаний", "Колледж доблести"]
-        case "жрец":
-            return ["Домен жизни", "Домен войны"]
-        case "друид":
-            return ["Круг луны", "Круг земли"]
-        case "воин":
-            return ["Боевой мастер", "Чемпион"]
-        case "монах":
-            return ["Путь тени", "Путь четырех стихий"]
-        case "паладин":
-            return ["Клятва преданности", "Клятва древних"]
-        case "следопыт":
-            return ["Звериный товарищ", "Охотник"]
-        case "плут":
-            return ["Вор", "Убийца"]
-        case "чародей":
-            return ["Дикая магия", "Божественная душа"]
-        case "колдун":
-            return ["Великий древний", "Небесный покровитель"]
-        case "волшебник":
-            return ["Школа иллюзий", "Школа некромантии"]
-        default:
-            return ["Нет подкласса"]
-        }
-    }
 }
 
-struct ClassLevel: Codable {
+struct ClassTableRow: Codable {
     let level: String
     let proficiencyBonus: String
     let classFeatures: String
-    let specialFeatures: [String: String]
+    let additionalData: [String: String] // Для всех остальных колонок
     
     enum CodingKeys: String, CodingKey {
         case level = "Уровень"
@@ -68,19 +157,41 @@ struct ClassLevel: Codable {
         proficiencyBonus = try container.decode(String.self, forKey: .proficiencyBonus)
         classFeatures = try container.decode(String.self, forKey: .classFeatures)
         
-        // Остальные поля динамически
-        var specialFeatures: [String: String] = [:]
-        let allKeys = container.allKeys
-        for key in allKeys {
-            if key != .level && key != .proficiencyBonus && key != .classFeatures {
-                if let value = try? container.decode(String.self, forKey: key) {
-                    specialFeatures[key.stringValue] = value
+        // Декодируем все остальные поля в additionalData
+        let dynamicContainer = try decoder.container(keyedBy: DynamicCodingKey.self)
+        var additionalData: [String: String] = [:]
+        
+        for key in dynamicContainer.allKeys {
+            if key.stringValue != "Уровень" && 
+               key.stringValue != "Бонус владения" && 
+               key.stringValue != "Классовые умения" {
+                if let value = try? dynamicContainer.decode(String.self, forKey: key) {
+                    additionalData[key.stringValue] = value
                 }
             }
         }
-        self.specialFeatures = specialFeatures
+        
+        self.additionalData = additionalData
     }
 }
+
+struct DynamicCodingKey: CodingKey {
+    var stringValue: String
+    var intValue: Int?
+    
+    init?(stringValue: String) {
+        self.stringValue = stringValue
+        self.intValue = nil
+    }
+    
+    init?(intValue: Int) {
+        self.stringValue = String(intValue)
+        self.intValue = intValue
+    }
+}
+
+typealias ClassTablesData = [ClassTable]
+
 
 // Расширение для работы с мировоззрениями
 extension Character {
@@ -109,4 +220,6 @@ extension Character {
         }
     }
 }
+
+
 

@@ -10,7 +10,7 @@ struct CardView<Content: View>: View {
     
     var body: some View {
         content
-            .background(Color.white)
+            .background(Color(red: 0.95, green: 0.94, blue: 0.92))
             .cornerRadius(12)
             .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
     }
