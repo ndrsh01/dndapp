@@ -30,7 +30,8 @@ class DataService: ObservableObject {
     @Published var monsters: [Monster] = []
     @Published var relationships: [Relationship] = []
     @Published var notes: [Note] = []
-    @Published var characters: [DnDCharacter] = []
+    @Published var characters: [Character] = []
+    @Published var characterClasses: [CharacterClass] = []
     
     // MARK: - Private Properties
     private var cancellables = Set<AnyCancellable>()
@@ -49,22 +50,29 @@ class DataService: ObservableObject {
     private init() {
         loadPersistedData()
         loadData()
+        // Убеждаемся что цитаты загружены синхронно при старте
+        loadQuotesSynchronously()
+        // Убеждаемся что монстры загружены синхронно при старте
+        loadMonstersSynchronously()
     }
     
     // MARK: - Data Loading
     private func loadData() {
         // Сначала пробуем загрузить из кэша синхронно
         loadQuotesFromCache()
+        loadCustomQuotesData() // Загружаем пользовательские цитаты
         loadSpellsFromCache()
         loadFeatsFromCache()
         loadBackgroundsFromCache()
-        
+        loadMonstersFromCache()
+
         // Затем обновляем асинхронно
         Task {
             await loadQuotes()
             await loadSpells()
             await loadFeats()
             await loadBackgrounds()
+            await loadMonsters()
         }
     }
     
@@ -72,6 +80,149 @@ class DataService: ObservableObject {
     private func loadQuotesFromCache() {
         if let cachedQuotes = cacheManager.get(QuotesData.self, forKey: .quotes) {
             self.quotes = cachedQuotes
+        }
+    }
+
+    private func loadQuotesSynchronously() {
+        // Если данные уже загружены из кэша, используем их
+        if quotes != nil {
+            return
+        }
+
+        // Загружаем из bundle синхронно
+        if let url = Bundle.main.url(forResource: "quotes", withExtension: "json"),
+           let data = try? Data(contentsOf: url),
+           let quotesData = try? JSONDecoder().decode(QuotesData.self, from: data) {
+            self.quotes = quotesData
+            print("Quotes loaded synchronously from bundle")
+        } else {
+            print("Failed to load quotes synchronously from bundle")
+        }
+
+        // Загружаем пользовательские цитаты
+        loadCustomQuotesData()
+    }
+
+    private func loadMonstersSynchronously() {
+        print("=== STARTING MONSTER LOADING ===")
+
+        // Если данные уже загружены, выходим
+        if !monsters.isEmpty {
+            print("Monsters already loaded: \(monsters.count) monsters")
+            return
+        }
+
+        // Проверяем bundle
+        print("Bundle path: \(Bundle.main.bundlePath)")
+        print("Resource path: \(Bundle.main.resourcePath ?? "nil")")
+
+        // Загружаем из bundle
+        var url: URL?
+
+        // Сначала пробуем найти в bundle
+        url = Bundle.main.url(forResource: "bestiary_5e", withExtension: "ndjson")
+
+        // Если не нашли в bundle, пробуем найти в исходной директории проекта
+        if url == nil {
+            print("Trying to find bestiary file in project directory...")
+            let projectPath = "/Users/alexanderaferenok/Documents/GitHub/dnd_app/dnd_app/Sources/Resources/bestiary_5e.ndjson"
+            if FileManager.default.fileExists(atPath: projectPath) {
+                url = URL(fileURLWithPath: projectPath)
+                print("Found bestiary file in project directory: \(projectPath)")
+            }
+        }
+
+        guard let finalUrl = url else {
+            print("ERROR: bestiary_5e.ndjson not found in bundle or project directory")
+            // Попробуем найти все доступные ресурсы
+            if let resourcePath = Bundle.main.resourcePath {
+                do {
+                    let contents = try FileManager.default.contentsOfDirectory(atPath: resourcePath)
+                    print("Available resources: \(contents.filter { $0.contains("bestiary") || $0.contains("json") || $0.contains("ndjson") })")
+                } catch {
+                    print("ERROR: Cannot list bundle contents: \(error)")
+                }
+            }
+            return
+        }
+
+        print("Found bestiary file at: \(finalUrl.path)")
+
+        guard let data = try? Data(contentsOf: finalUrl) else {
+            print("ERROR: Cannot read data from bestiary_5e.ndjson")
+            return
+        }
+
+        print("File found, data size: \(data.count) bytes")
+
+        // Парсим NDJSON
+        guard let content = String(data: data, encoding: .utf8) else {
+            print("ERROR: Cannot convert data to string")
+            return
+        }
+
+        let lines = content.components(separatedBy: .newlines)
+        print("Total lines in file: \(lines.count)")
+
+        var monsters: [Monster] = []
+        var successfulParses = 0
+        var parseErrors = 0
+
+        let decoder = JSONDecoder()
+
+        for (index, line) in lines.enumerated() {
+            let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+
+            // Пропускаем пустые строки
+            if trimmedLine.isEmpty {
+                continue
+            }
+
+            guard let lineData = trimmedLine.data(using: .utf8) else {
+                parseErrors += 1
+                if parseErrors <= 3 {
+                    print("ERROR: Cannot convert line \(index) to data")
+                }
+                continue
+            }
+
+            do {
+                let monster = try decoder.decode(Monster.self, from: lineData)
+                monsters.append(monster)
+                successfulParses += 1
+
+                if successfulParses <= 5 {
+                    print("✓ Successfully parsed monster: \(monster.name)")
+                }
+            } catch {
+                parseErrors += 1
+                if parseErrors <= 5 {
+                    print("✗ Failed to parse monster at line \(index): \(error.localizedDescription)")
+                    if index < 10 {
+                        print("   Problematic line: \(trimmedLine.prefix(100))...")
+                    }
+                }
+            }
+        }
+
+        // Сортируем по имени
+        monsters.sort { $0.name < $1.name }
+
+        // Сохраняем результат
+        self.monsters = monsters
+
+        print("=== MONSTER LOADING COMPLETE ===")
+        print("Successfully loaded: \(successfulParses) monsters")
+        print("Parse errors: \(parseErrors)")
+        print("Total monsters in array: \(monsters.count)")
+
+        if monsters.isEmpty {
+            print("WARNING: No monsters were loaded!")
+        } else {
+            print("Sample monsters:")
+            for i in 0..<min(3, monsters.count) {
+                print("  - \(monsters[i].name)")
+            }
         }
     }
     
@@ -92,7 +243,16 @@ class DataService: ObservableObject {
             self.backgrounds = cachedBackgrounds
         }
     }
-    
+
+    private func loadMonstersFromCache() {
+        if let cachedMonsters = cacheManager.get([Monster].self, forKey: .monsters) {
+            self.monsters = cachedMonsters
+            print("Loaded \(cachedMonsters.count) monsters from cache")
+        } else {
+            print("No cached monsters found")
+        }
+    }
+
     func loadQuotes() async {
         do {
             let quotesData = try await cacheManager.loadWithCache(
@@ -108,6 +268,8 @@ class DataService: ObservableObject {
             
             await MainActor.run {
                 self.quotes = quotesData
+                // После загрузки стандартных цитат, загружаем пользовательские
+                self.loadCustomQuotesData()
             }
         } catch {
             print("Failed to load quotes: \(error)")
@@ -178,40 +340,163 @@ class DataService: ObservableObject {
     }
     
     func loadMonsters() async {
+        // Если монстры уже загружены, не загружаем снова
+        if !monsters.isEmpty {
+            print("Monsters already loaded (\(monsters.count)), skipping async load")
+            return
+        }
+
         do {
+            print("=== STARTING MONSTERS LOAD ===")
+            print("Current monsters count: \(monsters.count)")
             let monstersData = try await cacheManager.loadWithCache(
                 [Monster].self,
                 forKey: .monsters
             ) {
-                guard let url = Bundle.main.url(forResource: "bestiary_5e", withExtension: "ndjson"),
-                      let data = try? Data(contentsOf: url) else {
-                    throw DataServiceError.fileNotFound("bestiary_5e.ndjson")
-                }
-                
-                // Парсим NDJSON
-                let lines = String(data: data, encoding: .utf8)?.components(separatedBy: .newlines) ?? []
-                var monsters: [Monster] = []
-                
-                for line in lines {
-                    guard !line.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                          let lineData = line.data(using: .utf8) else { continue }
-                    
-                    do {
-                        let monster = try JSONDecoder().decode(Monster.self, from: lineData)
-                        monsters.append(monster)
-                    } catch {
-                        print("Failed to decode monster: \(error)")
+                print("Loading monsters from file async...")
+                print("Bundle path: \(Bundle.main.bundlePath)")
+                print("Resource path: \(Bundle.main.resourcePath ?? "nil")")
+
+                var url: URL?
+
+                // Сначала пробуем найти в bundle
+                url = Bundle.main.url(forResource: "bestiary_5e", withExtension: "ndjson")
+                if url != nil {
+                    print("Found bestiary file in bundle: \(url!.path)")
+                } else {
+                    print("Bestiary file NOT found in bundle")
+                    // Показываем все доступные ресурсы в bundle
+                    if let resourcePath = Bundle.main.resourcePath {
+                        do {
+                            let contents = try FileManager.default.contentsOfDirectory(atPath: resourcePath)
+                            print("Available resources in bundle (\(contents.count) files):")
+                            let jsonFiles = contents.filter { $0.contains("json") || $0.contains("ndjson") }
+                            print("JSON/NDJSON files: \(jsonFiles)")
+                        } catch {
+                            print("ERROR: Cannot list bundle contents: \(error)")
+                        }
+                    } else {
+                        print("ERROR: Bundle has no resource path")
                     }
                 }
-                
-                return monsters
+
+                // Если не нашли в bundle, пробуем найти в исходной директории проекта
+                if url == nil {
+                    print("Trying to find bestiary file in project directory...")
+
+                    // Сначала пробуем маленький тестовый файл
+                    let testPath = "/Users/alexanderaferenok/Documents/GitHub/dnd_app/test_first_3_monsters.ndjson"
+                    if FileManager.default.fileExists(atPath: testPath) {
+                        url = URL(fileURLWithPath: testPath)
+                        print("Using small test file: \(testPath)")
+                    } else {
+                        // Если тестового файла нет, используем полный файл
+                        let projectPath = "/Users/alexanderaferenok/Documents/GitHub/dnd_app/dnd_app/Sources/Resources/bestiary_5e.ndjson"
+                        if FileManager.default.fileExists(atPath: projectPath) {
+                            url = URL(fileURLWithPath: projectPath)
+                            print("Found bestiary file in project directory: \(projectPath)")
+                        } else {
+                            print("Bestiary file NOT found in project directory: \(projectPath)")
+                        }
+                    }
+                }
+
+                guard let finalUrl = url else {
+                    print("ERROR: bestiary_5e.ndjson not found in bundle or project directory")
+                    throw DataServiceError.fileNotFound("bestiary_5e.ndjson")
+                }
+
+                print("Found bestiary file at: \(finalUrl.path)")
+
+                guard let data = try? Data(contentsOf: finalUrl) else {
+                    print("Failed to read data from bestiary_5e.ndjson")
+                    throw DataServiceError.fileNotFound("bestiary_5e.ndjson")
+                }
+
+                print("File found, data size: \(data.count) bytes")
+
+                // Парсим NDJSON
+                guard let content = String(data: data, encoding: .utf8) else {
+                    print("ERROR: Cannot convert data to string")
+                    throw DataServiceError.decodingError("Cannot convert data to string")
+                }
+
+                let lines = content.components(separatedBy: .newlines)
+                print("Total lines in file: \(lines.count)")
+                var monsters: [Monster] = []
+                var successfulParses = 0
+                var parseErrors = 0
+
+                let decoder = JSONDecoder()
+
+                print("Starting to parse \(lines.count) lines...")
+
+                for (index, line) in lines.enumerated() {
+                    let trimmedLine = line.trimmingCharacters(in: .whitespacesAndNewlines)
+
+                    // Пропускаем пустые строки
+                    if trimmedLine.isEmpty {
+                        continue
+                    }
+
+                    // Проверяем, что строка начинается с '{'
+                    if !trimmedLine.hasPrefix("{") {
+                        parseErrors += 1
+                        if parseErrors <= 3 {
+                            print("ERROR: Line \(index) doesn't start with '{': \(trimmedLine.prefix(50))...")
+                        }
+                        continue
+                    }
+
+                    guard let lineData = trimmedLine.data(using: .utf8) else {
+                        parseErrors += 1
+                        if parseErrors <= 3 {
+                            print("ERROR: Cannot convert line \(index) to data")
+                        }
+                        continue
+                    }
+
+                    do {
+                        let monster = try decoder.decode(Monster.self, from: lineData)
+                        monsters.append(monster)
+                        successfulParses += 1
+
+                        if successfulParses <= 5 {
+                            print("✓ Successfully parsed monster \(successfulParses): \(monster.name)")
+                        }
+                    } catch {
+                        parseErrors += 1
+                        print("✗ Failed to decode monster at line \(index): \(error.localizedDescription)")
+                        if parseErrors <= 3 {
+                            print("   Problematic JSON: \(trimmedLine.prefix(200))...")
+                        }
+                        if parseErrors >= 10 {
+                            print("Too many parse errors (\(parseErrors)), stopping...")
+                            break
+                        }
+                    }
+                }
+
+                print("Successfully parsed \(successfulParses) monsters, \(parseErrors) parse errors")
+                print("Total monsters in array: \(monsters.count)")
+                return monsters.sorted { $0.name < $1.name }
             }
-            
+
             await MainActor.run {
-                self.monsters = monstersData
+                // Не перезаписываем, если уже есть данные
+                if monstersData.isEmpty && !self.monsters.isEmpty {
+                    print("Async load returned empty array, keeping existing \(self.monsters.count) monsters")
+                } else {
+                    self.monsters = monstersData
+                    print("Loaded \(monstersData.count) monsters from async load")
+                }
             }
         } catch {
             print("Failed to load monsters: \(error)")
+            // Если загрузка не удалась, но у нас уже есть данные, оставляем их
+            if !self.monsters.isEmpty {
+                print("Keeping existing \(self.monsters.count) monsters after load failure")
+            }
         }
     }
     
@@ -220,6 +505,11 @@ class DataService: ObservableObject {
         loadRelationships()
         loadNotes()
         loadCharacters()
+<<<<<<< Updated upstream
+=======
+        loadCharacterClasses()
+        loadCustomQuotesData()
+>>>>>>> Stashed changes
     }
     
     // MARK: - Cache Management
@@ -235,7 +525,7 @@ class DataService: ObservableObject {
         Task {
             // Очищаем кэш и перезагружаем данные
             cacheManager.clearAll()
-            await loadData()
+            loadData()
         }
     }
     
@@ -256,10 +546,53 @@ class DataService: ObservableObject {
     
     private func loadCharacters() {
         if let data = userDefaults.data(forKey: Keys.characters),
-           let characters = try? JSONDecoder().decode([DnDCharacter].self, from: data) {
+           let characters = try? JSONDecoder().decode([Character].self, from: data) {
             self.characters = characters
         }
     }
+<<<<<<< Updated upstream
+=======
+    
+    private func loadCharacterClasses() {
+        guard let url = Bundle.main.url(forResource: "class_tables", withExtension: "json") else {
+            print("class_tables.json not found in bundle")
+            return
+        }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            let classes = try JSONDecoder().decode([CharacterClass].self, from: data)
+            self.characterClasses = classes
+            print("Loaded \(classes.count) character classes")
+        } catch {
+            print("Error loading character classes: \(error)")
+        }
+    }
+
+    private func loadCustomQuotesData() {
+        let key = "custom_quotes_data"
+        if let data = userDefaults.data(forKey: key),
+           let customQuotesData = try? JSONDecoder().decode(QuotesData.self, from: data) {
+            // Если есть сохраненные пользовательские данные, объединяем их с данными из bundle
+            if let existingQuotesData = self.quotes {
+                // Создаем новую структуру с объединенными категориями
+                var mergedCategories = existingQuotesData.categories
+                // Объединяем категории: пользовательские категории заменяют встроенные
+                for (category, quotes) in customQuotesData.categories {
+                    mergedCategories[category] = quotes
+                    print("Loaded custom category: \(category) with \(quotes.count) quotes")
+                }
+                self.quotes = QuotesData(categories: mergedCategories)
+            } else {
+                // Если встроенных данных нет, используем пользовательские
+                self.quotes = customQuotesData
+            }
+            print("Custom quotes data loaded from UserDefaults - \(customQuotesData.categories.count) categories")
+        } else {
+            print("No custom quotes data found in UserDefaults")
+        }
+    }
+>>>>>>> Stashed changes
     
     private func saveRelationships() {
         if let data = try? JSONEncoder().encode(relationships) {
@@ -340,24 +673,24 @@ class DataService: ObservableObject {
     }
     
     // MARK: - Characters
-    func addCharacter(_ character: DnDCharacter) {
+    func addCharacter(_ character: Character) {
         characters.append(character)
         saveCharacters()
     }
     
-    func updateCharacter(_ character: DnDCharacter) {
+    func updateCharacter(_ character: Character) {
         if let index = characters.firstIndex(where: { $0.id == character.id }) {
             characters[index] = character
             saveCharacters()
         }
     }
     
-    func deleteCharacter(_ character: DnDCharacter) {
+    func deleteCharacter(_ character: Character) {
         characters.removeAll { $0.id == character.id }
         saveCharacters()
     }
     
-    func duplicateCharacter(_ character: DnDCharacter) {
+    func duplicateCharacter(_ character: Character) {
         var newCharacter = character
         newCharacter.name = "\(character.name) (копия)"
         newCharacter.dateCreated = Date()
@@ -385,7 +718,7 @@ class DataService: ObservableObject {
     }
     
     // MARK: - Session Management
-    func getSelectedCharacter() -> DnDCharacter? {
+    func getSelectedCharacter() -> Character? {
         guard let characterId = userDefaults.string(forKey: Keys.selectedCharacter),
               let character = characters.first(where: { $0.id.uuidString == characterId }) else {
             return characters.first
@@ -393,7 +726,7 @@ class DataService: ObservableObject {
         return character
     }
     
-    func setSelectedCharacter(_ character: DnDCharacter) {
+    func setSelectedCharacter(_ character: Character) {
         userDefaults.set(character.id.uuidString, forKey: Keys.selectedCharacter)
     }
     

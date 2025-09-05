@@ -1,468 +1,340 @@
 import SwiftUI
 
 struct CharacterView: View {
-    @StateObject private var viewModel = CharacterViewModel()
-    @State private var showCharacterSelection = false
-    @State private var showAddCharacter = false
-    @State private var editingCharacter: DnDCharacter?
+    @StateObject private var viewModel: CharacterViewModel
+    @State private var showingEditHitPoints = false
+    @State private var showingEditAbility = false
+    @State private var showingEditCombatStat = false
+    @State private var selectedAbility: AbilityScore?
+    @State private var selectedCombatStat: CombatStat?
+    @State private var hitPointsType: EditHitPointsPopupView.HitPointsType = .current
     
-    var body: some View {
-        NavigationView {
-            VStack {
-                if let character = viewModel.selectedCharacter {
-                    CharacterSheetView(character: character) { updatedCharacter in
-                        viewModel.updateCharacter(updatedCharacter)
-                    }
-                } else {
-                    EmptyStateView(
-                        icon: "person",
-                        title: "Нет персонажа",
-                        description: "Создайте или импортируйте персонажа для начала игры",
-                        actionTitle: "Создать персонажа",
-                        action: {
-                            showAddCharacter = true
-                        }
-                    )
-                }
-            }
-            .background(Color(red: 0.98, green: 0.97, blue: 0.95))
-            .navigationTitle("Персонаж")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button(action: {
-                        showCharacterSelection = true
-                    }) {
-                        Image(systemName: "person.2")
-                            .foregroundColor(.orange)
-                    }
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button("Создать персонажа") {
-                            showAddCharacter = true
-                        }
-                        
-                        Button("Импорт персонажа") {
-                            // TODO: Implement character import
-                        }
-                        
-                        if viewModel.selectedCharacter != nil {
-                            Button("Экспорт персонажа") {
-                                // TODO: Implement character export
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .foregroundColor(.orange)
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showCharacterSelection) {
-            CharacterSelectionView(
-                characters: viewModel.characters,
-                selectedCharacter: viewModel.selectedCharacter
-            ) { character in
-                viewModel.selectCharacter(character)
-            }
-        }
-        .sheet(isPresented: $showAddCharacter) {
-            AddCharacterView { character in
-                viewModel.addCharacter(character)
-            }
-        }
-        .sheet(item: $editingCharacter) { character in
-            EditCharacterView(character: character) { updatedCharacter in
-                viewModel.updateCharacter(updatedCharacter)
-            }
-        }
+    let onCharacterUpdate: ((Character) -> Void)?
+    
+    init(character: Character, onCharacterUpdate: ((Character) -> Void)? = nil) {
+        self._viewModel = StateObject(wrappedValue: CharacterViewModel(character: character))
+        self.onCharacterUpdate = onCharacterUpdate
     }
-}
-
-struct CharacterSheetView: View {
-    let character: DnDCharacter
-    let onUpdate: (DnDCharacter) -> Void
-    @State private var showEditView = false
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                // Character Header
-                CharacterHeaderView(character: character)
+            VStack(spacing: 16) {
+                // Заголовок персонажа
+                EditableCharacterHeader(character: $viewModel.character)
+                    .environmentObject(DataService.shared)
                 
-                // Health Section
-                HealthSectionView(character: character) { updatedCharacter in
-                    onUpdate(updatedCharacter)
-                }
+                // Хиты
+                hitPointsSection
                 
-                // Main Stats
-                MainStatsView(character: character) { updatedCharacter in
-                    onUpdate(updatedCharacter)
-                }
+                // Основные характеристики
+                abilityScoresSection
                 
-                // Combat Stats
-                CombatStatsView(character: character) { updatedCharacter in
-                    onUpdate(updatedCharacter)
-                }
+                // Боевые характеристики
+                combatStatsSection
                 
-                // Skills
-                SkillsView(character: character) { updatedCharacter in
-                    onUpdate(updatedCharacter)
-                }
-                
-                // Weapons
-                WeaponsView(character: character) { updatedCharacter in
-                    onUpdate(updatedCharacter)
-                }
+                // Детальная информация
+                detailedInfoSection
             }
-            .padding(.horizontal, 16)
+            .padding()
         }
-        .toolbar {
-            ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Редактировать") {
-                    showEditView = true
-                }
-            }
-        }
-        .sheet(isPresented: $showEditView) {
-            EditCharacterView(character: character) { updatedCharacter in
-                onUpdate(updatedCharacter)
-            }
-        }
-    }
-}
-
-struct CharacterHeaderView: View {
-    let character: DnDCharacter
-    
-    var body: some View {
-        CardView {
-            HStack {
-                // Character Avatar
-                Circle()
-                    .fill(Color.orange.opacity(0.3))
-                    .frame(width: 60, height: 60)
-                    .overlay(
-                        Image(systemName: "person.fill")
-                            .font(.title)
-                            .foregroundColor(.orange)
+        .navigationTitle("Персонаж")
+        .navigationBarTitleDisplayMode(.inline)
+        .overlay(
+            ZStack {
+                if showingEditHitPoints {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            showingEditHitPoints = false
+                        }
+                    
+                    EditHitPointsPopupView(
+                        currentHitPoints: $viewModel.character.hitPoints,
+                        maxHitPoints: $viewModel.character.maxHitPoints,
+                        hitPointsType: hitPointsType
                     )
-                
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(character.name)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    Text(character.info.race)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    HStack {
-                        Text("Уровень \(character.info.level)")
-                            .font(.caption)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color.orange.opacity(0.2))
-                            .cornerRadius(8)
-                        
-                        Text(character.info.charClass)
-                            .font(.caption)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color.blue.opacity(0.2))
-                            .cornerRadius(8)
+                    .onDisappear {
+                        onCharacterUpdate?(viewModel.character)
                     }
                 }
                 
-                Spacer()
+                if showingEditAbility, let ability = selectedAbility {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            showingEditAbility = false
+                        }
+                    
+                    EditAbilityPopupView(
+                        ability: ability,
+                        value: Binding(
+                            get: { viewModel.character.value(for: ability) },
+                            set: { newValue in
+                                viewModel.updateAbilityScore(ability: ability, newValue: newValue)
+                            }
+                        )
+                    )
+                    .onDisappear {
+                        onCharacterUpdate?(viewModel.character)
+                    }
+                }
+                
+                if showingEditCombatStat, let stat = selectedCombatStat {
+                    Color.black.opacity(0.3)
+                        .ignoresSafeArea()
+                        .onTapGesture {
+                            showingEditCombatStat = false
+                        }
+                    
+                    EditCombatStatPopupView(
+                        stat: stat,
+                        value: Binding(
+                            get: { viewModel.character.value(for: stat) },
+                            set: { newValue in
+                                viewModel.updateCombatStat(stat: stat, newValue: newValue)
+                            }
+                        )
+                    )
+                    .onDisappear {
+                        onCharacterUpdate?(viewModel.character)
+                    }
+                }
             }
-            .padding(16)
+        )
+    }
+    
+    private func showHitPointsContextMenu() {
+        let alert = UIAlertController(title: "Хиты", message: "Выберите тип хитов для редактирования", preferredStyle: .actionSheet)
+        
+        alert.addAction(UIAlertAction(title: "Текущие хиты", style: .default) { _ in
+            hitPointsType = .current
+            showingEditHitPoints = true
+        })
+        
+        alert.addAction(UIAlertAction(title: "Максимальные хиты", style: .default) { _ in
+            hitPointsType = .maximum
+            showingEditHitPoints = true
+        })
+        
+        alert.addAction(UIAlertAction(title: "Временные хиты", style: .default) { _ in
+            hitPointsType = .temporary
+            showingEditHitPoints = true
+        })
+        
+        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            window.rootViewController?.present(alert, animated: true)
         }
     }
-}
-
-struct HealthSectionView: View {
-    let character: DnDCharacter
-    let onUpdate: (DnDCharacter) -> Void
-    @State private var currentHP: Int
     
-    init(character: DnDCharacter, onUpdate: @escaping (DnDCharacter) -> Void) {
-        self.character = character
-        self.onUpdate = onUpdate
-        self._currentHP = State(initialValue: character.vitality.hpMax)
+    private var healthBarColor: Color {
+        let percentage = viewModel.character.healthPercentage
+        if percentage <= 0.25 {
+            return .red
+        } else if percentage <= 0.7 {
+            return .yellow
+        } else {
+            return .green
+        }
     }
     
-    var body: some View {
-        CardView {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: "heart.fill")
-                        .foregroundColor(.red)
-                    Text("Хиты")
-                        .font(.headline)
+    private var hitPointsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "heart.fill")
+                    .foregroundColor(.green)
+                Text("Хиты")
+                    .font(.headline)
+                Spacer()
                 }
                 
                 HStack {
-                    Text("\(currentHP) / \(character.vitality.hpMax)")
+                Text("\(viewModel.character.hitPoints) / \(viewModel.character.maxHitPoints)")
                         .font(.title2)
                         .fontWeight(.bold)
+                    .foregroundColor(.green)
                     
                     Spacer()
                     
-                    Text("\(Int(Double(currentHP) / Double(character.vitality.hpMax) * 100))% здоровья")
+                Text("\(Int(viewModel.character.healthPercentage * 100))% здоровья")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
                 
-                ProgressView(value: Double(currentHP), total: Double(character.vitality.hpMax))
-                    .progressViewStyle(LinearProgressViewStyle(tint: .red))
-            }
-            .padding(16)
+            ProgressView(value: viewModel.character.healthPercentage)
+                .progressViewStyle(LinearProgressViewStyle(tint: healthBarColor))
+                .scaleEffect(x: 1, y: 2, anchor: .center)
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .onTapGesture {
+            hitPointsType = .current
+            showingEditHitPoints = true
+        }
+        .onLongPressGesture {
+            showHitPointsContextMenu()
         }
     }
-}
-
-struct MainStatsView: View {
-    let character: DnDCharacter
-    let onUpdate: (DnDCharacter) -> Void
     
-    var body: some View {
-        CardView {
-            VStack(alignment: .leading, spacing: 16) {
+    private var abilityScoresSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Image(systemName: "sparkles")
                         .foregroundColor(.purple)
                     Text("Основные характеристики")
                         .font(.headline)
+                Spacer()
                 }
                 
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
-                    StatCardView(stat: character.stats.str)
-                    StatCardView(stat: character.stats.dex)
-                    StatCardView(stat: character.stats.con)
-                    StatCardView(stat: character.stats.int)
-                    StatCardView(stat: character.stats.wis)
-                    StatCardView(stat: character.stats.cha)
+                ForEach(AbilityScore.allCases, id: \.self) { ability in
+                    abilityCard(ability: ability)
                 }
             }
-            .padding(16)
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+    }
+    
+    private var combatStatsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "shield.fill")
+                    .foregroundColor(.blue)
+                Text("Боевые характеристики")
+                    .font(.headline)
+                Spacer()
+            }
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: 12) {
+                ForEach(CombatStat.allCases, id: \.self) { stat in
+                    combatStatCard(stat: stat)
+                }
+            }
+        }
+        .padding()
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+    }
+    
+    private var detailedInfoSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Детальная информация")
+                .font(.headline)
+                .padding(.horizontal)
+            
+            VStack(spacing: 8) {
+                detailCard(title: "Характеристики", icon: "person.2.fill", color: .blue)
+                detailCard(title: "Боевые характеристики", icon: "shield.fill", color: .red)
+                detailCard(title: "Навыки", icon: "brain.head.profile", color: .green)
+                detailCard(title: "Классовые умения", icon: "star.fill", color: .purple)
+                detailCard(title: "Снаряжение", icon: "bag.fill", color: .orange)
+                detailCard(title: "Сокровища", icon: "diamond.fill", color: .yellow)
+                detailCard(title: "Личность", icon: "person.crop.square.fill", color: .pink)
+                detailCard(title: "Особенности", icon: "star.fill", color: .blue)
+            }
         }
     }
-}
-
-struct StatCardView: View {
-    let stat: StatValue
     
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(stat.label)
+    
+    private func abilityCard(ability: AbilityScore) -> some View {
+        let value = viewModel.character.value(for: ability)
+        let modifier = viewModel.character.modifier(for: ability)
+        
+        return VStack(spacing: 4) {
+            Image(systemName: ability.icon)
+                .font(.title3)
+                .foregroundColor(ability.color)
+            
+            Text(ability.rawValue)
                 .font(.caption)
                 .foregroundColor(.secondary)
             
-            Text("\(stat.score)")
-                .font(.title2)
+            Text(viewModel.character.formatModifier(modifier))
+                .font(.headline)
+                .fontWeight(.bold)
+                .foregroundColor(.green)
+            
+            Text("\(value)")
+                    .font(.caption)
+                .foregroundColor(.primary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 12)
+        .background(ability.color.opacity(0.1))
+        .cornerRadius(8)
+        .onTapGesture {
+            selectedAbility = ability
+            showingEditAbility = true
+        }
+    }
+    
+    private func combatStatCard(stat: CombatStat) -> some View {
+        let value = viewModel.character.value(for: stat)
+        
+        return VStack(spacing: 4) {
+            Image(systemName: stat.icon)
+                .font(.title3)
+                .foregroundColor(stat.color)
+            
+            Text("\(value)")
+                .font(.headline)
                 .fontWeight(.bold)
             
-            if let modifier = stat.modifier {
-                Text(modifier >= 0 ? "+\(modifier)" : "\(modifier)")
-                    .font(.caption)
-                    .foregroundColor(modifier >= 0 ? .green : .red)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(Color(.systemGray6))
-        .cornerRadius(8)
-    }
-}
-
-struct CombatStatsView: View {
-    let character: DnDCharacter
-    let onUpdate: (DnDCharacter) -> Void
-    
-    var body: some View {
-        CardView {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    Image(systemName: "shield.fill")
-                        .foregroundColor(.blue)
-                    Text("Боевые характеристики")
-                        .font(.headline)
-                }
-                
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
-                    CombatStatView(title: "КЗ", value: "\(character.vitality.ac)")
-                    CombatStatView(title: "Инициатива", value: "+\(character.stats.dex.modifier ?? 0)")
-                    CombatStatView(title: "Скорость", value: "\(character.vitality.speed) фт.")
-                    CombatStatView(title: "Спасбросок", value: "+2")
-                }
-            }
-            .padding(16)
-        }
-    }
-}
-
-struct CombatStatView: View {
-    let title: String
-    let value: String
-    
-    var body: some View {
-        VStack(spacing: 4) {
-            Text(title)
+            Text(stat.rawValue)
                 .font(.caption)
                 .foregroundColor(.secondary)
-            
-            Text(value)
-                .font(.title3)
-                .fontWeight(.semibold)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .background(Color(.systemGray6))
+        .background(stat.color.opacity(0.1))
         .cornerRadius(8)
-    }
-}
-
-struct SkillsView: View {
-    let character: DnDCharacter
-    let onUpdate: (DnDCharacter) -> Void
-    
-    var body: some View {
-        CardView {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: "brain.head.profile")
-                        .foregroundColor(.green)
-                    Text("Навыки")
-                        .font(.headline)
-                }
-                
-                // TODO: Implement skills display
-                Text("Навыки будут добавлены в следующих версиях")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding(16)
+        .onTapGesture {
+            selectedCombatStat = stat
+            showingEditCombatStat = true
         }
     }
-}
-
-struct WeaponsView: View {
-    let character: DnDCharacter
-    let onUpdate: (DnDCharacter) -> Void
     
-    var body: some View {
-        CardView {
-            VStack(alignment: .leading, spacing: 12) {
+    private func detailCard(title: String, icon: String, color: Color) -> some View {
                 HStack {
-                    Image(systemName: "sword")
-                        .foregroundColor(.red)
-                    Text("Оружие")
-                        .font(.headline)
-                }
-                
-                if character.weaponsList.isEmpty {
-                    Text("Нет оружия")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                } else {
-                    ForEach(character.weaponsList) { weapon in
-                        HStack {
-                            Text(weapon.name)
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(color)
+                .frame(width: 24)
+            
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(.medium)
+            
                             Spacer()
-                            Text(weapon.dmg)
+            
+            Image(systemName: "chevron.down")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-            }
-            .padding(16)
         }
-    }
-}
-
-struct CharacterSelectionView: View {
-    let characters: [DnDCharacter]
-    let selectedCharacter: DnDCharacter?
-    let onSelect: (DnDCharacter) -> Void
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        NavigationView {
-            List {
-                ForEach(characters) { character in
-                    HStack {
-                        VStack(alignment: .leading) {
-                            Text(character.name)
-                                .font(.headline)
-                            Text("\(character.info.race) - \(character.info.charClass)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        
-                        Spacer()
-                        
-                        if selectedCharacter?.id == character.id {
-                            Image(systemName: "checkmark")
-                                .foregroundColor(.orange)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        onSelect(character)
-                        dismiss()
-                    }
-                }
-            }
-            .navigationTitle("Выбор персонажа")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Готово") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-    }
-}
-
-struct AddCharacterView: View {
-    @Environment(\.dismiss) private var dismiss
-    let onSave: (DnDCharacter) -> Void
-    
-    var body: some View {
-        CharacterCreationView { character in
-            onSave(character)
-        }
-    }
-}
-
-struct EditCharacterView: View {
-    @Environment(\.dismiss) private var dismiss
-    let character: DnDCharacter
-    let onSave: (DnDCharacter) -> Void
-    
-    var body: some View {
-        NavigationView {
-            Text("Редактирование персонажа будет добавлено в следующих версиях")
-                .navigationTitle("Редактировать")
-                .navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Готово") {
-                            dismiss()
-                        }
-                    }
-                }
-        }
+        .padding()
+        .background(color.opacity(0.1))
+        .cornerRadius(8)
     }
 }
 
 #Preview {
-    CharacterView()
+    NavigationView {
+        CharacterView(character: Character(
+            name: "Абоба",
+            race: "Человек",
+            characterClass: "Монах",
+            background: "Чужеземец",
+            alignment: "Хаотично-нейтральный",
+            level: 8
+        ))
+    }
 }

@@ -2,6 +2,10 @@ import SwiftUI
 
 struct MainTabView: View {
     @StateObject private var globalContextMenu = GlobalContextMenuManager.shared
+    @StateObject private var characterManager = CharacterManager()
+    @State private var showingCharacterCreation = false
+    @State private var showingCharacterEdit = false
+    @State private var showingCharacterSelection = false
     
     var body: some View {
         ZStack {
@@ -30,10 +34,14 @@ struct MainTabView: View {
                         Text("Заметки")
                     }
                 
-                CharacterView()
+                CharacterTabView()
+                    .environmentObject(characterManager)
                     .tabItem {
                         Image(systemName: "person")
                         Text("Персонаж")
+                    }
+                    .onLongPressGesture {
+                        showCharacterContextMenu()
                     }
             }
             .accentColor(.orange)
@@ -56,7 +64,7 @@ struct MainTabView: View {
                         .frame(width: globalContextMenu.highlightedElementFrame.width,
                                height: globalContextMenu.highlightedElementFrame.height)
                         .position(x: globalContextMenu.highlightedElementFrame.midX,
-                                 y: globalContextMenu.highlightedElementFrame.midY)
+                                  y: globalContextMenu.highlightedElementFrame.midY)
                         .zIndex(9999)
                         .blendMode(.destinationOut)
                 }
@@ -88,6 +96,51 @@ struct MainTabView: View {
                     .zIndex(10000)
                 }
             }
+        }
+        .sheet(isPresented: $showingCharacterCreation) {
+            CharacterCreationView { newCharacter in
+                characterManager.addCharacter(newCharacter)
+            }
+            .environmentObject(characterManager)
+        }
+        .sheet(isPresented: $showingCharacterEdit) {
+            if let selectedCharacter = characterManager.selectedCharacter {
+                CharacterEditView(character: selectedCharacter) { updatedCharacter in
+                    characterManager.updateCharacter(updatedCharacter)
+                }
+                .environmentObject(characterManager)
+                .environmentObject(DataService.shared)
+            }
+        }
+        .sheet(isPresented: $showingCharacterSelection) {
+            CharacterSelectionView()
+                .environmentObject(characterManager)
+        }
+    }
+    
+    private func showCharacterContextMenu() {
+        // Показываем action sheet с опциями
+        let alert = UIAlertController(title: "Персонаж", message: "Выберите действие", preferredStyle: .actionSheet)
+        
+        alert.addAction(UIAlertAction(title: "Создать персонажа", style: .default) { _ in
+            showingCharacterCreation = true
+        })
+        
+        if characterManager.selectedCharacter != nil {
+            alert.addAction(UIAlertAction(title: "Редактировать персонажа", style: .default) { _ in
+                showingCharacterEdit = true
+            })
+            
+            alert.addAction(UIAlertAction(title: "Выбрать другого", style: .default) { _ in
+                showingCharacterSelection = true
+            })
+        }
+        
+        alert.addAction(UIAlertAction(title: "Отмена", style: .cancel))
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            window.rootViewController?.present(alert, animated: true)
         }
     }
 }

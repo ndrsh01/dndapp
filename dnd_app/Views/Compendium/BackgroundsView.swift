@@ -134,11 +134,6 @@ struct BackgroundCardView: View {
                             .font(.system(size: 16))
                     }
                     
-                    Button(action: onToggleExpanded) {
-                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                            .foregroundColor(.orange)
-                            .font(.system(size: 14, weight: .medium))
-                    }
                 }
             }
             
@@ -198,6 +193,9 @@ struct BackgroundCardView: View {
         .background(Color(red: 0.95, green: 0.94, blue: 0.92))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+        .onTapGesture {
+            onToggleExpanded()
+        }
     }
 }
 

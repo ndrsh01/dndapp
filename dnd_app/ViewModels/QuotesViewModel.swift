@@ -12,16 +12,21 @@ class QuotesViewModel: ObservableObject {
     
     init() {
         loadSelectedCategory()
-        
+
         // Подписываемся на изменения данных
         dataService.$quotes
             .sink { [weak self] quotes in
-                if quotes != nil {
+                if let quotes = quotes, !quotes.categories.isEmpty {
                     self?.generateRandomQuote()
                 }
             }
             .store(in: &cancellables)
-        
+
+        // Генерируем цитату сразу, если данные уже доступны
+        if dataService.quotes != nil && !availableCategories.isEmpty {
+            generateRandomQuote()
+        }
+
         // Отладочная информация
         print("QuotesViewModel init - selectedCategory: \(selectedCategory)")
         print("QuotesViewModel init - availableCategories: \(availableCategories)")

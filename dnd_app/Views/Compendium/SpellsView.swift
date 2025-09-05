@@ -205,12 +205,6 @@ struct SpellCardView: View {
                         .font(.title3)
                 }
                 
-                // Expand/Collapse Button
-                Button(action: onToggleExpanded) {
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .foregroundColor(.orange)
-                        .font(.caption)
-                }
             }
             
             // Tags
@@ -268,6 +262,9 @@ struct SpellCardView: View {
         .background(Color(red: 0.95, green: 0.94, blue: 0.92))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .onTapGesture {
+            onToggleExpanded()
+        }
     }
 }
 

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @StateObject private var characterViewModel = CharacterViewModel()
+    @StateObject private var characterManager = CharacterManager()
     @State private var showCharacterSelection = false
     @State private var showExportAlert = false
     @State private var showImportAlert = false
@@ -19,7 +19,7 @@ struct SettingsView: View {
                         VStack(alignment: .leading) {
                             Text("Выбранный персонаж")
                                 .font(.headline)
-                            Text(characterViewModel.selectedCharacter?.name ?? "Нет персонажа")
+                            Text(characterManager.selectedCharacter?.name ?? "Нет персонажа")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -83,12 +83,8 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.large)
         }
         .sheet(isPresented: $showCharacterSelection) {
-            CharacterSelectionView(
-                characters: characterViewModel.characters,
-                selectedCharacter: characterViewModel.selectedCharacter
-            ) { character in
-                characterViewModel.selectCharacter(character)
-            }
+            CharacterSelectionView()
+                .environmentObject(characterManager)
         }
         .alert("Экспорт данных", isPresented: $showExportAlert) {
             Button("Отмена", role: .cancel) { }

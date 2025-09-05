@@ -9,8 +9,40 @@ struct Note: Codable, Identifiable {
     var isAlive: Bool
     var dateCreated: Date
     var dateModified: Date
+
+    // Дополнительные поля для персонажей
+    var race: String?
+    var occupation: String?
+    var organization: String?
+    var age: String?
+    var appearance: String?
+
+    // Дополнительные поля для локаций
+    var locationType: String?
+    var population: String?
+    var government: String?
+    var climate: String?
+
+    // Дополнительные поля для предметов
+    var itemType: String?
+    var rarity: String?
+    var value: String?
+
+    // Дополнительные поля для квестов
+    var questType: String?
+    var status: String?
+    var reward: String?
+
+    // Дополнительные поля для лора
+    var loreType: String?
+    var era: String?
     
-    init(title: String, description: String = "", importance: Int = 3, category: NoteCategory = .all, isAlive: Bool = true) {
+    init(title: String, description: String = "", importance: Int = 3, category: NoteCategory = .all, isAlive: Bool = true,
+         race: String? = nil, occupation: String? = nil, organization: String? = nil, age: String? = nil, appearance: String? = nil,
+         locationType: String? = nil, population: String? = nil, government: String? = nil, climate: String? = nil,
+         itemType: String? = nil, rarity: String? = nil, value: String? = nil,
+         questType: String? = nil, status: String? = nil, reward: String? = nil,
+         loreType: String? = nil, era: String? = nil) {
         self.id = UUID()
         self.title = title
         self.description = description
@@ -19,33 +51,58 @@ struct Note: Codable, Identifiable {
         self.isAlive = isAlive
         self.dateCreated = Date()
         self.dateModified = Date()
+
+        // Инициализация дополнительных полей
+        self.race = race
+        self.occupation = occupation
+        self.organization = organization
+        self.age = age
+        self.appearance = appearance
+        self.locationType = locationType
+        self.population = population
+        self.government = government
+        self.climate = climate
+        self.itemType = itemType
+        self.rarity = rarity
+        self.value = value
+        self.questType = questType
+        self.status = status
+        self.reward = reward
+        self.loreType = loreType
+        self.era = era
     }
 }
 
 enum NoteCategory: String, CaseIterable, Codable {
     case all = "Все"
-    case places = "Места"
-    case people = "Люди"
-    case enemies = "Враги"
-    case items = "Вещи"
-    
+    case campaign = "Кампания"
+    case characters = "Персонажи"
+    case locations = "Локации"
+    case quests = "Квесты"
+    case lore = "Лор"
+    case items = "Предметы"
+
     var icon: String {
         switch self {
         case .all: return "list.bullet"
-        case .places: return "mappin"
-        case .people: return "person.2"
-        case .enemies: return "exclamationmark.triangle"
+        case .campaign: return "book.closed"
+        case .characters: return "person.2"
+        case .locations: return "map"
+        case .quests: return "target"
+        case .lore: return "scroll"
         case .items: return "cube.box"
         }
     }
-    
+
     var color: String {
         switch self {
         case .all: return "gray"
-        case .places: return "blue"
-        case .people: return "green"
-        case .enemies: return "red"
-        case .items: return "orange"
+        case .campaign: return "purple"
+        case .characters: return "blue"
+        case .locations: return "green"
+        case .quests: return "orange"
+        case .lore: return "red"
+        case .items: return "indigo"
         }
     }
 }

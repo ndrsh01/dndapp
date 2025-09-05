@@ -2,76 +2,47 @@ import SwiftUI
 
 struct CharacterCreationView: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var viewModel = CharacterCreationViewModel()
     @State private var currentStep = 0
+    @State private var character = Character(
+        name: "",
+        race: "Человек",
+        characterClass: "Воин",
+        background: "Солдат",
+        alignment: "Законно-добрый",
+        level: 1
+    )
     
-    let onSave: (DnDCharacter) -> Void
+    let onSave: (Character) -> Void
+    
+    private let totalSteps = 5
     
     var body: some View {
         NavigationView {
-            VStack {
-                // Progress Bar
-                ProgressView(value: Double(currentStep), total: Double(viewModel.totalSteps))
-                    .progressViewStyle(LinearProgressViewStyle(tint: .orange))
-                    .padding(.horizontal, 16)
-                    .padding(.top, 8)
+            VStack(spacing: 0) {
+                // Прогресс-бар
+                progressBar
                 
-                // Step Content
+                // Контент шага
                 TabView(selection: $currentStep) {
-                    BasicInfoStepView(character: $viewModel.character)
+                    BasicInfoStep(character: $character)
                         .tag(0)
                     
-                    RaceClassStepView(character: $viewModel.character)
+                    RaceClassStep(character: $character)
                         .tag(1)
                     
-                    StatsStepView(character: $viewModel.character)
+                    AbilityScoresStep(character: $character)
                         .tag(2)
                     
-                    BackgroundStepView(character: $viewModel.character)
+                    BackgroundStep(character: $character)
                         .tag(3)
                     
-                    EquipmentStepView(character: $viewModel.character)
+                    ReviewStep(character: character)
                         .tag(4)
-                    
-                    ReviewStepView(character: viewModel.character)
-                        .tag(5)
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
                 
-                // Navigation Buttons
-                HStack {
-                    if currentStep > 0 {
-                        Button("Назад") {
-                            withAnimation {
-                                currentStep -= 1
-                            }
-                        }
-                        .buttonStyle(DnDButtonStyle())
-                    }
-                    
-                    Spacer()
-                    
-                    if currentStep < viewModel.totalSteps - 1 {
-                        Button("Далее") {
-                            if viewModel.validateCurrentStep(currentStep) {
-                                withAnimation {
-                                    currentStep += 1
-                                }
-                            }
-                        }
-                        .buttonStyle(DnDButtonStyle())
-                    } else {
-                        Button("Создать") {
-                            let character = viewModel.createCharacter()
-                            onSave(character)
-                            dismiss()
-                        }
-                        .buttonStyle(DnDButtonStyle())
-                        .disabled(!viewModel.isValid)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 20)
+                // Навигационные кнопки
+                navigationButtons
             }
             .navigationTitle("Создание персонажа")
             .navigationBarTitleDisplayMode(.inline)
@@ -84,371 +55,511 @@ struct CharacterCreationView: View {
             }
         }
     }
+    
+    private var progressBar: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Text("Шаг \(currentStep + 1) из \(totalSteps)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Text(stepTitle)
+                    .font(.headline)
+            }
+            .padding(.horizontal)
+            
+            ProgressView(value: Double(currentStep + 1), total: Double(totalSteps))
+                .progressViewStyle(LinearProgressViewStyle(tint: .orange))
+                .padding(.horizontal)
+        }
+        .padding(.vertical, 8)
+        .background(Color(.systemBackground))
+    }
+    
+    private var stepTitle: String {
+        switch currentStep {
+        case 0: return "Основная информация"
+        case 1: return "Раса и класс"
+        case 2: return "Характеристики"
+        case 3: return "Предыстория"
+        case 4: return "Обзор"
+        default: return ""
+        }
+    }
+    
+    private var navigationButtons: some View {
+        HStack {
+            if currentStep > 0 {
+                Button("Назад") {
+                    withAnimation {
+                        currentStep -= 1
+                    }
+                }
+                .foregroundColor(.orange)
+            }
+            
+            Spacer()
+            
+            if currentStep < totalSteps - 1 {
+                Button("Далее") {
+                    withAnimation {
+                        currentStep += 1
+                    }
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background(Color.orange)
+                .cornerRadius(8)
+            } else {
+                Button("Создать") {
+                    onSave(character)
+                    dismiss()
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 24)
+                .padding(.vertical, 12)
+                .background(character.name.isEmpty ? Color.gray : Color.orange)
+                .cornerRadius(8)
+                .disabled(character.name.isEmpty)
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+    }
 }
 
-// MARK: - Step 1: Basic Info
-struct BasicInfoStepView: View {
-    @Binding var character: DnDCharacter
+// MARK: - Step Views
+
+struct BasicInfoStep: View {
+    @Binding var character: Character
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: 24) {
+                // Заголовок
+                VStack(spacing: 8) {
+                    Image(systemName: "person.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.orange)
+                    
                 Text("Основная информация")
                     .font(.title2)
                     .fontWeight(.bold)
-                    .padding(.top, 20)
-                
-                VStack(spacing: 16) {
-                    TextField("Имя персонажа", text: $character.name)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
                     
-                    TextField("Имя игрока", text: $character.info.playerName)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                    
-                    Picker("Раса", selection: $character.info.race) {
-                        Text("Выберите расу").tag("")
-                        Text("Человек").tag("Человек")
-                        Text("Эльф").tag("Эльф")
-                        Text("Дварф").tag("Дварф")
-                        Text("Халфлинг").tag("Халфлинг")
-                        Text("Драконорожденный").tag("Драконорожденный")
-                        Text("Гном").tag("Гном")
-                        Text("Полуэльф").tag("Полуэльф")
-                        Text("Полуорк").tag("Полуорк")
-                        Text("Табакси").tag("Табакси")
-                        Text("Тифлинг").tag("Тифлинг")
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                    
-                    Picker("Мировоззрение", selection: $character.info.alignment) {
-                        Text("Выберите мировоззрение").tag("")
-                        Text("Законно-добрый").tag("Законно-добрый")
-                        Text("Нейтрально-добрый").tag("Нейтрально-добрый")
-                        Text("Хаотично-добрый").tag("Хаотично-добрый")
-                        Text("Законно-нейтральный").tag("Законно-нейтральный")
-                        Text("Нейтральный").tag("Нейтральный")
-                        Text("Хаотично-нейтральный").tag("Хаотично-нейтральный")
-                        Text("Законно-злой").tag("Законно-злой")
-                        Text("Нейтрально-злой").tag("Нейтрально-злой")
-                        Text("Хаотично-злой").tag("Хаотично-злой")
-                    }
-                    .pickerStyle(MenuPickerStyle())
+                    Text("Расскажите о вашем персонаже")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
-                .padding(.horizontal, 20)
+                .padding(.top)
+                
+                // Форма
+                VStack(spacing: 20) {
+                    FormField(
+                        title: "Имя персонажа",
+                        placeholder: "Введите имя",
+                        text: $character.name
+                    )
+                    
+                    FormField(
+                        title: "Уровень",
+                        placeholder: "1",
+                        text: Binding(
+                            get: { String(character.level) },
+                            set: { character.level = Int($0) ?? 1 }
+                        )
+                    )
+                    
+                    FormField(
+                        title: "Мировоззрение",
+                        placeholder: "Законно-добрый",
+                        text: $character.alignment
+                    )
+                }
+                .padding(.horizontal)
             }
         }
     }
 }
 
-// MARK: - Step 2: Race & Class
-struct RaceClassStepView: View {
-    @Binding var character: DnDCharacter
+struct RaceClassStep: View {
+    @Binding var character: Character
+    
+    private let races = ["Человек", "Эльф", "Дварф", "Халфлинг", "Драконорожденный", "Гном", "Полуэльф", "Полуорк", "Тифлинг"]
+    private let classes = ["Воин", "Маг", "Клирик", "Плут", "Бард", "Друид", "Паладин", "Следопыт", "Чернокнижник", "Монах", "Варвар", "Изобретатель"]
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: 24) {
+                // Заголовок
+                VStack(spacing: 8) {
+                    Image(systemName: "star.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.purple)
+                    
                 Text("Раса и класс")
                     .font(.title2)
                     .fontWeight(.bold)
-                    .padding(.top, 20)
-                
-                VStack(spacing: 16) {
-                    Picker("Класс", selection: $character.info.charClass) {
-                        Text("Выберите класс").tag("")
-                        Text("Варвар").tag("Варвар")
-                        Text("Бард").tag("Бард")
-                        Text("Жрец").tag("Жрец")
-                        Text("Друид").tag("Друид")
-                        Text("Воин").tag("Воин")
-                        Text("Монах").tag("Монах")
-                        Text("Паладин").tag("Паладин")
-                        Text("Следопыт").tag("Следопыт")
-                        Text("Плут").tag("Плут")
-                        Text("Чародей").tag("Чародей")
-                        Text("Колдун").tag("Колдун")
-                        Text("Волшебник").tag("Волшебник")
-                    }
-                    .pickerStyle(MenuPickerStyle())
                     
-                    TextField("Подкласс", text: $character.info.charSubclass)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                    
-                    Stepper("Уровень: \(character.info.level)", value: $character.info.level, in: 1...20)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)
-                        .background(Color(.systemGray6))
-                        .cornerRadius(8)
+                    Text("Выберите расу и класс персонажа")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
-                .padding(.horizontal, 20)
+                .padding(.top)
+                
+                // Выбор расы
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Раса")
+                        .font(.headline)
+                        .padding(.horizontal)
+                    
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
+                        ForEach(races, id: \.self) { race in
+                            SelectionCard(
+                                title: race,
+                                isSelected: character.race == race,
+                                action: { character.race = race }
+                            )
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                
+                // Выбор класса
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Класс")
+                        .font(.headline)
+                        .padding(.horizontal)
+                    
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
+                        ForEach(classes, id: \.self) { characterClass in
+                            SelectionCard(
+                                title: characterClass,
+                                isSelected: character.characterClass == characterClass,
+                                action: { character.characterClass = characterClass }
+                            )
+                        }
+                    }
+                    .padding(.horizontal)
+                }
             }
         }
     }
 }
 
-// MARK: - Step 3: Stats
-struct StatsStepView: View {
-    @Binding var character: DnDCharacter
+struct AbilityScoresStep: View {
+    @Binding var character: Character
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: 24) {
+                // Заголовок
+                VStack(spacing: 8) {
+                    Image(systemName: "chart.bar.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.blue)
+                    
                 Text("Характеристики")
                     .font(.title2)
                     .fontWeight(.bold)
-                    .padding(.top, 20)
+                    
+                    Text("Распределите очки характеристик")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.top)
                 
-                VStack(spacing: 16) {
-                    StatStepperView(
+                // Характеристики
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 16) {
+                    AbilityScoreField(
                         title: "Сила",
-                        value: $character.stats.str.score,
-                        modifier: character.stats.str.modifier ?? 0
+                        value: $character.strength,
+                        color: .red
                     )
                     
-                    StatStepperView(
+                    AbilityScoreField(
                         title: "Ловкость",
-                        value: $character.stats.dex.score,
-                        modifier: character.stats.dex.modifier ?? 0
+                        value: $character.dexterity,
+                        color: .green
                     )
                     
-                    StatStepperView(
+                    AbilityScoreField(
                         title: "Телосложение",
-                        value: $character.stats.con.score,
-                        modifier: character.stats.con.modifier ?? 0
+                        value: $character.constitution,
+                        color: .orange
                     )
                     
-                    StatStepperView(
+                    AbilityScoreField(
                         title: "Интеллект",
-                        value: $character.stats.int.score,
-                        modifier: character.stats.int.modifier ?? 0
+                        value: $character.intelligence,
+                        color: .blue
                     )
                     
-                    StatStepperView(
+                    AbilityScoreField(
                         title: "Мудрость",
-                        value: $character.stats.wis.score,
-                        modifier: character.stats.wis.modifier ?? 0
+                        value: $character.wisdom,
+                        color: .purple
                     )
                     
-                    StatStepperView(
+                    AbilityScoreField(
                         title: "Харизма",
-                        value: $character.stats.cha.score,
-                        modifier: character.stats.cha.modifier ?? 0
+                        value: $character.charisma,
+                        color: .pink
                     )
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal)
             }
         }
     }
 }
 
-struct StatStepperView: View {
+struct BackgroundStep: View {
+    @Binding var character: Character
+    
+    private let backgrounds = ["Солдат", "Ученый", "Торговец", "Пират", "Следопыт", "Благородный", "Чужеземец", "Преступник", "Отшельник", "Артист"]
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                // Заголовок
+                VStack(spacing: 8) {
+                    Image(systemName: "book.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.green)
+                    
+                Text("Предыстория")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    
+                    Text("Выберите предысторию персонажа")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.top)
+                
+                // Выбор предыстории
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
+                    ForEach(backgrounds, id: \.self) { background in
+                        SelectionCard(
+                            title: background,
+                            isSelected: character.background == background,
+                            action: { character.background = background }
+                        )
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+}
+
+struct ReviewStep: View {
+    let character: Character
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                // Заголовок
+                VStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.green)
+                    
+                    Text("Обзор персонажа")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    
+                    Text("Проверьте информацию о персонаже")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.top)
+                
+                // Карточка персонажа
+                VStack(spacing: 16) {
+                    // Аватар и основная информация
+                    HStack(spacing: 16) {
+                        Circle()
+                            .fill(Color.orange)
+                            .frame(width: 80, height: 80)
+                            .overlay(
+                                Image(systemName: "person.fill")
+                                    .font(.title)
+                                    .foregroundColor(.white)
+                            )
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(character.name)
+                                .font(.title2)
+                                .fontWeight(.bold)
+                            
+                            Text(character.race)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            Text(character.characterClass)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            
+                            Text("Уровень \(character.level)")
+                                .font(.caption)
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color.orange)
+                                .cornerRadius(8)
+                        }
+                        
+                        Spacer()
+                    }
+                    
+                    // Характеристики
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Характеристики")
+                            .font(.headline)
+                        
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
+                            CharacteristicCard(title: "СИЛ", value: character.strength, modifier: character.strengthModifier)
+                            CharacteristicCard(title: "ЛОВ", value: character.dexterity, modifier: character.dexterityModifier)
+                            CharacteristicCard(title: "ТЕЛ", value: character.constitution, modifier: character.constitutionModifier)
+                            CharacteristicCard(title: "ИНТ", value: character.intelligence, modifier: character.intelligenceModifier)
+                            CharacteristicCard(title: "МДР", value: character.wisdom, modifier: character.wisdomModifier)
+                            CharacteristicCard(title: "ХАР", value: character.charisma, modifier: character.charismaModifier)
+                        }
+                    }
+                    
+                    // Дополнительная информация
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Дополнительная информация")
+                            .font(.headline)
+                        
+                        CharacterInfoRow(label: "Предыстория", value: character.background)
+                        CharacterInfoRow(label: "Мировоззрение", value: character.alignment)
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+                .padding(.horizontal)
+            }
+        }
+    }
+}
+
+// MARK: - Helper Views
+
+struct FormField: View {
+    let title: String
+    let placeholder: String
+    @Binding var text: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.headline)
+            
+            TextField(placeholder, text: $text)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+        }
+    }
+}
+
+struct SelectionCard: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.headline)
+                .foregroundColor(isSelected ? .white : .primary)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(isSelected ? Color.orange : Color(.systemGray6))
+                .cornerRadius(12)
+        }
+    }
+}
+
+struct AbilityScoreField: View {
     let title: String
     @Binding var value: Int
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Text(title)
+                .font(.headline)
+            
+            HStack {
+                Button("-") {
+                    if value > 1 {
+                        value -= 1
+                    }
+                }
+                .foregroundColor(color)
+                
+                Text("\(value)")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .frame(minWidth: 40)
+                
+                Button("+") {
+                    if value < 20 {
+                        value += 1
+                    }
+                }
+                .foregroundColor(color)
+            }
+            
+            Text("(\(value >= 10 ? "+" : "")\((value - 10) / 2))")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .background(color.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+struct CharacteristicCard: View {
+    let title: String
+    let value: Int
     let modifier: Int
     
     var body: some View {
-        HStack {
+        VStack(spacing: 4) {
             Text(title)
-                .frame(width: 80, alignment: .leading)
+                .font(.caption)
+                .foregroundColor(.secondary)
             
-            Stepper(value: $value, in: 1...30) {
-                HStack {
-                    Text("\(value)")
-                        .frame(width: 30)
-                    
-                    Text(modifier >= 0 ? "+\(modifier)" : "\(modifier)")
-                        .foregroundColor(.orange)
-                        .frame(width: 40)
-                }
-            }
+            Text("\(value)")
+                .font(.headline)
+                .fontWeight(.bold)
+            
+            Text("(\(modifier >= 0 ? "+" : "")\(modifier))")
+                .font(.caption)
+                .foregroundColor(.green)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
+        .frame(maxWidth: .infinity)
+        .padding()
         .background(Color(.systemGray6))
         .cornerRadius(8)
     }
 }
 
-// MARK: - Step 4: Background
-struct BackgroundStepView: View {
-    @Binding var character: DnDCharacter
+struct CharacterInfoRow: View {
+    let label: String
+    let value: String
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                Text("Предыстория")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .padding(.top, 20)
-                
-                VStack(spacing: 16) {
-                    Picker("Предыстория", selection: $character.info.background) {
-                        Text("Выберите предысторию").tag("")
-                        Text("Аколит").tag("Аколит")
-                        Text("Артист").tag("Артист")
-                        Text("Благородный").tag("Благородный")
-                        Text("Герой").tag("Герой")
-                        Text("Гильдейский ремесленник").tag("Гильдейский ремесленник")
-                        Text("Моряк").tag("Моряк")
-                        Text("Мудрец").tag("Мудрец")
-                        Text("Народный герой").tag("Народный герой")
-                        Text("Отшельник").tag("Отшельник")
-                        Text("Пират").tag("Пират")
-                        Text("Преступник").tag("Преступник")
-                        Text("Солдат").tag("Солдат")
-                        Text("Странник").tag("Странник")
-                        Text("Чужеземец").tag("Чужеземец")
-                    }
-                    .pickerStyle(MenuPickerStyle())
-                    
-                    TextField("Описание предыстории", text: $character.text.background, axis: .vertical)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .lineLimit(3...6)
-                }
-                .padding(.horizontal, 20)
-            }
-        }
-    }
-}
-
-// MARK: - Step 5: Equipment
-struct EquipmentStepView: View {
-    @Binding var character: DnDCharacter
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                Text("Снаряжение")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .padding(.top, 20)
-                
-                VStack(spacing: 16) {
-                    TextField("Снаряжение", text: $character.text.equipment, axis: .vertical)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .lineLimit(5...10)
-                    
-                    TextField("Золото", value: $character.coins.gp, format: .number)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .keyboardType(.numberPad)
-                }
-                .padding(.horizontal, 20)
-            }
-        }
-    }
-}
-
-// MARK: - Step 6: Review
-struct ReviewStepView: View {
-    let character: DnDCharacter
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                Text("Обзор персонажа")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .padding(.top, 20)
-                
-                CardView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        HStack {
-                            Text(character.name)
-                                .font(.title2)
-                                .fontWeight(.bold)
-                            
-                            Spacer()
-                            
-                            Text("Уровень \(character.info.level)")
-                                .font(.headline)
-                                .foregroundColor(.orange)
-                        }
-                        
-                        Text("\(character.info.race) - \(character.info.charClass)")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        
-                        Text(character.info.alignment)
-                            .font(.caption)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 2)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(4)
-                        
-                        if !character.info.background.isEmpty {
-                            Text("Предыстория: \(character.info.background)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(16)
-                }
-                .padding(.horizontal, 20)
-            }
-        }
-    }
-}
-
-// MARK: - ViewModel
-class CharacterCreationViewModel: ObservableObject {
-    @Published var character = DnDCharacter()
-    let totalSteps = 6
-    
-    var isValid: Bool {
-        !character.name.isEmpty &&
-        !character.info.race.isEmpty &&
-        !character.info.charClass.isEmpty &&
-        !character.info.alignment.isEmpty
-    }
-    
-    func validateCurrentStep(_ step: Int) -> Bool {
-        switch step {
-        case 0: // Basic Info
-            return !character.name.isEmpty && !character.info.race.isEmpty
-        case 1: // Race & Class
-            return !character.info.charClass.isEmpty
-        case 2: // Stats
-            return true // Stats are always valid
-        case 3: // Background
-            return true // Background is optional
-        case 4: // Equipment
-            return true // Equipment is optional
-        default:
-            return true
-        }
-    }
-    
-    func createCharacter() -> DnDCharacter {
-        var newCharacter = character
-        newCharacter.dateCreated = Date()
-        newCharacter.dateModified = Date()
-        
-        // Calculate modifiers
-        newCharacter.stats.str.modifier = (newCharacter.stats.str.score - 10) / 2
-        newCharacter.stats.dex.modifier = (newCharacter.stats.dex.score - 10) / 2
-        newCharacter.stats.con.modifier = (newCharacter.stats.con.score - 10) / 2
-        newCharacter.stats.int.modifier = (newCharacter.stats.int.score - 10) / 2
-        newCharacter.stats.wis.modifier = (newCharacter.stats.wis.score - 10) / 2
-        newCharacter.stats.cha.modifier = (newCharacter.stats.cha.score - 10) / 2
-        
-        // Calculate HP based on class and level
-        newCharacter.vitality.hpMax = calculateHP(for: newCharacter)
-        newCharacter.vitality.hpDiceCurrent = newCharacter.info.level
-        
-        return newCharacter
-    }
-    
-    private func calculateHP(for character: DnDCharacter) -> Int {
-        let conModifier = character.stats.con.modifier ?? 0
-        let baseHP = getBaseHP(for: character.info.charClass)
-        return baseHP + (conModifier * character.info.level)
-    }
-    
-    private func getBaseHP(for className: String) -> Int {
-        switch className {
-        case "Варвар": return 12
-        case "Воин", "Паладин", "Следопыт": return 10
-        case "Бард", "Жрец", "Друид", "Монах", "Плут", "Чародей", "Колдун", "Волшебник": return 8
-        default: return 8
+        HStack {
+            Text(label)
+                .foregroundColor(.secondary)
+            Spacer()
+            Text(value)
+                .fontWeight(.medium)
         }
     }
 }

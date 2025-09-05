@@ -12,27 +12,23 @@ class MonsterService: ObservableObject {
         // Don't load automatically in init
     }
     
-    func loadMonsters() {
+    func loadMonsters() async {
         isLoading = true
         error = nil
-        
-        DispatchQueue.global(qos: .background).async { [weak self] in
-            guard let self = self else { return }
-            
-            do {
-                let monsters = try self.parseNDJSON()
-                
-                DispatchQueue.main.async {
-                    self.monsters = monsters
-                    self.isLoading = false
-                    print("Loaded \(monsters.count) monsters successfully")
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    self.error = error.localizedDescription
-                    self.isLoading = false
-                    print("Failed to load monsters: \(error.localizedDescription)")
-                }
+
+        do {
+            let monsters = try parseNDJSON()
+
+            await MainActor.run {
+                self.monsters = monsters
+                self.isLoading = false
+                print("Loaded \(monsters.count) monsters successfully")
+            }
+        } catch {
+            await MainActor.run {
+                self.error = error.localizedDescription
+                self.isLoading = false
+                print("Failed to load monsters: \(error.localizedDescription)")
             }
         }
     }
@@ -74,10 +70,14 @@ class MonsterService: ObservableObject {
     func searchMonsters(query: String) -> [Monster] {
         guard !query.isEmpty else { return monsters }
         
+        let queryLower = query.lowercased()
         return monsters.filter { monster in
-            monster.name.localizedCaseInsensitiveContains(query) ||
-            monster.type.localizedCaseInsensitiveContains(query) ||
-            monster.alignment.localizedCaseInsensitiveContains(query)
+            monster.name.lowercased().hasPrefix(queryLower) ||
+            monster.type.lowercased().hasPrefix(queryLower) ||
+            monster.alignment.lowercased().hasPrefix(queryLower) ||
+            monster.name.lowercased().contains(queryLower) ||
+            monster.type.lowercased().contains(queryLower) ||
+            monster.alignment.lowercased().contains(queryLower)
         }
     }
     
@@ -85,16 +85,34 @@ class MonsterService: ObservableObject {
         switch type {
         case .all:
             return monsters
+        case .aberration:
+            return monsters.filter { $0.type.lowercased().contains("aberration") }
         case .beast:
             return monsters.filter { $0.type.lowercased().contains("beast") }
+        case .celestial:
+            return monsters.filter { $0.type.lowercased().contains("celestial") }
+        case .construct:
+            return monsters.filter { $0.type.lowercased().contains("construct") }
         case .dragon:
             return monsters.filter { $0.type.lowercased().contains("dragon") }
-        case .humanoid:
-            return monsters.filter { $0.type.lowercased().contains("humanoid") }
-        case .undead:
-            return monsters.filter { $0.type.lowercased().contains("undead") }
+        case .elemental:
+            return monsters.filter { $0.type.lowercased().contains("elemental") }
+        case .fey:
+            return monsters.filter { $0.type.lowercased().contains("fey") }
         case .fiend:
             return monsters.filter { $0.type.lowercased().contains("fiend") }
+        case .giant:
+            return monsters.filter { $0.type.lowercased().contains("giant") }
+        case .humanoid:
+            return monsters.filter { $0.type.lowercased().contains("humanoid") }
+        case .monstrosity:
+            return monsters.filter { $0.type.lowercased().contains("monstrosity") }
+        case .ooze:
+            return monsters.filter { $0.type.lowercased().contains("ooze") }
+        case .plant:
+            return monsters.filter { $0.type.lowercased().contains("plant") }
+        case .undead:
+            return monsters.filter { $0.type.lowercased().contains("undead") }
         }
     }
     
@@ -107,20 +125,43 @@ class MonsterService: ObservableObject {
 
 enum MonsterType: String, CaseIterable {
     case all = "Все"
-    case beast = "Звери"
-    case dragon = "Драконы"
-    case humanoid = "Гуманоиды"
+    case aberration = "Аберрация"
+    case beast = "Зверь"
+    case celestial = "Небожитель"
+    case construct = "Конструкт"
+    case dragon = "Дракон"
+    case elemental = "Элементаль"
+    case fey = "Фея"
+    case fiend = "Исчадие"
+    case giant = "Великан"
+    case humanoid = "Гуманоид"
+    case monstrosity = "Чудовище"
+    case ooze = "Слизь"
+    case plant = "Растение"
     case undead = "Нежить"
-    case fiend = "Демоны"
     
     var icon: String {
         switch self {
         case .all: return "list.bullet"
+        case .aberration: return "brain.head.profile"
         case .beast: return "pawprint"
+        case .celestial: return "star.circle"
+        case .construct: return "gear"
         case .dragon: return "flame"
+<<<<<<< Updated upstream
         case .humanoid: return "person.2"
         case .undead: return "skull"
+=======
+        case .elemental: return "wind"
+        case .fey: return "sparkles"
+>>>>>>> Stashed changes
         case .fiend: return "exclamationmark.triangle"
+        case .giant: return "person.3"
+        case .humanoid: return "person.2"
+        case .monstrosity: return "eye"
+        case .ooze: return "drop"
+        case .plant: return "leaf"
+        case .undead: return "bone"
         }
     }
 }

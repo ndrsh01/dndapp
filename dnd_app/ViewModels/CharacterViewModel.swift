@@ -1,99 +1,148 @@
 import Foundation
-import Combine
+import SwiftUI
 
 class CharacterViewModel: ObservableObject {
-    @Published var characters: [DnDCharacter] = []
-    @Published var selectedCharacter: DnDCharacter?
-    @Published var showCharacterSelection = false
-    @Published var showAddCharacter = false
-    @Published var editingCharacter: DnDCharacter?
+    @Published var character: Character
     
-    private let dataService = DataService.shared
-    private var cancellables = Set<AnyCancellable>()
-    
-    init() {
-        setupBindings()
-        loadSelectedCharacter()
+    init(character: Character) {
+        self.character = character
     }
     
-    private func setupBindings() {
-        dataService.$characters
-            .assign(to: \.characters, on: self)
-            .store(in: &cancellables)
+    func updateCharacter(_ updatedCharacter: Character) {
+        character = updatedCharacter
+        character.dateModified = Date()
     }
     
-    private func loadSelectedCharacter() {
-        selectedCharacter = dataService.getSelectedCharacter()
+    func updateHitPoints(_ newHitPoints: Int) {
+        character.hitPoints = max(0, min(newHitPoints, character.maxHitPoints))
+        character.dateModified = Date()
     }
     
-    func addCharacter(_ character: DnDCharacter) {
-        dataService.addCharacter(character)
-        if selectedCharacter == nil {
-            selectCharacter(character)
+    func updateMaxHitPoints(_ newMaxHitPoints: Int) {
+        character.maxHitPoints = max(1, newMaxHitPoints)
+        if character.hitPoints > character.maxHitPoints {
+            character.hitPoints = character.maxHitPoints
         }
+        character.dateModified = Date()
     }
     
-    func updateCharacter(_ character: DnDCharacter) {
-        dataService.updateCharacter(character)
-        if selectedCharacter?.id == character.id {
-            selectedCharacter = character
-        }
-    }
-    
-    func deleteCharacter(_ character: DnDCharacter) {
-        dataService.deleteCharacter(character)
-        if selectedCharacter?.id == character.id {
-            selectedCharacter = characters.first
-            if let newSelected = selectedCharacter {
-                dataService.setSelectedCharacter(newSelected)
-            }
-        }
-    }
-    
-    func duplicateCharacter(_ character: DnDCharacter) {
-        dataService.duplicateCharacter(character)
-    }
-    
-    func selectCharacter(_ character: DnDCharacter) {
-        selectedCharacter = character
-        dataService.setSelectedCharacter(character)
-    }
-    
-    func showCharacterSelectionView() {
-        showCharacterSelection = true
-    }
-    
-    func showAddCharacterView() {
-        showAddCharacter = true
-    }
-    
-    func showEditCharacterView(_ character: DnDCharacter) {
-        editingCharacter = character
-    }
-    
-    // MARK: - Character Import/Export
-    func exportCharacter(_ character: DnDCharacter) -> String? {
-        do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = .prettyPrinted
-            let data = try encoder.encode(character)
-            return String(data: data, encoding: .utf8)
-        } catch {
-            print("Failed to export character: \(error)")
-            return nil
-        }
-    }
-    
-    func importCharacter(from jsonString: String) -> DnDCharacter? {
-        guard let data = jsonString.data(using: .utf8) else { return nil }
+    func updateAbilityScore(ability: AbilityScore, newValue: Int) {
+        let clampedValue = max(1, min(30, newValue))
         
-        do {
-            let decoder = JSONDecoder()
-            let character = try decoder.decode(DnDCharacter.self, from: data)
-            return character
-        } catch {
-            print("Failed to import character: \(error)")
-            return nil
+        switch ability {
+        case .strength:
+            character.strength = clampedValue
+        case .dexterity:
+            character.dexterity = clampedValue
+        case .constitution:
+            character.constitution = clampedValue
+        case .intelligence:
+            character.intelligence = clampedValue
+        case .wisdom:
+            character.wisdom = clampedValue
+        case .charisma:
+            character.charisma = clampedValue
         }
+        
+        character.dateModified = Date()
+    }
+    
+    func updateCombatStat(stat: CombatStat, newValue: Int) {
+        switch stat {
+        case .armorClass:
+            character.armorClass = max(0, newValue)
+        case .initiative:
+            character.initiative = newValue
+        case .speed:
+            character.speed = max(0, newValue)
+        case .proficiencyBonus:
+            character.proficiencyBonus = max(0, newValue)
+        }
+        
+        character.dateModified = Date()
+    }
+}
+
+enum AbilityScore: String, CaseIterable {
+    case strength = "СИЛ"
+    case dexterity = "ЛОВ"
+    case constitution = "ТЕЛ"
+    case intelligence = "ИНТ"
+    case wisdom = "МДР"
+    case charisma = "ХАР"
+    
+    var fullName: String {
+        switch self {
+        case .strength: return "Сила"
+        case .dexterity: return "Ловкость"
+        case .constitution: return "Телосложение"
+        case .intelligence: return "Интеллект"
+        case .wisdom: return "Мудрость"
+        case .charisma: return "Харизма"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .strength: return "figure.strengthtraining.traditional"
+        case .dexterity: return "figure.run"
+        case .constitution: return "heart.fill"
+        case .intelligence: return "brain.head.profile"
+        case .wisdom: return "eye.fill"
+        case .charisma: return "person.2.fill"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .strength: return .red
+        case .dexterity: return .green
+        case .constitution: return .orange
+        case .intelligence: return .blue
+        case .wisdom: return .purple
+        case .charisma: return .pink
+        }
+    }
+    
+    var displayName: String {
+        return fullName
+    }
+}
+
+enum CombatStat: String, CaseIterable {
+    case armorClass = "КЗ"
+    case initiative = "Инициатива"
+    case speed = "Скорость"
+    case proficiencyBonus = "Бонус мастерства"
+    
+    var fullName: String {
+        switch self {
+        case .armorClass: return "Класс брони"
+        case .initiative: return "Инициатива"
+        case .speed: return "Скорость"
+        case .proficiencyBonus: return "Бонус мастерства"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .armorClass: return "shield.fill"
+        case .initiative: return "bolt.fill"
+        case .speed: return "figure.run"
+        case .proficiencyBonus: return "star.fill"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .armorClass: return .blue
+        case .initiative: return .yellow
+        case .speed: return .green
+        case .proficiencyBonus: return .purple
+        }
+    }
+    
+    var displayName: String {
+        return fullName
     }
 }
