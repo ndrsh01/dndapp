@@ -11,6 +11,18 @@ struct BestiaryView: View {
     var filteredMonsters: [Monster] {
         let searchQuery = searchText.lowercased()
         var filtered = dataService.monsters
+        
+        print("=== FILTERING MONSTERS ===")
+        print("Total monsters: \(dataService.monsters.count)")
+        print("Search text: '\(searchText)'")
+        print("Selected types: \(selectedTypes)")
+        print("Selected CRs: \(selectedChallengeRatings)")
+        
+        // Если монстры не загружены, возвращаем пустой массив
+        if dataService.monsters.isEmpty {
+            print("No monsters loaded, returning empty array")
+            return []
+        }
 
         // Поиск
         if !searchText.isEmpty {
@@ -149,17 +161,20 @@ struct BestiaryView: View {
         .onAppear {
             print("=== BESTIARY VIEW APPEARED ===")
             print("DataService monsters count: \(dataService.monsters.count)")
-
-            if dataService.monsters.isEmpty {
-                print("WARNING: No monsters loaded! Attempting to reload...")
-                Task {
-                    await dataService.loadMonsters()
-                    print("After reload attempt: \(dataService.monsters.count) monsters")
-                }
-            } else {
-                print("Monsters are loaded. First 5 monsters:")
-                for i in 0..<min(5, dataService.monsters.count) {
-                    print("  \(i+1). \(dataService.monsters[i].name)")
+            
+            // Принудительно загружаем монстров при каждом появлении
+            Task {
+                await dataService.loadMonsters()
+                print("After load attempt: \(dataService.monsters.count) monsters")
+                
+                if !dataService.monsters.isEmpty {
+                    print("First 3 monsters:")
+                    for i in 0..<min(3, dataService.monsters.count) {
+                        let monster = dataService.monsters[i]
+                        print("  \(i+1). \(monster.name) (type: \(monster.type))")
+                    }
+                } else {
+                    print("ERROR: Still no monsters after load attempt!")
                 }
             }
         }

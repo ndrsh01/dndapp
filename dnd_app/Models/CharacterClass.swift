@@ -7,7 +7,7 @@ struct DnDClass: Codable, Identifiable {
     let nameEn: String
     let hitDice: String
     let proficiencies: Proficiencies
-    let equipment: Equipment
+    let equipment: ClassEquipment
     let levelProgression: [LevelProgression]
     let subclasses: [DnDSubclass]
     
@@ -41,7 +41,7 @@ struct Proficiencies: Codable {
     }
 }
 
-struct Equipment: Codable {
+struct ClassEquipment: Codable {
     let optionA: [String]
     let optionB: [String]
     

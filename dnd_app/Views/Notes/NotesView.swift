@@ -1,17 +1,17 @@
 import SwiftUI
 
 struct NotesView: View {
-    @StateObject private var viewModel = NotesViewModel()
+    @EnvironmentObject private var viewModel: NotesViewModel
     @State private var showAddNote = false
     @State private var editingNote: Note?
-    
+
     var body: some View {
         NavigationView {
-            VStack {
+            VStack(spacing: 0) {
                 // Search Bar
                 SearchBar(text: $viewModel.searchText, placeholder: "Поиск заметок...")
                     .padding(.horizontal, 16)
-                    .padding(.top, 16)
+                    .padding(.top, 8)
                     .padding(.bottom, 8)
                 
                 // Category Selection
@@ -39,6 +39,7 @@ struct NotesView: View {
                 
                 // Notes List
                 if viewModel.filteredNotes.isEmpty {
+                    Spacer()
                     EmptyStateView(
                         icon: "note.text",
                         title: "Нет заметок",
@@ -48,9 +49,11 @@ struct NotesView: View {
                             showAddNote = true
                         }
                     )
+                    Spacer()
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 16) {
+                            Spacer().frame(height: 12)
                             ForEach(viewModel.filteredNotes) { note in
                                 NoteCardView(note: note)
                                     .contextMenu {
@@ -81,24 +84,24 @@ struct NotesView: View {
                         .padding(.bottom, 16)
                     }
                 }
-            }
-            .background(Color(red: 0.98, green: 0.97, blue: 0.95))
-            .navigationTitle("Заметки")
-            .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {
-                        showAddNote = true
-                    }) {
-                        Image(systemName: "plus")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.orange)
-                    }
+        }
+        .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+        .navigationTitle("Заметки")
+        .navigationBarTitleDisplayMode(.large)
+        .ignoresSafeArea(.all, edges: .bottom)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: {
+                    showAddNote = true
+                }) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.orange)
                 }
             }
         }
         .sheet(isPresented: $showAddNote) {
-            AddNoteView { note in
+            AddNoteView(characterId: viewModel.selectedCharacterId) { note in
                 viewModel.addNote(note)
             }
         }
@@ -106,6 +109,7 @@ struct NotesView: View {
             EditNoteView(note: note) { updatedNote in
                 viewModel.updateNote(updatedNote)
             }
+        }
         }
     }
 }
@@ -308,6 +312,7 @@ struct AddNoteView: View {
     @State private var loreType = ""
     @State private var era = ""
 
+    let characterId: UUID?
     let onSave: (Note) -> Void
 
     var body: some View {
@@ -422,6 +427,7 @@ struct AddNoteView: View {
                             title: title,
                             description: content,
                             category: category,
+                            characterId: characterId,
                             race: race.isEmpty ? nil : race,
                             occupation: occupation.isEmpty ? nil : occupation,
                             organization: organization.isEmpty ? nil : organization,

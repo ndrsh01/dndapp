@@ -2,6 +2,7 @@ import SwiftUI
 
 struct CharacterSelectionView: View {
     @EnvironmentObject private var characterManager: CharacterManager
+    @Environment(\.dismiss) private var dismiss
     @State private var showingCreateCharacter = false
     @State private var showingImportSheet = false
     @State private var showingAlert = false
@@ -11,6 +12,9 @@ struct CharacterSelectionView: View {
     @State private var showingExportCharacter = false
     @State private var showingDeleteConfirmation = false
     @State private var characterToDelete: Character?
+    @State private var showingShareSheet = false
+    @State private var exportURL: URL?
+    @State private var isExporting = false
     
     var body: some View {
         NavigationView {
@@ -42,8 +46,39 @@ struct CharacterSelectionView: View {
             }
             .sheet(isPresented: $showingImportSheet) {
                 DocumentPicker { data in
-                    // Сначала пробуем импортировать как внешний формат
-                    if let character = characterManager.importExternalCharacterFromData(data) {
+                    // Сначала пробуем импортировать как расширенный формат с дополнительными данными
+                    if let jsonString = String(data: data, encoding: .utf8),
+                       let (character, relationships, notes, spells) = characterManager.importCharacterWithData(from: jsonString) {
+                        characterManager.addCharacter(character)
+                        
+                        // Сохраняем дополнительные данные
+                        let dataService = DataService.shared
+                        for relationship in relationships {
+                            dataService.addRelationship(relationship)
+                        }
+                        for note in notes {
+                            dataService.addNote(note)
+                        }
+                        
+                        // Сохраняем избранные заклинания
+                        var favoriteSpells = Set<UUID>()
+                        if let data = UserDefaults.standard.data(forKey: "favoriteSpells"),
+                           let existingFavorites = try? JSONDecoder().decode(Set<UUID>.self, from: data) {
+                            favoriteSpells = existingFavorites
+                        }
+                        
+                        for spell in spells {
+                            favoriteSpells.insert(spell.id)
+                        }
+                        
+                        if let data = try? JSONEncoder().encode(favoriteSpells) {
+                            UserDefaults.standard.set(data, forKey: "favoriteSpells")
+                        }
+                        
+                        alertMessage = "Персонаж успешно импортирован с дополнительными данными!"
+                        showingAlert = true
+                    } else if let character = characterManager.importExternalCharacterFromData(data) {
+                        // Если не получилось, пробуем внешний формат
                         characterManager.addCharacter(character)
                         alertMessage = "Персонаж успешно импортирован из внешнего формата!"
                         showingAlert = true
@@ -67,7 +102,7 @@ struct CharacterSelectionView: View {
             }
             .sheet(isPresented: $showingExportCharacter) {
                 if let character = selectedCharacterForContext {
-                    CharacterExportView(character: character)
+                    SimpleExportView(character: character)
                 }
             }
             .alert("Импорт", isPresented: $showingAlert) {
@@ -87,12 +122,92 @@ struct CharacterSelectionView: View {
                     Text("Вы уверены, что хотите удалить персонажа \"\(character.name)\"? Это действие нельзя отменить.")
                 }
             }
+            .sheet(isPresented: $showingShareSheet) {
+                Group {
+                    let _ = print("=== SHEET CONDITION CHECK ===")
+                    let _ = print("isExporting: \(isExporting)")
+                    let _ = print("exportURL != nil: \(exportURL != nil)")
+                    let _ = print("exportURL: \(exportURL?.path ?? "nil")")
+                    
+                    if isExporting {
+                        VStack(spacing: 20) {
+                            ProgressView()
+                                .scaleEffect(2.0)
+                                .progressViewStyle(CircularProgressViewStyle(tint: .blue))
+                            
+                            Text("Экспорт персонажа...")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            
+                            Text("Создание файла с данными персонажа")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(40)
+                        .background(Color(.systemBackground))
+                        .cornerRadius(16)
+                        .shadow(radius: 10)
+                        .onAppear {
+                            print("=== SHARE SHEET SHEET TRIGGERED (LOADING) ===")
+                            print("showingShareSheet: \(showingShareSheet)")
+                            print("isExporting: \(isExporting)")
+                        }
+                    } else if let url = exportURL {
+                        CharacterSelectionShareSheet(items: [url])
+                            .onAppear {
+                                print("=== SHARE SHEET SHEET TRIGGERED (SUCCESS) ===")
+                                print("showingShareSheet: \(showingShareSheet)")
+                                print("exportURL: \(url.path)")
+                            }
+                    } else {
+                        VStack(spacing: 20) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 50))
+                                .foregroundColor(.orange)
+                            
+                            Text("Проблема с экспортом")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                            
+                            Text("Не удалось создать файл для экспорта")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                            
+                            Button("Закрыть") {
+                                showingShareSheet = false
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .padding(.top)
+                        }
+                        .padding(40)
+                        .background(Color(.systemBackground))
+                        .cornerRadius(16)
+                        .shadow(radius: 10)
+                        .onAppear {
+                            print("=== SHARE SHEET SHEET TRIGGERED (ERROR) ===")
+                            print("showingShareSheet: \(showingShareSheet)")
+                            print("exportURL: nil")
+                        }
+                    }
+                }
+            }
+        }
+        .onAppear {
+            print("=== CHARACTER SELECTION VIEW APPEARED ===")
+            print("Total characters: \(characterManager.characters.count)")
+            for (index, character) in characterManager.characters.enumerated() {
+                print("Character \(index): '\(character.name)' with ID: \(character.id)")
+            }
+            print("Currently selected: '\(characterManager.selectedCharacter?.name ?? "nil")' with ID: \(characterManager.selectedCharacter?.id.uuidString ?? "nil")")
         }
     }
     
     private func playButton(for character: Character) -> some View {
         Button(action: {
             characterManager.selectCharacter(character)
+            dismiss() // Закрываем экран выбора персонажа
         }) {
             HStack {
                 Image(systemName: "play.fill")
@@ -185,7 +300,11 @@ struct CharacterSelectionView: View {
                             character: character,
                             isSelected: characterManager.selectedCharacter?.id == character.id,
                             onSelect: {
+                                print("=== CHARACTER SELECTION VIEW ===")
+                                print("User tapped on character: '\(character.name)' with ID: \(character.id)")
+                                print("Current selected character: '\(characterManager.selectedCharacter?.name ?? "nil")' with ID: \(characterManager.selectedCharacter?.id.uuidString ?? "nil")")
                                 characterManager.selectCharacter(character)
+                                print("After selection: '\(characterManager.selectedCharacter?.name ?? "nil")' with ID: \(characterManager.selectedCharacter?.id.uuidString ?? "nil")")
                             },
                             onEdit: {
                                 selectedCharacterForContext = character
@@ -247,22 +366,105 @@ struct CharacterSelectionView: View {
                 .cornerRadius(12)
             }
             
-            Button(action: {
-                showingImportSheet = true
-            }) {
-                HStack {
-                    Image(systemName: "square.and.arrow.down.fill")
-                    Text("Импортировать из JSON")
+            HStack(spacing: 12) {
+                Button(action: {
+                    showingImportSheet = true
+                }) {
+                    HStack {
+                        Image(systemName: "square.and.arrow.down.fill")
+                        Text("Импорт")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.orange)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.orange.opacity(0.1))
+                    .cornerRadius(12)
                 }
-                .font(.headline)
-                .foregroundColor(.orange)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.orange.opacity(0.1))
-                .cornerRadius(12)
+                
+                Button(action: {
+                    if let selectedCharacter = characterManager.selectedCharacter {
+                        exportCharacterDirectly(selectedCharacter)
+                    } else {
+                        alertMessage = "Выберите персонажа для экспорта"
+                        showingAlert = true
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "square.and.arrow.up.fill")
+                        Text("Экспорт")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.green)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.green.opacity(0.1))
+                    .cornerRadius(12)
+                }
+                .disabled(characterManager.selectedCharacter == nil)
+                .opacity(characterManager.selectedCharacter == nil ? 0.6 : 1.0)
             }
         }
         .padding(.horizontal)
+    }
+    
+    private func exportCharacterDirectly(_ character: Character) {
+        print("=== DIRECT EXPORT ===")
+        print("Character: \(character.name)")
+        print("Current exportURL: \(exportURL?.path ?? "nil")")
+        
+        // Устанавливаем флаг экспорта и показываем Sheet
+        isExporting = true
+        showingShareSheet = true
+        
+        // Экспортируем полный формат
+        print("Calling exportCharacterExtended...")
+        guard let jsonString = characterManager.exportCharacterExtended(character) else {
+            print("ERROR: exportCharacterExtended returned nil")
+            DispatchQueue.main.async {
+                self.isExporting = false
+                self.alertMessage = "Ошибка создания файла экспорта"
+                self.showingAlert = true
+            }
+            return
+        }
+        print("exportCharacterExtended succeeded, JSON length: \(jsonString.count)")
+        
+        print("JSON string length: \(jsonString.count)")
+        
+        // Создаем временный файл
+        let fileName = "\(character.name)_экспорт.json"
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        print("Creating file at: \(tempURL)")
+        
+        do {
+            try jsonString.write(to: tempURL, atomically: true, encoding: .utf8)
+            print("File created successfully")
+            
+            // Обновляем UI на главном потоке
+            DispatchQueue.main.async {
+                print("=== UPDATING UI ON MAIN THREAD ===")
+                print("Setting exportURL: \(tempURL)")
+                self.exportURL = tempURL
+                // Не сбрасываем isExporting сразу, чтобы Sheet не переключился на ошибку
+                print("Export completed, ShareSheet should update automatically")
+                print("Current showingShareSheet state: \(self.showingShareSheet)")
+                print("Current exportURL: \(self.exportURL?.path ?? "nil")")
+                
+                // Сбрасываем isExporting через небольшую задержку
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.isExporting = false
+                }
+            }
+            
+        } catch {
+            print("ERROR: \(error)")
+            DispatchQueue.main.async {
+                self.isExporting = false
+                self.alertMessage = "Ошибка сохранения файла: \(error.localizedDescription)"
+                self.showingAlert = true
+            }
+        }
     }
 }
 
@@ -396,7 +598,30 @@ struct CharacterContextMenu: View {
     }
 }
 
+struct CharacterSelectionShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+    
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        print("=== CHARACTER SELECTION SHARE SHEET ===")
+        print("Creating UIActivityViewController with items count: \(items.count)")
+        
+        for (index, item) in items.enumerated() {
+            print("Item \(index): \(type(of: item))")
+            if let url = item as? URL {
+                print("  - URL: \(url)")
+                print("  - Path: \(url.path)")
+                print("  - File exists: \(FileManager.default.fileExists(atPath: url.path))")
+            }
+        }
+        
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        return controller
+    }
+    
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
 #Preview {
     CharacterSelectionView()
-        .environmentObject(CharacterManager())
+        .environmentObject(CharacterManager.shared)
 }

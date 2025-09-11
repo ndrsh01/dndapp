@@ -1,10 +1,10 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @StateObject private var characterManager = CharacterManager()
+    @ObservedObject private var characterManager = CharacterManager.shared
+    @StateObject private var settingsManager = SettingsManager.shared
     @State private var showCharacterSelection = false
-    @State private var showExportAlert = false
-    @State private var showImportAlert = false
+    @State private var showCacheClearedAlert = false
     
     var body: some View {
         NavigationView {
@@ -33,30 +33,43 @@ struct SettingsView: View {
                     }
                 }
                 
-                // Data Management Section
+                // Cache Management Section
                 Section("Управление данными") {
-                    SettingsRowView(
-                        icon: "square.and.arrow.up",
-                        title: "Экспорт данных",
-                        subtitle: "Сохранить все данные в файл"
-                    ) {
-                        showExportAlert = true
-                    }
-                    
-                    SettingsRowView(
-                        icon: "square.and.arrow.down",
-                        title: "Импорт данных",
-                        subtitle: "Загрузить данные из файла"
-                    ) {
-                        showImportAlert = true
-                    }
-                    
                     SettingsRowView(
                         icon: "trash",
                         title: "Очистить кэш",
                         subtitle: "Удалить временные файлы"
                     ) {
-                        // TODO: Implement cache clearing
+                        clearCache()
+                    }
+                }
+                
+                // Appearance Section
+                Section("Внешний вид") {
+                    HStack {
+                        Image(systemName: "moon")
+                            .foregroundColor(.orange)
+                            .frame(width: 24)
+
+                        VStack(alignment: .leading) {
+                            Text("Темная тема")
+                                .font(.headline)
+                            Text("Включить темную цветовую схему")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Spacer()
+
+                        Toggle("", isOn: Binding(
+                            get: { 
+                                return settingsManager.settings.selectedTheme == .dark 
+                            },
+                            set: { isOn in
+                                settingsManager.settings.selectedTheme = isOn ? .dark : .light
+                            }
+                        ))
+                        .labelsHidden()
                     }
                 }
                 
@@ -86,21 +99,29 @@ struct SettingsView: View {
             CharacterSelectionView()
                 .environmentObject(characterManager)
         }
-        .alert("Экспорт данных", isPresented: $showExportAlert) {
-            Button("Отмена", role: .cancel) { }
-            Button("Экспорт") {
-                // TODO: Implement data export
-            }
+        .alert("Кэш очищен", isPresented: $showCacheClearedAlert) {
+            Button("OK") { }
         } message: {
-            Text("Все ваши данные будут сохранены в файл для резервного копирования.")
+            Text("Временные файлы успешно удалены.")
         }
-        .alert("Импорт данных", isPresented: $showImportAlert) {
-            Button("Отмена", role: .cancel) { }
-            Button("Импорт") {
-                // TODO: Implement data import
+    }
+    
+    private func clearCache() {
+        // Очищаем временные файлы
+        let tempDirectory = FileManager.default.temporaryDirectory
+        
+        do {
+            let tempFiles = try FileManager.default.contentsOfDirectory(at: tempDirectory, includingPropertiesForKeys: nil)
+            
+            for file in tempFiles {
+                try FileManager.default.removeItem(at: file)
             }
-        } message: {
-            Text("Выберите файл с данными для импорта.")
+            
+            print("Cache cleared: \(tempFiles.count) files removed")
+            showCacheClearedAlert = true
+            
+        } catch {
+            print("Error clearing cache: \(error)")
         }
     }
 }

@@ -1,12 +1,12 @@
 import Foundation
 
-// Модели для внешнего формата персонажа (как в JSON файле)
-struct ExternalCharacter: Codable {
+// Модель для внешнего формата персонажа (как в приложенном файле)
+struct ExternalCharacterFormat: Codable {
     let tags: [String]
     let disabledBlocks: DisabledBlocks
     let edition: String
-    let spells: ExternalSpells
-    let data: String // Это JSON строка, нужно парсить отдельно
+    let spells: SpellsInfo
+    let data: String // JSON строка с данными персонажа
     let jsonType: String
     let version: String
 }
@@ -31,143 +31,171 @@ struct DisabledBlocks: Codable {
     }
 }
 
-struct ExternalSpells: Codable {
+struct SpellsInfo: Codable {
     let mode: String
     let prepared: [String]
     let book: [String]
 }
 
-// Внутренняя структура данных персонажа
+// Внутренние данные персонажа (JSON строка)
 struct ExternalCharacterData: Codable {
     let isDefault: Bool
     let jsonType: String
     let template: String
-    let name: ExternalValue
-    let info: ExternalInfo
-    let subInfo: ExternalSubInfo
-    let spellsInfo: ExternalSpellsInfo
+    let name: CharacterField
+    let info: CharacterInfo
+    let subInfo: CharacterSubInfo
+    let spellsInfo: CharacterSpellsInfo
     let spells: [String: String]
     let spellsPact: [String: String]
     let proficiency: Int
-    let stats: ExternalStats
-    let saves: ExternalSaves
-    let skills: ExternalSkills
-    let vitality: ExternalVitality
-    let attunementsList: [ExternalAttunement]
-    let weaponsList: [ExternalWeapon]
+    let stats: CharacterStats
+    let saves: CharacterSaves
+    let skills: CharacterSkills
+    let vitality: CharacterVitality
+    let attunementsList: [AttunementItem]
+    let weaponsList: [WeaponItem]
     let weapons: [String: String]
-    let text: ExternalText
-    let coins: ExternalCoins
-    let resources: [String: ExternalResource]
+    let text: CharacterText
+    let prof: CharacterField
+    let equipment: CharacterField
+    let background: CharacterField
+    let allies: CharacterField
+    let personality: CharacterField
+    let ideals: CharacterField
+    let flaws: CharacterField
+    let bonds: CharacterField
+    let coins: CharacterCoins
+    let resources: [String: CharacterResource]
     let bonusesSkills: [String: String]
     let bonusesStats: [String: String]
     let conditions: [String]
     let createdAt: String
 }
 
-struct ExternalValue: Codable {
-    let value: String
+struct CharacterField: Codable {
+    let value: CharacterFieldValue
 }
 
-struct ExternalInfo: Codable {
-    let charClass: ExternalValue
-    let charSubclass: ExternalValue
-    let level: ExternalIntValue
-    let background: ExternalValue
-    let playerName: ExternalValue
-    let race: ExternalValue
-    let alignment: ExternalValue
-    let experience: ExternalValue
+struct CharacterFieldValue: Codable {
+    let data: CharacterFieldData?
+    let size: Int?
 }
 
-struct ExternalIntValue: Codable {
-    let value: Int
+struct CharacterFieldData: Codable {
+    let type: String
+    let content: [CharacterFieldContent]?
 }
 
-struct ExternalSubInfo: Codable {
-    let age: ExternalValue
-    let height: ExternalValue
-    let weight: ExternalValue
-    let eyes: ExternalValue
-    let skin: ExternalValue
-    let hair: ExternalValue
+struct CharacterFieldContent: Codable {
+    let type: String
+    let content: [CharacterFieldContent]?
+    let text: String?
+    let marks: [CharacterFieldMark]?
+    let attrs: [String: String]?
 }
 
-struct ExternalSpellsInfo: Codable {
-    let base: ExternalValue
-    let save: ExternalValue
-    let mod: ExternalValue
+struct CharacterFieldMark: Codable {
+    let type: String
+    let attrs: [String: String]?
 }
 
-struct ExternalStats: Codable {
-    let str: ExternalStat
-    let dex: ExternalStat
-    let con: ExternalStat
-    let int: ExternalStat
-    let wis: ExternalStat
-    let cha: ExternalStat
+struct CharacterInfo: Codable {
+    let charClass: CharacterField
+    let charSubclass: CharacterField
+    let level: CharacterField
+    let background: CharacterField
+    let playerName: CharacterField
+    let race: CharacterField
+    let alignment: CharacterField
+    let experience: CharacterField
 }
 
-struct ExternalStat: Codable {
+struct CharacterSubInfo: Codable {
+    let age: CharacterField
+    let height: CharacterField
+    let weight: CharacterField
+    let eyes: CharacterField
+    let skin: CharacterField
+    let hair: CharacterField
+}
+
+struct CharacterSpellsInfo: Codable {
+    let base: CharacterField
+    let save: CharacterField
+    let mod: CharacterField
+}
+
+struct CharacterStats: Codable {
+    let str: CharacterStat
+    let dex: CharacterStat
+    let con: CharacterStat
+    let int: CharacterStat
+    let wis: CharacterStat
+    let cha: CharacterStat
+}
+
+struct CharacterStat: Codable {
     let name: String
     let score: Int
     let modifier: Int?
     let label: String
 }
 
-struct ExternalSaves: Codable {
-    let str: ExternalSave
-    let dex: ExternalSave
-    let con: ExternalSave
-    let int: ExternalSave
-    let wis: ExternalSave
-    let cha: ExternalSave
+struct CharacterSaves: Codable {
+    let str: CharacterSave
+    let dex: CharacterSave
+    let con: CharacterSave
+    let int: CharacterSave
+    let wis: CharacterSave
+    let cha: CharacterSave
 }
 
-struct ExternalSave: Codable {
+struct CharacterSave: Codable {
     let name: String
     let isProf: Bool
 }
 
-struct ExternalSkills: Codable {
-    let acrobatics: ExternalSkill
-    let investigation: ExternalSkill
-    let athletics: ExternalSkill
-    let perception: ExternalSkill
-    let survival: ExternalSkill
-    let performance: ExternalSkill
-    let intimidation: ExternalSkill
-    let history: ExternalSkill
-    let sleightOfHand: ExternalSkill
-    let arcana: ExternalSkill
-    let medicine: ExternalSkill
-    let deception: ExternalSkill
-    let nature: ExternalSkill
-    let insight: ExternalSkill
-    let religion: ExternalSkill
-    let stealth: ExternalSkill
-    let persuasion: ExternalSkill
-    let animalHandling: ExternalSkill
+struct CharacterSkills: Codable {
+    let acrobatics: CharacterSkill
+    let investigation: CharacterSkill
+    let athletics: CharacterSkill
+    let perception: CharacterSkill
+    let survival: CharacterSkill
+    let performance: CharacterSkill
+    let intimidation: CharacterSkill
+    let history: CharacterSkill
+    let sleightOfHand: CharacterSkill
+    let arcana: CharacterSkill
+    let medicine: CharacterSkill
+    let deception: CharacterSkill
+    let nature: CharacterSkill
+    let insight: CharacterSkill
+    let religion: CharacterSkill
+    let stealth: CharacterSkill
+    let persuasion: CharacterSkill
+    let animalHandling: CharacterSkill
     
     enum CodingKeys: String, CodingKey {
-        case acrobatics, investigation, athletics, perception, survival, performance, intimidation, history, arcana, medicine, deception, nature, insight, religion, stealth, persuasion
+        case acrobatics, investigation, athletics, perception, survival, performance, intimidation, history
         case sleightOfHand = "sleight of hand"
+        case arcana, medicine, deception, nature, insight, religion, stealth, persuasion
         case animalHandling = "animal handling"
     }
 }
 
-struct ExternalSkill: Codable {
+struct CharacterSkill: Codable {
     let baseStat: String
     let name: String
     let isProf: Int?
 }
 
-struct ExternalVitality: Codable {
-    let hpDiceCurrent: ExternalIntValue
+struct CharacterVitality: Codable {
+    let hpDiceCurrent: CharacterField
     let hpDiceMulti: [String: String]
-    let speed: ExternalValue
-    let hpMax: ExternalIntValue
-    let ac: ExternalIntValue
+    let speed: CharacterField
+    let hpMax: CharacterField
+    let ac: CharacterField
     let isDying: Bool
     
     enum CodingKeys: String, CodingKey {
@@ -180,76 +208,32 @@ struct ExternalVitality: Codable {
     }
 }
 
-struct ExternalAttunement: Codable {
+struct AttunementItem: Codable {
     let id: String
     let checked: Bool
     let value: String
 }
 
-struct ExternalWeapon: Codable {
+struct WeaponItem: Codable {
     let id: String
-    let name: ExternalValue
-    let mod: ExternalValue
-    let dmg: ExternalValue
+    let name: CharacterField
+    let mod: CharacterField
+    let dmg: CharacterField
     let ability: String
     let isProf: Bool
 }
 
-struct ExternalText: Codable {
-    let traits: ExternalTextValue
-    let attacks: ExternalTextValue
-    let features: ExternalTextValue
-    let prof: ExternalTextValue
-    let equipment: ExternalTextValue
-    let background: ExternalTextValue
-    let allies: ExternalTextValue
-    let personality: ExternalTextValue
-    let ideals: ExternalTextValue
-    let flaws: ExternalTextValue
-    let bonds: ExternalTextValue
+struct CharacterText: Codable {
+    let traits: CharacterField
+    let attacks: CharacterField
+    let features: CharacterField
 }
 
-struct ExternalTextValue: Codable {
-    let value: ExternalTextData
-    let size: Int
+struct CharacterCoins: Codable {
+    let gp: CharacterField
 }
 
-struct ExternalTextData: Codable {
-    let data: ExternalTextContent
-}
-
-struct ExternalTextContent: Codable {
-    let type: String
-    let content: [ExternalTextNode]
-}
-
-struct ExternalTextNode: Codable {
-    let type: String
-    let content: [ExternalTextContent]?
-    let text: String?
-    let marks: [ExternalTextMark]?
-    let attrs: ExternalTextAttrs?
-}
-
-struct ExternalTextMark: Codable {
-    let type: String
-    let attrs: ExternalTextAttrs?
-}
-
-struct ExternalTextAttrs: Codable {
-    let id: String?
-    let textName: String?
-    let href: String?
-    let target: String?
-    let rel: String?
-    let `class`: String?
-}
-
-struct ExternalCoins: Codable {
-    let gp: ExternalIntValue
-}
-
-struct ExternalResource: Codable {
+struct CharacterResource: Codable {
     let id: String
     let name: String
     let current: Int
@@ -259,4 +243,3 @@ struct ExternalResource: Codable {
     let icon: String
     let isShortRest: Bool?
 }
-

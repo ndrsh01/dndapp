@@ -16,7 +16,7 @@ struct FavoritesView: View {
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.top, 20)
                 
                 // Контент
                 TabView(selection: $selectedTab) {
@@ -38,9 +38,10 @@ struct FavoritesView: View {
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
-            .background(Color(UIColor.systemGroupedBackground))
+            .background(Color(red: 0.98, green: 0.97, blue: 0.95))
             .navigationTitle("Избранное")
             .navigationBarTitleDisplayMode(.large)
+            .ignoresSafeArea(.all, edges: .bottom)
         }
     }
 }

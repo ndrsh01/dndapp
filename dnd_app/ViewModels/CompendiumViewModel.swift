@@ -8,6 +8,7 @@ class CompendiumViewModel: ObservableObject {
     @Published var searchText: String = ""
     @Published var selectedSection: CompendiumSection = .spells
     @Published var showFavoritesOnly = false
+    @Published var selectedCharacterId: UUID?
     
     private let dataService = DataService.shared
     private var cancellables = Set<AnyCancellable>()
@@ -48,8 +49,15 @@ class CompendiumViewModel: ObservableObject {
             .store(in: &cancellables)
     }
     
+    func setSelectedCharacter(_ characterId: UUID?) {
+        print("=== COMPENDIUM VIEWMODEL ===")
+        print("Setting selected character for spells: \(characterId?.uuidString ?? "nil")")
+        selectedCharacterId = characterId
+        print("Selected character set for compendium")
+    }
+    
     var filteredSpells: [Spell] {
-        let spells = showFavoritesOnly ? self.spells.filter { $0.isFavorite } : self.spells
+        let spells = showFavoritesOnly ? dataService.getFavoriteSpells(for: selectedCharacterId) : self.spells
         
         if searchText.isEmpty {
             return spells
@@ -99,7 +107,7 @@ class CompendiumViewModel: ObservableObject {
     }
     
     func toggleSpellFavorite(_ spell: Spell) {
-        dataService.toggleSpellFavorite(spell)
+        dataService.toggleSpellFavorite(spell, for: selectedCharacterId)
     }
     
     func toggleFeatFavorite(_ feat: Feat) {

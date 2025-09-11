@@ -9,15 +9,17 @@ enum SheetContent {
 }
 
 struct CompendiumView: View {
-    @StateObject private var viewModel = CompendiumViewModel()
+    @EnvironmentObject private var viewModel: CompendiumViewModel
     @State private var selectedItem: Any?
     @State private var showSheet = false
     @State private var sheetContent: SheetContent = .spells
     
     var body: some View {
-        NavigationView {
-            ScrollView {
+        ScrollView {
                 LazyVStack(spacing: 16) {
+                    Spacer()
+                        .frame(height: 8)
+
                     // Карточки категорий согласно изображению
                     CompendiumCategoryCard(
                         title: "Заклинания",
@@ -81,24 +83,29 @@ struct CompendiumView: View {
                     
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 8)
-            }
-            .background(Color(red: 0.98, green: 0.97, blue: 0.95))
-            .navigationTitle("Глоссарий")
-            .navigationBarTitleDisplayMode(.large)
+                .padding(.top, 32)
+                .padding(.bottom, 20)
         }
+        .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+        .navigationTitle("Глоссарий")
+        .navigationBarTitleDisplayMode(.large)
+        .ignoresSafeArea(.all, edges: .bottom)
         .sheet(isPresented: $showSheet) {
             switch sheetContent {
             case .spells:
                 SpellsView()
+                    .environmentObject(viewModel)
             case .backgrounds:
                 BackgroundsView()
+                    .environmentObject(viewModel)
             case .feats:
                 FeatsView()
+                    .environmentObject(viewModel)
             case .bestiary:
                 BestiaryView()
             case .favorites:
                 FavoritesView()
+                    .environmentObject(viewModel)
             }
         }
     }

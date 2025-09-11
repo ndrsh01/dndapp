@@ -12,6 +12,8 @@ struct CharacterView: View {
     @State private var showingClassFeaturesView = false
     @State private var showingEquipmentView = false
     @State private var showingTreasuresView = false
+    @State private var showingFeaturesView = false
+    @State private var showingPersonalityView = false
     
     let onCharacterUpdate: ((Character) -> Void)?
     let onCharacterContextMenu: (() -> Void)?
@@ -37,10 +39,7 @@ struct CharacterView: View {
                 
                 // Боевые характеристики
                 combatStatsSection
-                
-                // Ресурсы классов
-                classResourcesSection
-                
+
                 // Детальная информация
                 detailedInfoSection
             }
@@ -70,7 +69,8 @@ struct CharacterView: View {
                     EditHitPointsPopupView(
                         currentHitPoints: $viewModel.character.hitPoints,
                         maxHitPoints: $viewModel.character.maxHitPoints,
-                        hitPointsType: hitPointsType
+                        hitPointsType: hitPointsType,
+                        onDismiss: { showingEditHitPoints = false }
                     )
                     .onDisappear {
                         onCharacterUpdate?(viewModel.character)
@@ -91,7 +91,8 @@ struct CharacterView: View {
                             set: { newValue in
                                 viewModel.updateAbilityScore(ability: ability, newValue: newValue)
                             }
-                        )
+                        ),
+                        onDismiss: { showingEditAbility = false }
                     )
                     .onDisappear {
                         onCharacterUpdate?(viewModel.character)
@@ -128,7 +129,8 @@ struct CharacterView: View {
         }
         .sheet(isPresented: $showingClassFeaturesView) {
             CharacterClassFeaturesView(
-                character: $viewModel.character
+                character: $viewModel.character,
+                onCharacterUpdate: onCharacterUpdate
             )
             .environmentObject(DataService.shared)
         }
@@ -140,6 +142,18 @@ struct CharacterView: View {
         }
         .sheet(isPresented: $showingTreasuresView) {
             CharacterTreasuresView(
+                character: $viewModel.character,
+                onCharacterUpdate: onCharacterUpdate
+            )
+        }
+        .sheet(isPresented: $showingFeaturesView) {
+            CharacterFeaturesView(
+                character: $viewModel.character,
+                onCharacterUpdate: onCharacterUpdate
+            )
+        }
+        .sheet(isPresented: $showingPersonalityView) {
+            CharacterPersonalityView(
                 character: $viewModel.character,
                 onCharacterUpdate: onCharacterUpdate
             )
@@ -360,6 +374,10 @@ struct CharacterView: View {
                 showingEquipmentView = true
             } else if title == "Сокровища" {
                 showingTreasuresView = true
+            } else if title == "Личность" {
+                showingPersonalityView = true
+            } else if title == "Особенности" {
+                showingFeaturesView = true
             }
         }
     }
@@ -543,6 +561,7 @@ struct CharacterClassFeaturesView: View {
     @Binding var character: Character
     @EnvironmentObject private var dataService: DataService
     @Environment(\.dismiss) private var dismiss
+    let onCharacterUpdate: ((Character) -> Void)?
     
     var body: some View {
         NavigationView {
@@ -558,25 +577,26 @@ struct CharacterClassFeaturesView: View {
                         .foregroundColor(.secondary)
                         .padding(.horizontal)
                     
-                    // Ресурсы класса
-                    if !availableResources.isEmpty {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Ресурсы класса")
-                                .font(.headline)
-                                .padding(.horizontal)
-                            
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
-                                ForEach(availableResources, id: \.name) { resource in
-                                    ClassResourceInfoCard(resource: resource)
-                                }
-                            }
-                            .padding(.horizontal)
-                        }
-                    }
-                    
+                    // Все классовые умения
                     LazyVStack(spacing: 12) {
                         ForEach(availableFeatures, id: \.name) { feature in
-                            ClassFeatureCard(feature: feature)
+                            // Проверяем, является ли это умение ресурсом
+                            if isResourceFeature(feature) {
+                                // Показываем как редактируемый ресурс
+                                if let resource = availableResources.first(where: { $0.name == feature.name }) {
+                                    ClassResourceInfoCard(
+                                        resource: resource,
+                                        character: $character,
+                                        onCharacterUpdate: onCharacterUpdate
+                                    )
+                                } else {
+                                    // Если ресурс не найден, показываем как обычное умение
+                                    ClassFeatureCard(feature: feature)
+                                }
+                            } else {
+                                // Показываем как обычное умение (только для чтения)
+                                ClassFeatureCard(feature: feature)
+                            }
                         }
                     }
                     .padding(.horizontal)
@@ -626,27 +646,70 @@ struct CharacterClassFeaturesView: View {
         return features
     }
     
+    private func isResourceFeature(_ feature: ClassFeatureWithLevel) -> Bool {
+        // Список умений, которые являются ресурсами и должны быть редактируемыми
+        let resourceFeatureNames = [
+            "Очки сосредоточенности",
+            "Кубы превосходства",
+            "Кость превосходства",
+            "Кость вдохновения",
+            "Божественное вмешательство",
+            "Дикий облик",
+            "Ячейки заклинаний",
+            "Подготовленные заклинания",
+            "Заговоры",
+            "Боевые искусства",
+            "Оружейное мастерство",
+            "Движение без доспехов"
+        ]
+        
+        return resourceFeatureNames.contains { feature.name.contains($0) }
+    }
+    
     private var availableResources: [ClassResourceInfo] {
         // Получаем данные из class_tables.json
         guard let classTable = getClassTableForCharacter(),
               let levelRow = classTable.rows.first(where: { $0.level == String(character.level) }) else {
             return []
         }
-        
+
         var resources: [ClassResourceInfo] = []
-        
+
         // Обрабатываем все дополнительные данные из таблицы класса
         for (columnName, value) in levelRow.additionalData {
             // Пропускаем пустые значения и прочерки
             if value == "-" || value == "—" || value.isEmpty {
                 continue
             }
-            
-            let resourceInfo = createResourceInfo(columnName: columnName, value: value)
-            resources.append(resourceInfo)
+
+            // Фильтруем только важные ресурсы
+            if isImportantResource(columnName: columnName) {
+                let resourceInfo = createResourceInfo(columnName: columnName, value: value)
+                resources.append(resourceInfo)
+            }
         }
-        
+
         return resources
+    }
+
+    private func isImportantResource(columnName: String) -> Bool {
+        let importantResources = [
+            "Ярость",
+            "Урон ярости",
+            "Кость вдохновения",
+            "Заговоры",
+            "Подготовленные заклинания",
+            "Очки сосредоточенности",
+            "Кубы превосходства",
+            "Божественное вмешательство",
+            "Дикий облик",
+            "Кость превосходства"
+        ]
+
+        return importantResources.contains { columnName.contains($0) } ||
+               columnName.lowercased().contains("сосредоточен") ||
+               columnName.lowercased().contains("превосходств") ||
+               columnName.lowercased().contains("вдохновен")
     }
     
     private func getClassTableForCharacter() -> ClassTable? {
@@ -708,6 +771,12 @@ struct CharacterClassFeaturesView: View {
             return "circle.dotted"
         case "Движение без доспехов":
             return "figure.run"
+        case let name where name.contains("Кубы превосходства") || name.contains("Кость превосходства"):
+            return "dice.fill"
+        case let name where name.contains("Божественное вмешательство"):
+            return "sparkles"
+        case let name where name.contains("Дикий облик"):
+            return "leaf.fill"
         default:
             return "star.fill"
         }
@@ -754,6 +823,12 @@ struct CharacterClassFeaturesView: View {
             return "Очков сосредоточенности: \(value)"
         case "Движение без доспехов":
             return "Дополнительная скорость: \(value)"
+        case let name where name.contains("Кубы превосходства") || name.contains("Кость превосходства"):
+            return "Кубов превосходства: \(value)"
+        case let name where name.contains("Божественное вмешательство"):
+            return "Использований божественного вмешательства: \(value)"
+        case let name where name.contains("Дикий облик"):
+            return "Использований дикого облика: \(value)"
         default:
             return "\(columnName): \(value)"
         }
@@ -874,32 +949,93 @@ struct ClassResourceView: View {
 
 struct ClassResourceInfoCard: View {
     let resource: ClassResourceInfo
-    
+    @Binding var character: Character
+    let onCharacterUpdate: ((Character) -> Void)?
+
+    // Найдем соответствующий ресурс в персонаже
+    private var characterResource: ClassResource? {
+        character.classResources.values.first { $0.name == resource.name }
+    }
+
+    private var currentValue: Int {
+        characterResource?.currentValue ?? resource.maxValue
+    }
+
+    private var maxValue: Int {
+        characterResource?.maxValue ?? resource.maxValue
+    }
+
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 12) {
             // Иконка ресурса
             Image(systemName: resource.icon)
-                .font(.title2)
+                .font(.title)
                 .foregroundColor(.orange)
-                .frame(width: 40, height: 40)
+                .frame(width: 44, height: 44)
                 .background(
                     Circle()
-                        .fill(Color.orange.opacity(0.1))
+                        .fill(Color.orange.opacity(0.15))
                 )
-            
+
             // Название ресурса
             Text(resource.name)
-                .font(.caption)
+                .font(.subheadline)
                 .fontWeight(.medium)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
-            
-            // Значение
-            Text("\(resource.maxValue)")
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(.primary)
-            
+
+            // Управление значением
+            VStack(spacing: 8) {
+                // Текущее значение
+                HStack(spacing: 4) {
+                    Text("\(currentValue)")
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(.primary)
+
+                    Text("/")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+
+                    Text("\(maxValue)")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                // Кнопки управления
+                HStack(spacing: 12) {
+                    // Кнопка уменьшения
+                    Button(action: {
+                        useResource()
+                    }) {
+                        Image(systemName: "minus.circle.fill")
+                            .font(.title3)
+                            .foregroundColor(currentValue > 0 ? .red : .gray.opacity(0.3))
+                    }
+                    .disabled(currentValue <= 0)
+
+                    // Кнопка сброса
+                    Button(action: {
+                        resetResource()
+                    }) {
+                        Image(systemName: "arrow.clockwise.circle.fill")
+                            .font(.title3)
+                            .foregroundColor(.blue)
+                    }
+                    .disabled(currentValue == maxValue)
+
+                    // Кнопка увеличения (если нужно)
+                    Button(action: {
+                        restoreResource()
+                    }) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3)
+                            .foregroundColor(currentValue < maxValue ? .green : .gray.opacity(0.3))
+                    }
+                    .disabled(currentValue >= maxValue)
+                }
+            }
+
             // Описание
             Text(resource.description)
                 .font(.caption2)
@@ -907,136 +1043,45 @@ struct ClassResourceInfoCard: View {
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
         }
-        .padding(8)
-        .background(Color(red: 0.95, green: 0.94, blue: 0.92))
-        .cornerRadius(12)
+        .padding(.vertical, 16)
+        .padding(.horizontal, 12)
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 3)
         .frame(maxWidth: .infinity)
     }
-}
 
-struct CharacterEquipmentView: View {
-    @Binding var character: Character
-    let onCharacterUpdate: ((Character) -> Void)?
-    @Environment(\.dismiss) private var dismiss
-    @State private var newEquipmentItem = ""
-    @State private var showingAddEquipment = false
-    
-    var body: some View {
-        NavigationView {
-            List {
-                Section {
-                    if character.equipment.isEmpty {
-                        Text("Нет снаряжения")
-                            .foregroundColor(.secondary)
-                            .italic()
-                    } else {
-                        ForEach(character.equipment, id: \.self) { item in
-                            Text(item)
-                        }
-                        .onDelete(perform: deleteEquipment)
-                    }
-                }
-                
-                Section {
-                    Button(action: {
-                        showingAddEquipment = true
-                    }) {
-                        Label("Добавить предмет", systemImage: "plus")
-                    }
-                }
-            }
-            .navigationTitle("Снаряжение")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Готово") {
-                        dismiss()
-                    }
-                }
-            }
-            .alert("Добавить предмет", isPresented: $showingAddEquipment) {
-                TextField("Название предмета", text: $newEquipmentItem)
-                Button("Отмена", role: .cancel) {
-                    newEquipmentItem = ""
-                }
-                Button("Добавить") {
-                    if !newEquipmentItem.isEmpty {
-                        character.equipment.append(newEquipmentItem)
-                        onCharacterUpdate?(character)
-                        newEquipmentItem = ""
-                    }
-                }
-            }
+    private func useResource() {
+        if var resource = characterResource, resource.currentValue > 0 {
+            resource.currentValue -= 1
+            updateResource(resource)
         }
     }
-    
-    private func deleteEquipment(at offsets: IndexSet) {
-        character.equipment.remove(atOffsets: offsets)
-        onCharacterUpdate?(character)
+
+    private func restoreResource() {
+        if var resource = characterResource, resource.currentValue < resource.maxValue {
+            resource.currentValue += 1
+            updateResource(resource)
+        }
+    }
+
+    private func resetResource() {
+        if var resource = characterResource {
+            resource.currentValue = resource.maxValue
+            updateResource(resource)
+        }
+    }
+
+    private func updateResource(_ updatedResource: ClassResource) {
+        // Найдем ключ ресурса в словаре
+        if let key = character.classResources.first(where: { $0.value.name == resource.name })?.key {
+            character.classResources[key] = updatedResource
+            onCharacterUpdate?(character)
+        }
     }
 }
 
-struct CharacterTreasuresView: View {
-    @Binding var character: Character
-    let onCharacterUpdate: ((Character) -> Void)?
-    @Environment(\.dismiss) private var dismiss
-    @State private var newTreasureItem = ""
-    @State private var showingAddTreasure = false
-    
-    var body: some View {
-        NavigationView {
-            List {
-                Section {
-                    if character.treasures.isEmpty {
-                        Text("Нет сокровищ")
-                            .foregroundColor(.secondary)
-                            .italic()
-                    } else {
-                        ForEach(character.treasures, id: \.self) { item in
-                            Text(item)
-                        }
-                        .onDelete(perform: deleteTreasure)
-                    }
-                }
-                
-                Section {
-                    Button(action: {
-                        showingAddTreasure = true
-                    }) {
-                        Label("Добавить сокровище", systemImage: "plus")
-                    }
-                }
-            }
-            .navigationTitle("Сокровища")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Готово") {
-                        dismiss()
-                    }
-                }
-            }
-            .alert("Добавить сокровище", isPresented: $showingAddTreasure) {
-                TextField("Название сокровища", text: $newTreasureItem)
-                Button("Отмена", role: .cancel) {
-                    newTreasureItem = ""
-                }
-                Button("Добавить") {
-                    if !newTreasureItem.isEmpty {
-                        character.treasures.append(newTreasureItem)
-                        onCharacterUpdate?(character)
-                        newTreasureItem = ""
-                    }
-                }
-            }
-        }
-    }
-    
-    private func deleteTreasure(at offsets: IndexSet) {
-        character.treasures.remove(atOffsets: offsets)
-        onCharacterUpdate?(character)
-    }
-}
+
 
 #Preview {
     NavigationView {

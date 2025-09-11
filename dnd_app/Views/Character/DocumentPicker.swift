@@ -28,7 +28,7 @@ struct DocumentPicker: UIViewControllerRepresentable {
             guard let url = urls.first else { return }
             
             // Начинаем доступ к файлу
-            url.startAccessingSecurityScopedResource()
+            _ = url.startAccessingSecurityScopedResource()
             defer { url.stopAccessingSecurityScopedResource() }
             
             do {

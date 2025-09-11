@@ -83,6 +83,9 @@ struct SpellsView: View {
         NavigationView {
             ScrollView {
                 LazyVStack(spacing: 12) {
+                    Spacer()
+                        .frame(height: 12)
+
                     // Search Bar
                     SearchBar(text: $searchText, placeholder: "Поиск заклинаний...")
                         .padding(.horizontal, 16)

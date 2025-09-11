@@ -119,7 +119,7 @@ struct CharacterEditView: View {
                     }
                     
                     HStack {
-                        Text("Бонус мастерства")
+                        Text("БМ")
                         Spacer()
                         Stepper("\(character.proficiencyBonus)", value: $character.proficiencyBonus, in: 0...10)
                     }
@@ -177,7 +177,9 @@ struct CharacterEditView: View {
             "Хаотично-нейтральный",
             "Законно-злой",
             "Нейтрально-злой",
-            "Хаотично-злой"
+            "Хаотично-злой",
+            // Добавляем сокращенные варианты для совместимости
+            "ЗД", "НД", "ХД", "ЗН", "Н", "ХН", "ЗЗ", "НЗ", "ХЗ"
         ]
     }
 }

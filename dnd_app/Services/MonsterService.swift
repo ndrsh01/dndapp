@@ -154,11 +154,9 @@ enum MonsterType: String, CaseIterable {
         case .fey: return "sparkles"
         case .fiend: return "exclamationmark.triangle"
         case .giant: return "person.3"
-        case .humanoid: return "person.2"
         case .monstrosity: return "eye"
         case .ooze: return "drop"
         case .plant: return "leaf"
-        case .undead: return "bone"
         }
     }
 }

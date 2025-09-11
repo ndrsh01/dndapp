@@ -6,13 +6,14 @@ struct EditHitPointsPopupView: View {
     @State private var temporaryHitPoints: Int = 0
     @State private var localValue: Int
     let hitPointsType: HitPointsType
-    @Environment(\.dismiss) private var dismiss
+    let onDismiss: () -> Void
     
-    init(currentHitPoints: Binding<Int>, maxHitPoints: Binding<Int>, hitPointsType: HitPointsType) {
+    init(currentHitPoints: Binding<Int>, maxHitPoints: Binding<Int>, hitPointsType: HitPointsType, onDismiss: @escaping () -> Void) {
         self._currentHitPoints = currentHitPoints
         self._maxHitPoints = maxHitPoints
         self.hitPointsType = hitPointsType
-        
+        self.onDismiss = onDismiss
+
         switch hitPointsType {
         case .current:
             self._localValue = State(initialValue: currentHitPoints.wrappedValue)
@@ -51,13 +52,13 @@ struct EditHitPointsPopupView: View {
             
             HStack(spacing: 16) {
                 Button("Отмена") {
-                    dismiss()
+                    onDismiss()
                 }
                 .buttonStyle(.bordered)
                 
                 Button("Сохранить") {
                     saveValue()
-                    dismiss()
+                    onDismiss()
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
@@ -96,6 +97,7 @@ struct EditHitPointsPopupView: View {
     EditHitPointsPopupView(
         currentHitPoints: .constant(15),
         maxHitPoints: .constant(20),
-        hitPointsType: .current
+        hitPointsType: .current,
+        onDismiss: {}
     )
 }

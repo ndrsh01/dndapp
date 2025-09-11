@@ -7,6 +7,7 @@ struct Note: Codable, Identifiable {
     var importance: Int // 1-5
     var category: NoteCategory
     var isAlive: Bool
+    var characterId: UUID? // Привязка к персонажу
     var dateCreated: Date
     var dateModified: Date
 
@@ -37,7 +38,7 @@ struct Note: Codable, Identifiable {
     var loreType: String?
     var era: String?
     
-    init(title: String, description: String = "", importance: Int = 3, category: NoteCategory = .all, isAlive: Bool = true,
+    init(title: String, description: String = "", importance: Int = 3, category: NoteCategory = .all, isAlive: Bool = true, characterId: UUID? = nil,
          race: String? = nil, occupation: String? = nil, organization: String? = nil, age: String? = nil, appearance: String? = nil,
          locationType: String? = nil, population: String? = nil, government: String? = nil, climate: String? = nil,
          itemType: String? = nil, rarity: String? = nil, value: String? = nil,
@@ -49,6 +50,7 @@ struct Note: Codable, Identifiable {
         self.importance = importance
         self.category = category
         self.isAlive = isAlive
+        self.characterId = characterId
         self.dateCreated = Date()
         self.dateModified = Date()
 

@@ -17,6 +17,7 @@ struct Spell: Codable, Identifiable {
     let улучшения: String
     
     var isFavorite: Bool = false
+    var characterId: UUID? = nil // Привязка к персонажу для избранного
     
     enum CodingKeys: String, CodingKey {
         case название = "Название"

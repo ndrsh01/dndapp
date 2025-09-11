@@ -7,6 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		276653102E6EAE0600949D0C /* ExtendedCharacterExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2766530F2E6EAE0600949D0C /* ExtendedCharacterExport.swift */; };
+		276653122E6EB3AB00949D0C /* CharacterPersonalityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276653112E6EB3AB00949D0C /* CharacterPersonalityView.swift */; };
+		276653142E6EB51400949D0C /* CharacterFeaturesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276653132E6EB51400949D0C /* CharacterFeaturesView.swift */; };
+		276653162E6EBC9100949D0C /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276653152E6EBC9100949D0C /* AppSettings.swift */; };
+		276653182E70063400949D0C /* CharacterEffects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276653172E70063400949D0C /* CharacterEffects.swift */; };
+		2766531A2E7019EE00949D0C /* ModernEditHitPointsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276653192E7019EE00949D0C /* ModernEditHitPointsView.swift */; };
+		2766531D2E703C5700949D0C /* SimpleExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2766531B2E703C5700949D0C /* SimpleExportView.swift */; };
+		2766531E2E703C5700949D0C /* SimpleEditStatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2766531C2E703C5700949D0C /* SimpleEditStatView.swift */; };
+		276653222E716E6900949D0C /* CharacterTreasuresView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2766531F2E716E6900949D0C /* CharacterTreasuresView.swift */; };
+		276653232E716E6900949D0C /* CharacterCoinsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276653202E716E6900949D0C /* CharacterCoinsView.swift */; };
+		276653242E716E6900949D0C /* CharacterEquipmentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276653212E716E6900949D0C /* CharacterEquipmentView.swift */; };
+		276653262E717A4100949D0C /* Equipment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276653252E717A4100949D0C /* Equipment.swift */; };
 		27AF9DF82E696FB7006311EC /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DC22E696FB6006311EC /* MainTabView.swift */; };
 		27AF9DF92E696FB7006311EC /* RelationshipsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DC42E696FB6006311EC /* RelationshipsViewModel.swift */; };
 		27AF9DFA2E696FB7006311EC /* CompendiumViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27AF9DC52E696FB6006311EC /* CompendiumViewModel.swift */; };
@@ -66,6 +78,18 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2766530F2E6EAE0600949D0C /* ExtendedCharacterExport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExtendedCharacterExport.swift; sourceTree = "<group>"; };
+		276653112E6EB3AB00949D0C /* CharacterPersonalityView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterPersonalityView.swift; sourceTree = "<group>"; };
+		276653132E6EB51400949D0C /* CharacterFeaturesView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterFeaturesView.swift; sourceTree = "<group>"; };
+		276653152E6EBC9100949D0C /* AppSettings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		276653172E70063400949D0C /* CharacterEffects.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterEffects.swift; sourceTree = "<group>"; };
+		276653192E7019EE00949D0C /* ModernEditHitPointsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ModernEditHitPointsView.swift; sourceTree = "<group>"; };
+		2766531B2E703C5700949D0C /* SimpleExportView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimpleExportView.swift; sourceTree = "<group>"; };
+		2766531C2E703C5700949D0C /* SimpleEditStatView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimpleEditStatView.swift; sourceTree = "<group>"; };
+		2766531F2E716E6900949D0C /* CharacterTreasuresView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterTreasuresView.swift; sourceTree = "<group>"; };
+		276653202E716E6900949D0C /* CharacterCoinsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterCoinsView.swift; sourceTree = "<group>"; };
+		276653212E716E6900949D0C /* CharacterEquipmentView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterEquipmentView.swift; sourceTree = "<group>"; };
+		276653252E717A4100949D0C /* Equipment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Equipment.swift; sourceTree = "<group>"; };
 		27AF9D902E6963CC006311EC /* dnd_app.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = dnd_app.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		27AF9DC22E696FB6006311EC /* MainTabView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		27AF9DC42E696FB6006311EC /* RelationshipsViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RelationshipsViewModel.swift; sourceTree = "<group>"; };
@@ -196,6 +220,10 @@
 				27AF9DCF2E696FB7006311EC /* Monster.swift */,
 				27AF9DD02E696FB7006311EC /* Feat.swift */,
 				27BFB5F32E6AF30100149C08 /* CharacterClass.swift */,
+				2766530F2E6EAE0600949D0C /* ExtendedCharacterExport.swift */,
+				276653172E70063400949D0C /* CharacterEffects.swift */,
+				276653152E6EBC9100949D0C /* AppSettings.swift */,
+				276653252E717A4100949D0C /* Equipment.swift */,
 				27AF9DD12E696FB7006311EC /* Character.swift */,
 				27AF9DD22E696FB7006311EC /* Background.swift */,
 				27AF9DD32E696FB7006311EC /* Quote.swift */,
@@ -282,9 +310,17 @@
 			children = (
 				27BFB5E72E6AE82900149C08 /* CharacterSelectionView.swift */,
 				27BFB5F12E6AF29800149C08 /* EditableCharacterHeader.swift */,
+				276653132E6EB51400949D0C /* CharacterFeaturesView.swift */,
+				276653202E716E6900949D0C /* CharacterCoinsView.swift */,
+				276653212E716E6900949D0C /* CharacterEquipmentView.swift */,
+				2766531F2E716E6900949D0C /* CharacterTreasuresView.swift */,
 				27BFB5EB2E6AE88A00149C08 /* CharacterExportView.swift */,
+				2766531C2E703C5700949D0C /* SimpleEditStatView.swift */,
+				2766531B2E703C5700949D0C /* SimpleExportView.swift */,
+				276653112E6EB3AB00949D0C /* CharacterPersonalityView.swift */,
 				27BFB5F92E6AF85200149C08 /* EditHitPointsPopupView.swift */,
 				27BFB5ED2E6AE8E100149C08 /* CharacterEditView.swift */,
+				276653192E7019EE00949D0C /* ModernEditHitPointsView.swift */,
 				27BFB5E82E6AE82900149C08 /* DocumentPicker.swift */,
 				27BFB5F62E6AF82A00149C08 /* EditAbilityPopupView.swift */,
 				27BFB5F52E6AF82A00149C08 /* EditCombatStatPopupView.swift */,
@@ -413,9 +449,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2766531E2E703C5700949D0C /* SimpleEditStatView.swift in Sources */,
 				27AF9DF92E696FB7006311EC /* RelationshipsViewModel.swift in Sources */,
 				27BFB5EE2E6AE8E100149C08 /* CharacterEditView.swift in Sources */,
 				27AF9E022E696FB7006311EC /* Monster.swift in Sources */,
+				276653102E6EAE0600949D0C /* ExtendedCharacterExport.swift in Sources */,
 				27BFB5F02E6AE91A00149C08 /* CharacterManager.swift in Sources */,
 				27AF9E042E696FB7006311EC /* Character.swift in Sources */,
 				27AF9DFC2E696FB7006311EC /* NotesViewModel.swift in Sources */,
@@ -426,22 +464,29 @@
 				27BFB5E62E6AE7C900149C08 /* CharacterTabView.swift in Sources */,
 				27AF9DFB2E696FB7006311EC /* QuotesViewModel.swift in Sources */,
 				27AF9E192E696FB7006311EC /* NotesView.swift in Sources */,
+				276653242E716E6900949D0C /* CharacterEquipmentView.swift in Sources */,
 				27DD686A2E6B522500621182 /* ImagePicker.swift in Sources */,
 				27AF9E252E6998F6006311EC /* SpellsView.swift in Sources */,
 				27AF9E062E696FB7006311EC /* Quote.swift in Sources */,
 				27AF9E092E696FB7006311EC /* Spell.swift in Sources */,
 				27BFB5FC2E6AF85300149C08 /* ExternalCharacterFormat.swift in Sources */,
 				27AF9E1D2E696FB7006311EC /* DataService.swift in Sources */,
+				2766531A2E7019EE00949D0C /* ModernEditHitPointsView.swift in Sources */,
 				27AF9E2B2E69ACEA006311EC /* FavoritesView.swift in Sources */,
 				27AF9E1B2E696FB7006311EC /* CompendiumView.swift in Sources */,
 				27BFB5E92E6AE82900149C08 /* CharacterSelectionView.swift in Sources */,
+				276653222E716E6900949D0C /* CharacterTreasuresView.swift in Sources */,
 				27AF9E232E6989DC006311EC /* CacheManager.swift in Sources */,
 				27AF9DF82E696FB7006311EC /* MainTabView.swift in Sources */,
 				27AF9E012E696FB7006311EC /* TabaxiImages.swift in Sources */,
 				27AF9DFD2E696FB7006311EC /* CharacterViewModel.swift in Sources */,
 				27AF9E0B2E696FB7006311EC /* SharedComponents.swift in Sources */,
+				276653232E716E6900949D0C /* CharacterCoinsView.swift in Sources */,
+				276653142E6EB51400949D0C /* CharacterFeaturesView.swift in Sources */,
+				276653262E717A4100949D0C /* Equipment.swift in Sources */,
 				27AF9E1C2E696FB7006311EC /* RelationshipsView.swift in Sources */,
 				27AF9E072E696FB7006311EC /* Note.swift in Sources */,
+				2766531D2E703C5700949D0C /* SimpleExportView.swift in Sources */,
 				27AF9E082E696FB7006311EC /* Relationship.swift in Sources */,
 				27BFB5F82E6AF82A00149C08 /* EditAbilityPopupView.swift in Sources */,
 				27BFB5F72E6AF82A00149C08 /* EditCombatStatPopupView.swift in Sources */,
@@ -450,14 +495,17 @@
 				27AF9E172E696FB7006311EC /* CharacterCreationView.swift in Sources */,
 				27BFB5F22E6AF29800149C08 /* EditableCharacterHeader.swift in Sources */,
 				27AF9E272E69ACD8006311EC /* BackgroundsView.swift in Sources */,
+				276653182E70063400949D0C /* CharacterEffects.swift in Sources */,
 				27AF9E292E69ACE1006311EC /* FeatsView.swift in Sources */,
 				27AF9E0C2E696FB7006311EC /* ContextMenuView.swift in Sources */,
 				27AF9E1A2E696FB7006311EC /* BestiaryView.swift in Sources */,
 				27AF9DFA2E696FB7006311EC /* CompendiumViewModel.swift in Sources */,
 				27AF9E1E2E696FB7006311EC /* MonsterService.swift in Sources */,
+				276653122E6EB3AB00949D0C /* CharacterPersonalityView.swift in Sources */,
 				27AF9E052E696FB7006311EC /* Background.swift in Sources */,
 				27AF9E152E696FB7006311EC /* SettingsView.swift in Sources */,
 				27AF9E162E696FB7006311EC /* QuotesView.swift in Sources */,
+				276653162E6EBC9100949D0C /* AppSettings.swift in Sources */,
 				27BFB5EC2E6AE88A00149C08 /* CharacterExportView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

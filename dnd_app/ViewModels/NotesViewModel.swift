@@ -7,6 +7,7 @@ class NotesViewModel: ObservableObject {
     @Published var selectedCategory: NoteCategory = .all
     @Published var showAddNote = false
     @Published var editingNote: Note?
+    @Published var selectedCharacterId: UUID?
     
     private let dataService = DataService.shared
     private var cancellables = Set<AnyCancellable>()
@@ -16,9 +17,26 @@ class NotesViewModel: ObservableObject {
     }
     
     private func setupBindings() {
-        dataService.$notes
+        // Подписываемся на изменения заметок и персонажа
+        Publishers.CombineLatest(dataService.$notes, $selectedCharacterId)
+            .map { [weak self] notes, characterId in
+                return self?.dataService.getNotes(for: characterId) ?? []
+            }
             .assign(to: \.notes, on: self)
             .store(in: &cancellables)
+    }
+    
+    func setSelectedCharacter(_ characterId: UUID?) {
+        print("=== NOTES VIEWMODEL ===")
+        print("Setting selected character for notes: \(characterId?.uuidString ?? "nil")")
+        selectedCharacterId = characterId
+        
+        // Принудительно обновляем заметки
+        let filteredNotes = dataService.getNotes(for: characterId)
+        notes = filteredNotes
+        
+        print("Selected character set. Current notes count: \(notes.count)")
+        print("Filtered notes: \(notes.map { $0.title })")
     }
     
     var filteredNotes: [Note] {

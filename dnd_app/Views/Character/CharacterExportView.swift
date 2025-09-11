@@ -1,50 +1,98 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct CharacterExportView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var jsonString: String
+    let character: Character
+    @EnvironmentObject private var characterManager: CharacterManager
+    @Environment(\.presentationMode) var presentationMode
     @State private var showingShareSheet = false
+    @State private var exportURL: URL?
+    @State private var exportType: ExportType = .extended
     @State private var showingAlert = false
     @State private var alertMessage = ""
+    @State private var showingCopyAlert = false
+    @State private var exportText = ""
     
-    let character: Character
-    
-    init(character: Character) {
-        self.character = character
+    enum ExportType: String, CaseIterable {
+        case extended = "Полный экспорт"
+        case basic = "Только персонаж"
+        case external = "Внешний формат"
         
-        // Генерируем JSON при инициализации
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
-        encoder.dateEncodingStrategy = .iso8601
-        
-        if let data = try? encoder.encode(character),
-           let json = String(data: data, encoding: .utf8) {
-            self._jsonString = State(initialValue: json)
-        } else {
-            self._jsonString = State(initialValue: "Ошибка генерации JSON")
+        var description: String {
+            switch self {
+            case .extended:
+                return "Персонаж + отношения + заметки + избранные заклинания"
+            case .basic:
+                return "Только основные данные персонажа"
+            case .external:
+                return "Формат внешнего приложения (Long Story Short)"
+            }
         }
     }
     
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
-                // Заголовок
-                VStack(spacing: 12) {
-                    Image(systemName: "square.and.arrow.up.circle.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(.orange)
-                    
-                    Text("Экспорт персонажа")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    
-                    Text("Экспортируйте \(character.name) в JSON файл")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                }
-                .padding(.top)
-                
                 // Информация о персонаже
+                characterInfoSection
+                
+                // Выбор типа экспорта
+                exportTypeSection
+                
+                // Предварительный просмотр
+                previewSection
+                
+                Spacer()
+                
+                // Кнопки действий
+                actionButtonsSection
+            }
+            .padding()
+            .navigationTitle("Экспорт персонажа")
+            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarItems(
+                leading: Button("Отмена") {
+                    presentationMode.wrappedValue.dismiss()
+                }
+            )
+            .sheet(isPresented: $showingShareSheet) {
+                if let url = exportURL {
+                    ShareSheet(items: [url])
+                        .onAppear {
+                            print("ShareSheet appeared with URL: \(url)")
+                        }
+                } else {
+                    VStack {
+                        Text("Ошибка экспорта")
+                            .foregroundColor(.red)
+                            .font(.headline)
+                        Text("Не удалось создать файл для экспорта")
+                        .foregroundColor(.secondary)
+                        Button("Закрыть") {
+                            showingShareSheet = false
+                        }
+                        .padding()
+                    }
+                    .padding()
+                }
+            }
+            .alert("Экспорт", isPresented: $showingAlert) {
+                Button("OK") { }
+            } message: {
+                Text(alertMessage)
+            }
+            .alert("Экспорт в буфер обмена", isPresented: $showingCopyAlert) {
+                Button("Копировать") {
+                    UIPasteboard.general.string = exportText
+                }
+                Button("Отмена", role: .cancel) { }
+            } message: {
+                Text("JSON скопирован в буфер обмена")
+            }
+        }
+    }
+    
+    private var characterInfoSection: some View {
                 VStack(spacing: 12) {
                     HStack {
                         Circle()
@@ -52,16 +100,16 @@ struct CharacterExportView: View {
                             .frame(width: 50, height: 50)
                             .overlay(
                                 Image(systemName: "person.fill")
-                                    .font(.title3)
+                            .font(.title2)
                                     .foregroundColor(.white)
                             )
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text(character.name)
-                                .font(.headline)
-                                .fontWeight(.semibold)
+                        .font(.title2)
+                        .fontWeight(.bold)
                             
-                            Text("\(character.race) • \(character.characterClass)")
+                    Text("\(character.race) \(character.characterClass)")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                             
@@ -69,9 +117,9 @@ struct CharacterExportView: View {
                                 .font(.caption)
                                 .foregroundColor(.white)
                                 .padding(.horizontal, 8)
-                                .padding(.vertical, 2)
+                        .padding(.vertical, 4)
                                 .background(Color.orange)
-                                .cornerRadius(6)
+                        .cornerRadius(8)
                         }
                         
                         Spacer()
@@ -80,48 +128,103 @@ struct CharacterExportView: View {
                     .background(Color(.systemGray6))
                     .cornerRadius(12)
                 }
-                .padding(.horizontal)
+    }
                 
-                // JSON предварительный просмотр
+    private var exportTypeSection: some View {
                 VStack(alignment: .leading, spacing: 12) {
+            Text("Тип экспорта")
+                .font(.headline)
+            
+            ForEach(ExportType.allCases, id: \.self) { type in
+                Button(action: {
+                    exportType = type
+                }) {
                     HStack {
-                        Text("JSON данные")
-                            .font(.headline)
+                        Image(systemName: exportType == type ? "checkmark.circle.fill" : "circle")
+                            .foregroundColor(exportType == type ? .orange : .gray)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(type.rawValue)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                            
+                            Text(type.description)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
                         
                         Spacer()
-                        
-                        Button("Копировать") {
-                            UIPasteboard.general.string = jsonString
-                            alertMessage = "JSON скопирован в буфер обмена!"
-                            showingAlert = true
-                        }
-                        .font(.caption)
+                    }
+                    .padding()
+                    .background(exportType == type ? Color.orange.opacity(0.1) : Color(.systemGray6))
+                    .cornerRadius(12)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+    }
+    
+    private var previewSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Что будет экспортировано")
+                .font(.headline)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "person.fill")
                         .foregroundColor(.orange)
-                    }
-                    .padding(.horizontal)
-                    
-                    ScrollView {
-                        Text(jsonString)
-                            .font(.system(.caption, design: .monospaced))
-                            .padding()
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color(.systemGray6))
-                            .cornerRadius(8)
-                    }
-                    .frame(maxHeight: 200)
-                    .padding(.horizontal)
+                        .frame(width: 20)
+                    Text("Персонаж: \(character.name)")
+                        .font(.subheadline)
                 }
                 
-                Spacer()
-                
-                // Кнопки действий
+                if exportType == .extended {
+                    let dataService = DataService.shared
+                    let relationshipsCount = dataService.getRelationships(for: character.id).count
+                    let notesCount = dataService.getNotes(for: character.id).count
+                    let spellsCount = dataService.getFavoriteSpells(for: character.id).count
+                    
+                    HStack {
+                        Image(systemName: "person.2")
+                            .foregroundColor(.blue)
+                            .frame(width: 20)
+                        Text("Отношения: \(relationshipsCount)")
+                            .font(.subheadline)
+                    }
+                    
+                    HStack {
+                        Image(systemName: "note.text")
+                            .foregroundColor(.green)
+                            .frame(width: 20)
+                        Text("Заметки: \(notesCount)")
+                            .font(.subheadline)
+                    }
+                    
+                    HStack {
+                        Image(systemName: "wand.and.stars")
+                            .foregroundColor(.purple)
+                            .frame(width: 20)
+                        Text("Избранные заклинания: \(spellsCount)")
+                            .font(.subheadline)
+                    }
+                }
+            }
+            .padding()
+            .background(Color(.systemGray6))
+            .cornerRadius(12)
+        }
+    }
+    
+    private var actionButtonsSection: some View {
                 VStack(spacing: 12) {
                     Button(action: {
-                        showingShareSheet = true
+                print("Export button tapped")
+                exportCharacter()
                     }) {
                         HStack {
-                            Image(systemName: "square.and.arrow.up")
-                            Text("Поделиться файлом")
+                    Image(systemName: "square.and.arrow.up.fill")
+                    Text("Экспортировать")
                         }
                         .font(.headline)
                         .foregroundColor(.white)
@@ -132,13 +235,12 @@ struct CharacterExportView: View {
                     }
                     
                     Button(action: {
-                        UIPasteboard.general.string = jsonString
-                        alertMessage = "JSON скопирован в буфер обмена!"
-                        showingAlert = true
+                print("Copy to clipboard button tapped")
+                copyToClipboard()
                     }) {
                         HStack {
-                            Image(systemName: "doc.on.doc")
-                            Text("Копировать JSON")
+                    Image(systemName: "doc.on.clipboard")
+                    Text("Копировать в буфер обмена")
                         }
                         .font(.headline)
                         .foregroundColor(.orange)
@@ -148,36 +250,107 @@ struct CharacterExportView: View {
                         .cornerRadius(12)
                     }
                 }
-                .padding(.horizontal)
+    }
+    
+    private func exportCharacter() {
+        print("=== CHARACTER EXPORT VIEW ===")
+        print("Starting export for character: \(character.name)")
+        print("Character ID: \(character.id)")
+        print("Export type: \(exportType.rawValue)")
+        
+        let jsonString: String?
+        let fileName: String
+
+        switch exportType {
+        case .extended:
+            print("Calling exportCharacterExtended...")
+            jsonString = characterManager.exportCharacterExtended(character)
+            fileName = "\(character.name)_полный_экспорт.json"
+        case .basic:
+            print("Calling exportCharacter...")
+            jsonString = characterManager.exportCharacter(character)
+            fileName = "\(character.name)_персонаж.json"
+        case .external:
+            print("Calling exportCharacterExternal...")
+            jsonString = characterManager.exportCharacterExternal(character)
+            fileName = "\(character.name)_внешний_формат.json"
+        }
+        
+        guard let jsonString = jsonString else {
+            print("ERROR: jsonString is nil from characterManager")
+            alertMessage = "Ошибка создания файла экспорта - jsonString is nil"
+            showingAlert = true
+            return
+        }
+
+        print("JSON string received, length: \(jsonString.count) characters")
+        print("First 100 characters: \(String(jsonString.prefix(100)))")
+
+        // Создаем временный файл
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        print("Creating temp file at: \(tempURL)")
+        print("File name: \(fileName)")
+
+        do {
+            print("Writing JSON string to file...")
+            try jsonString.write(to: tempURL, atomically: true, encoding: .utf8)
+            print("File written successfully")
+            
+            // Проверяем, что файл действительно создался
+            let fileExists = FileManager.default.fileExists(atPath: tempURL.path)
+            print("File exists check: \(fileExists)")
+            
+            if fileExists {
+                let fileSize = try FileManager.default.attributesOfItem(atPath: tempURL.path)[.size] as? Int64 ?? 0
+                print("File size: \(fileSize) bytes")
             }
-            .navigationTitle("Экспорт")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Готово") {
-                        dismiss()
-                    }
-                }
-            }
-            .sheet(isPresented: $showingShareSheet) {
-                ShareSheet(items: [createJSONFile()])
-            }
-            .alert("Экспорт", isPresented: $showingAlert) {
-                Button("OK") { }
-            } message: {
-                Text(alertMessage)
-            }
+            
+            exportURL = tempURL
+            print("Setting exportURL and showing share sheet")
+            showingShareSheet = true
+            
+        } catch {
+            print("ERROR writing file: \(error)")
+            print("Error type: \(type(of: error))")
+            print("Error localized description: \(error.localizedDescription)")
+            alertMessage = "Ошибка сохранения файла: \(error.localizedDescription)"
+            showingAlert = true
         }
     }
     
-    private func createJSONFile() -> URL {
-        let documentsPath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        let fileName = "\(character.name.replacingOccurrences(of: " ", with: "_"))_character.json"
-        let fileURL = documentsPath.appendingPathComponent(fileName)
+    private func copyToClipboard() {
+        print("=== COPY TO CLIPBOARD ===")
+        print("Starting copy to clipboard for character: \(character.name)")
+        print("Character ID: \(character.id)")
+        print("Export type: \(exportType.rawValue)")
         
-        try? jsonString.write(to: fileURL, atomically: true, encoding: .utf8)
+        let jsonString: String?
+
+        switch exportType {
+        case .extended:
+            print("Copy type: extended - calling exportCharacterExtended...")
+            jsonString = characterManager.exportCharacterExtended(character)
+        case .basic:
+            print("Copy type: basic - calling exportCharacter...")
+            jsonString = characterManager.exportCharacter(character)
+        case .external:
+            print("Copy type: external - calling exportCharacterExternal...")
+            jsonString = characterManager.exportCharacterExternal(character)
+        }
         
-        return fileURL
+        guard let jsonString = jsonString else {
+            print("ERROR: jsonString is nil for clipboard from characterManager")
+            alertMessage = "Ошибка создания JSON для буфера обмена - jsonString is nil"
+            showingAlert = true
+            return
+        }
+
+        print("JSON string received for clipboard, length: \(jsonString.count) characters")
+        print("First 100 characters: \(String(jsonString.prefix(100)))")
+        
+        exportText = jsonString
+        print("Setting exportText and showing copy alert")
+        showingCopyAlert = true
     }
 }
 
@@ -185,10 +358,43 @@ struct ShareSheet: UIViewControllerRepresentable {
     let items: [Any]
     
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
+        print("=== SHARE SHEET ===")
+        print("Creating UIActivityViewController with items count: \(items.count)")
+        
+        for (index, item) in items.enumerated() {
+            print("Item \(index): \(type(of: item))")
+            if let url = item as? URL {
+                print("  - URL: \(url)")
+                print("  - Path: \(url.path)")
+                print("  - File exists: \(FileManager.default.fileExists(atPath: url.path))")
+            } else {
+                print("  - Value: \(item)")
+            }
+        }
+        
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        print("UIActivityViewController created successfully")
+
+        // Настройки для iPad
+        if let popover = controller.popoverPresentationController {
+            print("Configuring popover for iPad...")
+            popover.sourceView = UIApplication.shared.connectedScenes
+                .compactMap { $0 as? UIWindowScene }
+                .flatMap { $0.windows }
+                .first { $0.isKeyWindow }?.rootViewController?.view
+            popover.sourceRect = CGRect(x: UIScreen.main.bounds.width / 2, y: UIScreen.main.bounds.height / 2, width: 0, height: 0)
+            popover.permittedArrowDirections = []
+            print("Popover configured")
+        } else {
+            print("No popover presentation controller (iPhone)")
+        }
+
+        return controller
     }
-    
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {
+        print("Updating UIActivityViewController")
+    }
 }
 
 #Preview {
@@ -199,5 +405,5 @@ struct ShareSheet: UIViewControllerRepresentable {
         background: "Солдат",
         alignment: "Законно-добрый"
     ))
+    .environmentObject(CharacterManager.shared)
 }
-

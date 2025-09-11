@@ -7,16 +7,18 @@ struct Relationship: Codable, Identifiable {
     var relationshipLevel: Int // 0-10, где 0-4 враги, 5 нейтрал, 6-10 друзья
     var isAlive: Bool
     var organization: String?
+    var characterId: UUID? // Привязка к персонажу
     var dateCreated: Date
     var dateModified: Date
     
-    init(name: String, description: String = "", relationshipLevel: Int = 5, isAlive: Bool = true, organization: String? = nil) {
+    init(name: String, description: String = "", relationshipLevel: Int = 5, isAlive: Bool = true, organization: String? = nil, characterId: UUID? = nil) {
         self.id = UUID()
         self.name = name
         self.description = description
         self.relationshipLevel = relationshipLevel
         self.isAlive = isAlive
         self.organization = organization
+        self.characterId = characterId
         self.dateCreated = Date()
         self.dateModified = Date()
     }
@@ -29,6 +31,7 @@ struct Relationship: Codable, Identifiable {
         self.relationshipLevel = relationship.relationshipLevel
         self.isAlive = relationship.isAlive
         self.organization = relationship.organization
+        self.characterId = relationship.characterId
         self.dateCreated = Date()
         self.dateModified = Date()
     }

@@ -3,8 +3,14 @@ import SwiftUI
 struct EditAbilityPopupView: View {
     let ability: AbilityScore
     @Binding var value: Int
-    @Environment(\.dismiss) private var dismiss
-    
+    let onDismiss: () -> Void
+
+    init(ability: AbilityScore, value: Binding<Int>, onDismiss: @escaping () -> Void) {
+        self.ability = ability
+        self._value = value
+        self.onDismiss = onDismiss
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             Text(ability.displayName)
@@ -25,12 +31,12 @@ struct EditAbilityPopupView: View {
             
             HStack(spacing: 16) {
                 Button("Отмена") {
-                    dismiss()
+                    onDismiss()
                 }
                 .buttonStyle(.bordered)
                 
                 Button("Сохранить") {
-                    dismiss()
+                    onDismiss()
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
@@ -49,6 +55,6 @@ struct EditAbilityPopupView: View {
 }
 
 #Preview {
-    EditAbilityPopupView(ability: .strength, value: .constant(15))
+    EditAbilityPopupView(ability: .strength, value: .constant(15), onDismiss: {})
 }
 

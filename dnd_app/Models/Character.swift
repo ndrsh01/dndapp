@@ -1,4 +1,194 @@
 import Foundation
+import SwiftUI
+
+// MARK: - Character Equipment Model
+
+struct CharacterEquipment: Codable, Identifiable {
+    let id: UUID
+    var name: String
+    var type: EquipmentType
+    var cost: Int // в медных монетах
+    var weight: Double // в кг
+    var rarity: Rarity
+    var description: String
+    
+    // Для оружия
+    var attackBonus: Int?
+    var damage: String?
+    
+    init(name: String) {
+        self.id = UUID()
+        self.name = name
+        self.type = .misc
+        self.cost = 0
+        self.weight = 0.0
+        self.rarity = .common
+        self.description = ""
+        self.attackBonus = nil
+        self.damage = nil
+    }
+    
+    init(name: String, type: EquipmentType, cost: Int = 0, weight: Double = 0.0, rarity: Rarity = .common, description: String = "", attackBonus: Int? = nil, damage: String? = nil) {
+        self.id = UUID()
+        self.name = name
+        self.type = type
+        self.cost = cost
+        self.weight = weight
+        self.rarity = rarity
+        self.description = description
+        self.attackBonus = attackBonus
+        self.damage = damage
+    }
+}
+
+enum EquipmentType: String, CaseIterable, Codable {
+    case weapon = "Оружие"
+    case armor = "Доспехи"
+    case shield = "Щит"
+    case tool = "Инструмент"
+    case consumable = "Расходник"
+    case misc = "Разное"
+    
+    var icon: String {
+        switch self {
+        case .weapon:
+            return "sword.fill"
+        case .armor:
+            return "shield.lefthalf.filled"
+        case .shield:
+            return "shield.fill"
+        case .tool:
+            return "wrench.and.screwdriver.fill"
+        case .consumable:
+            return "drop.fill"
+        case .misc:
+            return "bag.fill"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .weapon:
+            return .red
+        case .armor:
+            return .blue
+        case .shield:
+            return .blue
+        case .tool:
+            return .orange
+        case .consumable:
+            return .green
+        case .misc:
+            return .gray
+        }
+    }
+}
+
+enum Rarity: String, CaseIterable, Codable {
+    case common = "Обычное"
+    case uncommon = "Необычное"
+    case rare = "Редкое"
+    case veryRare = "Очень редкое"
+    case legendary = "Легендарное"
+    case artifact = "Артефакт"
+    
+    var color: Color {
+        switch self {
+        case .common:
+            return .gray
+        case .uncommon:
+            return .green
+        case .rare:
+            return .blue
+        case .veryRare:
+            return .purple
+        case .legendary:
+            return .orange
+        case .artifact:
+            return .red
+        }
+    }
+    
+    var multiplier: Double {
+        switch self {
+        case .common:
+            return 1.0
+        case .uncommon:
+            return 2.0
+        case .rare:
+            return 5.0
+        case .veryRare:
+            return 10.0
+        case .legendary:
+            return 25.0
+        case .artifact:
+            return 100.0
+        }
+    }
+}
+
+// MARK: - Treasure Model
+
+struct Treasure: Codable, Identifiable {
+    let id: UUID
+    var name: String
+    var category: TreasureCategory
+    var value: Int // в золотых монетах
+    var description: String
+    var quantity: Int
+    
+    init(name: String, category: TreasureCategory = .misc, value: Int = 0, description: String = "", quantity: Int = 1) {
+        self.id = UUID()
+        self.name = name
+        self.category = category
+        self.value = value
+        self.description = description
+        self.quantity = quantity
+    }
+}
+
+enum TreasureCategory: String, CaseIterable, Codable {
+    case gems = "Драгоценные камни"
+    case jewelry = "Украшения"
+    case art = "Произведения искусства"
+    case coins = "Монеты"
+    case magic = "Магические предметы"
+    case misc = "Разное"
+    
+    var icon: String {
+        switch self {
+        case .gems:
+            return "diamond.fill"
+        case .jewelry:
+            return "sparkles"
+        case .art:
+            return "paintbrush.fill"
+        case .coins:
+            return "circle.fill"
+        case .magic:
+            return "wand.and.stars"
+        case .misc:
+            return "bag.fill"
+        }
+    }
+    
+    var color: Color {
+        switch self {
+        case .gems:
+            return .blue
+        case .jewelry:
+            return .purple
+        case .art:
+            return .orange
+        case .coins:
+            return .yellow
+        case .magic:
+            return .green
+        case .misc:
+            return .gray
+        }
+    }
+}
 
 enum Skill: String, CaseIterable {
     case acrobatics = "Акробатика"
@@ -71,10 +261,17 @@ struct Character: Codable, Identifiable {
     var classAbilities: [String]
     
     // Снаряжение
-    var equipment: [String]
+    var equipment: [CharacterEquipment]
     
     // Сокровища
-    var treasures: [String]
+    var treasures: [Treasure]
+    
+    // Монеты
+    var copperPieces: Int
+    var silverPieces: Int
+    var electrumPieces: Int
+    var goldPieces: Int
+    var platinumPieces: Int
     
     // Личность
     var personalityTraits: String
@@ -87,7 +284,19 @@ struct Character: Codable, Identifiable {
     
     // Ресурсы классов
     var classResources: [String: ClassResource]
+
+    // Мультикласс
+    var classes: [CharacterClass]
+
+    // Эффекты и статусы
+    var activeEffects: [CharacterEffect]
+
+    // Временные HP
+    var temporaryHitPoints: Int
     
+    // Вдохновение
+    var inspiration: Bool
+
     var dateCreated: Date
     var dateModified: Date
     
@@ -130,6 +339,13 @@ struct Character: Codable, Identifiable {
         // Сокровища
         self.treasures = []
         
+        // Монеты
+        self.copperPieces = 0
+        self.silverPieces = 0
+        self.electrumPieces = 0
+        self.goldPieces = 0
+        self.platinumPieces = 0
+        
         // Личность
         self.personalityTraits = ""
         self.ideals = ""
@@ -138,10 +354,22 @@ struct Character: Codable, Identifiable {
         
         // Особенности
         self.features = []
-        
+
         // Ресурсы классов
         self.classResources = [:]
+
+        // Мультикласс
+        self.classes = [CharacterClass(name: characterClass, level: level, subclass: subclass)]
+
+        // Эффекты
+        self.activeEffects = []
+
+        // Временные HP
+        self.temporaryHitPoints = 0
         
+        // Вдохновение
+        self.inspiration = false
+
         self.dateCreated = Date()
         self.dateModified = Date()
     }
@@ -152,7 +380,10 @@ struct Character: Codable, Identifiable {
         case strength, dexterity, constitution, intelligence, wisdom, charisma
         case armorClass, initiative, speed, hitPoints, maxHitPoints, proficiencyBonus
         case skills, skillsExpertise, classAbilities, equipment, treasures
-        case personalityTraits, ideals, bonds, flaws, features, classResources, dateCreated, dateModified
+        case copperPieces, silverPieces, electrumPieces, goldPieces, platinumPieces
+        case personalityTraits, ideals, bonds, flaws, features, classResources
+        case classes, activeEffects, temporaryHitPoints, inspiration
+        case dateCreated, dateModified
     }
     
     // Кастомный декодер для безопасного декодирования старых данных
@@ -167,7 +398,19 @@ struct Character: Codable, Identifiable {
         background = try container.decode(String.self, forKey: .background)
         alignment = try container.decode(String.self, forKey: .alignment)
         level = try container.decode(Int.self, forKey: .level)
-        avatarImageData = try container.decodeIfPresent(Data.self, forKey: .avatarImageData)
+        // Декодируем avatarImageData, обрабатывая возможный base64 формат
+        if let avatarDataString = try container.decodeIfPresent(String.self, forKey: .avatarImageData) {
+            // Если это base64 строка, конвертируем обратно в Data
+            if let decodedData = Data(base64Encoded: avatarDataString) {
+                avatarImageData = decodedData
+                print("Decoded avatar image from base64, size: \(decodedData.count) bytes")
+            } else {
+                avatarImageData = nil
+                print("Failed to decode avatar image from base64")
+            }
+        } else {
+            avatarImageData = try container.decodeIfPresent(Data.self, forKey: .avatarImageData)
+        }
         
         strength = try container.decode(Int.self, forKey: .strength)
         dexterity = try container.decode(Int.self, forKey: .dexterity)
@@ -188,8 +431,26 @@ struct Character: Codable, Identifiable {
         skillsExpertise = try container.decodeIfPresent([String: Bool].self, forKey: .skillsExpertise) ?? [:]
         
         classAbilities = try container.decode([String].self, forKey: .classAbilities)
-        equipment = try container.decode([String].self, forKey: .equipment)
-        treasures = try container.decode([String].self, forKey: .treasures)
+        // Безопасное декодирование equipment (для обратной совместимости)
+        if let equipmentStrings = try? container.decode([String].self, forKey: .equipment) {
+            equipment = equipmentStrings.map { CharacterEquipment(name: $0) }
+        } else {
+            equipment = try container.decode([CharacterEquipment].self, forKey: .equipment)
+        }
+        // Безопасное декодирование treasures (для обратной совместимости)
+        if let treasureStrings = try? container.decode([String].self, forKey: .treasures) {
+            treasures = treasureStrings.map { Treasure(name: $0) }
+        } else {
+            treasures = try container.decode([Treasure].self, forKey: .treasures)
+        }
+        
+        // Безопасное декодирование полей монет (для обратной совместимости)
+        copperPieces = try container.decodeIfPresent(Int.self, forKey: .copperPieces) ?? 0
+        silverPieces = try container.decodeIfPresent(Int.self, forKey: .silverPieces) ?? 0
+        electrumPieces = try container.decodeIfPresent(Int.self, forKey: .electrumPieces) ?? 0
+        goldPieces = try container.decodeIfPresent(Int.self, forKey: .goldPieces) ?? 0
+        platinumPieces = try container.decodeIfPresent(Int.self, forKey: .platinumPieces) ?? 0
+        
         personalityTraits = try container.decode(String.self, forKey: .personalityTraits)
         ideals = try container.decode(String.self, forKey: .ideals)
         bonds = try container.decode(String.self, forKey: .bonds)
@@ -197,10 +458,72 @@ struct Character: Codable, Identifiable {
         features = try container.decode([String].self, forKey: .features)
         // Безопасное декодирование нового поля classResources
         classResources = try container.decodeIfPresent([String: ClassResource].self, forKey: .classResources) ?? [:]
+
+        // Безопасное декодирование новых полей (для обратной совместимости)
+        classes = try container.decodeIfPresent([CharacterClass].self, forKey: .classes) ?? [CharacterClass(name: characterClass, level: level, subclass: subclass)]
+        activeEffects = try container.decodeIfPresent([CharacterEffect].self, forKey: .activeEffects) ?? []
+        temporaryHitPoints = try container.decodeIfPresent(Int.self, forKey: .temporaryHitPoints) ?? 0
+        inspiration = try container.decodeIfPresent(Bool.self, forKey: .inspiration) ?? false
+
         dateCreated = try container.decode(Date.self, forKey: .dateCreated)
         dateModified = try container.decode(Date.self, forKey: .dateModified)
     }
-    
+
+    // Метод кодирования для поддержки Encodable
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(race, forKey: .race)
+        try container.encode(characterClass, forKey: .characterClass)
+        try container.encode(subclass, forKey: .subclass)
+        try container.encode(background, forKey: .background)
+        try container.encode(alignment, forKey: .alignment)
+        try container.encode(level, forKey: .level)
+        try container.encode(avatarImageData, forKey: .avatarImageData)
+
+        try container.encode(strength, forKey: .strength)
+        try container.encode(dexterity, forKey: .dexterity)
+        try container.encode(constitution, forKey: .constitution)
+        try container.encode(intelligence, forKey: .intelligence)
+        try container.encode(wisdom, forKey: .wisdom)
+        try container.encode(charisma, forKey: .charisma)
+
+        try container.encode(armorClass, forKey: .armorClass)
+        try container.encode(initiative, forKey: .initiative)
+        try container.encode(speed, forKey: .speed)
+        try container.encode(hitPoints, forKey: .hitPoints)
+        try container.encode(maxHitPoints, forKey: .maxHitPoints)
+        try container.encode(proficiencyBonus, forKey: .proficiencyBonus)
+
+        try container.encode(skills, forKey: .skills)
+        try container.encode(skillsExpertise, forKey: .skillsExpertise)
+        try container.encode(classAbilities, forKey: .classAbilities)
+        try container.encode(equipment, forKey: .equipment)
+        try container.encode(treasures, forKey: .treasures)
+
+        try container.encode(copperPieces, forKey: .copperPieces)
+        try container.encode(silverPieces, forKey: .silverPieces)
+        try container.encode(electrumPieces, forKey: .electrumPieces)
+        try container.encode(goldPieces, forKey: .goldPieces)
+        try container.encode(platinumPieces, forKey: .platinumPieces)
+
+        try container.encode(personalityTraits, forKey: .personalityTraits)
+        try container.encode(ideals, forKey: .ideals)
+        try container.encode(bonds, forKey: .bonds)
+        try container.encode(flaws, forKey: .flaws)
+        try container.encode(features, forKey: .features)
+        try container.encode(classResources, forKey: .classResources)
+
+        try container.encode(classes, forKey: .classes)
+        try container.encode(activeEffects, forKey: .activeEffects)
+        try container.encode(temporaryHitPoints, forKey: .temporaryHitPoints)
+
+        try container.encode(dateCreated, forKey: .dateCreated)
+        try container.encode(dateModified, forKey: .dateModified)
+    }
+
     // Вычисляемые свойства для модификаторов
     var strengthModifier: Int {
         return (strength - 10) / 2
@@ -250,6 +573,7 @@ struct Character: Codable, Identifiable {
         case .initiative: return initiative
         case .speed: return speed
         case .proficiencyBonus: return proficiencyBonus
+        case .inspiration: return inspiration ? 1 : 0
         }
     }
     
@@ -276,6 +600,10 @@ struct ClassResource: Codable {
         case ki = "ki"
         case sorceryPoints = "sorcery_points"
         case eldritchInvocations = "eldritch_invocations"
+        case concentrationPoints = "concentration_points"
+        case superiorityDice = "superiority_dice"
+        case channelDivinity = "channel_divinity"
+        case wildShape = "wild_shape"
         case other = "other"
     }
 }

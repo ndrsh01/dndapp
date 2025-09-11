@@ -44,6 +44,7 @@ class DataService: ObservableObject {
         static let relationships = "relationships"
         static let notes = "notes"
         static let characters = "characters"
+        static let spells = "spells"
         static let selectedCharacter = "selectedCharacter"
         static let selectedQuoteCategory = "selectedQuoteCategory"
     }
@@ -551,6 +552,7 @@ class DataService: ObservableObject {
         loadRelationships()
         loadNotes()
         loadCharacters()
+        loadSpells()
         loadCustomQuotesData()
     }
     
@@ -590,6 +592,13 @@ class DataService: ObservableObject {
         if let data = userDefaults.data(forKey: Keys.characters),
            let characters = try? JSONDecoder().decode([Character].self, from: data) {
             self.characters = characters
+        }
+    }
+    
+    private func loadSpells() {
+        if let data = userDefaults.data(forKey: Keys.spells),
+           let spells = try? JSONDecoder().decode([Spell].self, from: data) {
+            self.spells = spells
         }
     }
     
@@ -668,6 +677,12 @@ class DataService: ObservableObject {
         }
     }
     
+    private func saveSpells() {
+        if let data = try? JSONEncoder().encode(spells) {
+            userDefaults.set(data, forKey: Keys.spells)
+        }
+    }
+    
     // MARK: - Public Methods
     
     // MARK: - Quotes
@@ -681,8 +696,28 @@ class DataService: ObservableObject {
     
     // MARK: - Relationships
     func addRelationship(_ relationship: Relationship) {
+        print("=== ADD RELATIONSHIP ===")
+        print("Adding relationship: '\(relationship.name)' with characterId: \(relationship.characterId?.uuidString ?? "nil")")
         relationships.append(relationship)
         saveRelationships()
+        objectWillChange.send()
+        print("Relationship added successfully. Total relationships: \(relationships.count)")
+    }
+    
+    func getRelationships(for characterId: UUID?) -> [Relationship] {
+        let filteredRelationships: [Relationship]
+        if let characterId = characterId {
+            filteredRelationships = relationships.filter { $0.characterId == characterId }
+            print("=== GET RELATIONSHIPS ===")
+            print("Getting relationships for character: \(characterId.uuidString)")
+            print("Found \(filteredRelationships.count) relationships for this character")
+        } else {
+            filteredRelationships = relationships.filter { $0.characterId == nil }
+            print("=== GET RELATIONSHIPS ===")
+            print("Getting relationships without character (nil)")
+            print("Found \(filteredRelationships.count) relationships without character")
+        }
+        return filteredRelationships
     }
 
     var uniqueOrganizations: [String] {
@@ -694,12 +729,14 @@ class DataService: ObservableObject {
         if let index = relationships.firstIndex(where: { $0.id == relationship.id }) {
             relationships[index] = relationship
             saveRelationships()
+            objectWillChange.send()
         }
     }
     
     func deleteRelationship(_ relationship: Relationship) {
         relationships.removeAll { $0.id == relationship.id }
         saveRelationships()
+        objectWillChange.send()
     }
     
     func duplicateRelationship(_ relationship: Relationship) {
@@ -709,8 +746,27 @@ class DataService: ObservableObject {
     
     // MARK: - Notes
     func addNote(_ note: Note) {
+        print("=== ADD NOTE ===")
+        print("Adding note: '\(note.title)' with characterId: \(note.characterId?.uuidString ?? "nil")")
         notes.append(note)
         saveNotes()
+        print("Note added successfully. Total notes: \(notes.count)")
+    }
+    
+    func getNotes(for characterId: UUID?) -> [Note] {
+        let filteredNotes: [Note]
+        if let characterId = characterId {
+            filteredNotes = notes.filter { $0.characterId == characterId }
+            print("=== GET NOTES ===")
+            print("Getting notes for character: \(characterId.uuidString)")
+            print("Found \(filteredNotes.count) notes for this character")
+        } else {
+            filteredNotes = notes.filter { $0.characterId == nil }
+            print("=== GET NOTES ===")
+            print("Getting notes without character (nil)")
+            print("Found \(filteredNotes.count) notes without character")
+        }
+        return filteredNotes
     }
     
     func updateNote(_ note: Note) {
@@ -760,10 +816,35 @@ class DataService: ObservableObject {
     }
     
     // MARK: - Favorites
-    func toggleSpellFavorite(_ spell: Spell) {
+    func toggleSpellFavorite(_ spell: Spell, for characterId: UUID? = nil) {
+        print("=== TOGGLE SPELL FAVORITE ===")
+        print("Spell: '\(spell.название)', characterId: \(characterId?.uuidString ?? "nil")")
+
         if let index = spells.firstIndex(where: { $0.id == spell.id }) {
             spells[index].isFavorite.toggle()
+            spells[index].characterId = characterId
+            print("Spell favorite toggled to: \(spells[index].isFavorite)")
+            saveSpells() // Сохраняем изменения
+            print("Spell favorite saved successfully")
+        } else {
+            print("ERROR: Spell not found in spells array")
         }
+    }
+    
+    func getFavoriteSpells(for characterId: UUID?) -> [Spell] {
+        let filteredSpells: [Spell]
+        if let characterId = characterId {
+            filteredSpells = spells.filter { $0.isFavorite && $0.characterId == characterId }
+            print("=== GET FAVORITE SPELLS ===")
+            print("Getting favorite spells for character: \(characterId.uuidString)")
+            print("Found \(filteredSpells.count) favorite spells for this character")
+        } else {
+            filteredSpells = spells.filter { $0.isFavorite && $0.characterId == nil }
+            print("=== GET FAVORITE SPELLS ===")
+            print("Getting favorite spells without character (nil)")
+            print("Found \(filteredSpells.count) favorite spells without character")
+        }
+        return filteredSpells
     }
     
     func toggleFeatFavorite(_ feat: Feat) {

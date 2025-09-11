@@ -32,6 +32,9 @@ struct BackgroundsView: View {
         NavigationView {
             ScrollView {
                 LazyVStack(spacing: 12) {
+                    Spacer()
+                        .frame(height: 12)
+
                     // Search Bar
                     SearchBar(text: $searchText, placeholder: "Поиск предысторий...")
                         .padding(.horizontal, 16)

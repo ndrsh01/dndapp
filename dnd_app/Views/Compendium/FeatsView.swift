@@ -32,6 +32,9 @@ struct FeatsView: View {
         NavigationView {
             ScrollView {
                 LazyVStack(spacing: 12) {
+                    Spacer()
+                        .frame(height: 12)
+
                     // Search Bar
                     SearchBar(text: $searchText, placeholder: "Поиск черт...")
                         .padding(.horizontal, 16)

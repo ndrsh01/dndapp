@@ -5,6 +5,7 @@ class RelationshipsViewModel: ObservableObject {
     @Published var relationships: [Relationship] = []
     @Published var showAddRelationship = false
     @Published var editingRelationship: Relationship?
+    @Published var selectedCharacterId: UUID?
     
     private let dataService = DataService.shared
     private var cancellables = Set<AnyCancellable>()
@@ -14,9 +15,26 @@ class RelationshipsViewModel: ObservableObject {
     }
     
     private func setupBindings() {
-        dataService.$relationships
+        // Подписываемся на изменения отношений и персонажа
+        Publishers.CombineLatest(dataService.$relationships, $selectedCharacterId)
+            .map { [weak self] relationships, characterId in
+                return self?.dataService.getRelationships(for: characterId) ?? []
+            }
             .assign(to: \.relationships, on: self)
             .store(in: &cancellables)
+    }
+    
+    func setSelectedCharacter(_ characterId: UUID?) {
+        print("=== RELATIONSHIPS VIEWMODEL ===")
+        print("Setting selected character for relationships: \(characterId?.uuidString ?? "nil")")
+        selectedCharacterId = characterId
+        
+        // Принудительно обновляем отношения
+        let filteredRelationships = dataService.getRelationships(for: characterId)
+        relationships = filteredRelationships
+        
+        print("Selected character set. Current relationships count: \(relationships.count)")
+        print("Filtered relationships: \(relationships.map { $0.name })")
     }
     
     func addRelationship(_ relationship: Relationship) {
@@ -54,6 +72,18 @@ class RelationshipsViewModel: ObservableObject {
         }
         updatedRelationship.dateModified = Date()
         updateRelationship(updatedRelationship)
+    }
+    
+    func refreshRelationships() {
+        print("=== REFRESH RELATIONSHIPS ===")
+        print("Refreshing relationships for character: \(selectedCharacterId?.uuidString ?? "nil")")
+        
+        // Принудительно обновляем отношения
+        let filteredRelationships = dataService.getRelationships(for: selectedCharacterId)
+        relationships = filteredRelationships
+        
+        print("Relationships refreshed. Count: \(relationships.count)")
+        print("Current relationships: \(relationships.map { $0.name })")
     }
     
     func showAddRelationshipView() {

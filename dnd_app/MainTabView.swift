@@ -2,38 +2,46 @@ import SwiftUI
 
 struct MainTabView: View {
     @StateObject private var globalContextMenu = GlobalContextMenuManager.shared
-    @StateObject private var characterManager = CharacterManager()
+    @ObservedObject private var characterManager = CharacterManager.shared
+    @StateObject private var notesViewModel = NotesViewModel()
+    @StateObject private var relationshipsViewModel = RelationshipsViewModel()
+    @StateObject private var compendiumViewModel = CompendiumViewModel()
+    @StateObject private var settingsManager = SettingsManager.shared
     @State private var showingCharacterCreation = false
     @State private var showingCharacterEdit = false
     @State private var showingCharacterSelection = false
     
     var body: some View {
-        ZStack {
-            TabView {
+        NavigationView {
+            ZStack {
+                TabView {
                 QuotesView()
                     .tabItem {
                         Image(systemName: "quote.bubble")
                         Text("Цитаты")
                     }
-                
+
                 RelationshipsView()
+                    .environmentObject(relationshipsViewModel)
                     .tabItem {
                         Image(systemName: "person.2")
                         Text("Отношения")
                     }
-                
+
                 CompendiumView()
+                    .environmentObject(compendiumViewModel)
                     .tabItem {
                         Image(systemName: "book")
                         Text("Глоссарий")
                     }
-                
+
                 NotesView()
+                    .environmentObject(notesViewModel)
                     .tabItem {
                         Image(systemName: "note.text")
                         Text("Заметки")
                     }
-                
+
                 CharacterTabView(onCharacterContextMenu: {
                         showCharacterContextMenu()
                     })
@@ -44,7 +52,18 @@ struct MainTabView: View {
                     }
             }
             .accentColor(.orange)
-            .preferredColorScheme(.light)
+            .onReceive(characterManager.$selectedCharacter) { selectedCharacter in
+                // Обновляем ViewModels при изменении выбранного персонажа
+                print("=== MAIN TAB VIEW ===")
+                print("Character changed to: \(selectedCharacter?.name ?? "nil")")
+                print("Character ID: \(selectedCharacter?.id.uuidString ?? "nil")")
+                
+                notesViewModel.setSelectedCharacter(selectedCharacter?.id)
+                relationshipsViewModel.setSelectedCharacter(selectedCharacter?.id)
+                compendiumViewModel.setSelectedCharacter(selectedCharacter?.id)
+                
+                print("ViewModels updated")
+            }
             
             // Глобальное контекстное меню поверх всего
             if globalContextMenu.showContextMenu {
@@ -96,6 +115,9 @@ struct MainTabView: View {
                 }
             }
         }
+        .ignoresSafeArea(.all, edges: .bottom)
+        }
+        .preferredColorScheme(settingsManager.settings.selectedTheme.colorScheme)
         .sheet(isPresented: $showingCharacterCreation) {
             CharacterCreationView { newCharacter in
                 characterManager.addCharacter(newCharacter)
@@ -143,6 +165,7 @@ struct MainTabView: View {
         }
     }
 }
+
 
 #Preview {
     MainTabView()

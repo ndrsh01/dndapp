@@ -57,6 +57,8 @@ class CharacterViewModel: ObservableObject {
             character.speed = max(0, newValue)
         case .proficiencyBonus:
             character.proficiencyBonus = max(0, newValue)
+        case .inspiration:
+            character.inspiration = newValue > 0
         }
         
         character.dateModified = Date()
@@ -93,6 +95,10 @@ enum AbilityScore: String, CaseIterable {
         }
     }
     
+    var iconName: String {
+        return icon
+    }
+    
     var color: Color {
         switch self {
         case .strength: return .red
@@ -113,7 +119,8 @@ enum CombatStat: String, CaseIterable {
     case armorClass = "КЗ"
     case initiative = "Инициатива"
     case speed = "Скорость"
-    case proficiencyBonus = "Бонус мастерства"
+    case proficiencyBonus = "БМ"
+    case inspiration = "Вдохновение"
     
     var fullName: String {
         switch self {
@@ -121,6 +128,7 @@ enum CombatStat: String, CaseIterable {
         case .initiative: return "Инициатива"
         case .speed: return "Скорость"
         case .proficiencyBonus: return "Бонус мастерства"
+        case .inspiration: return "Вдохновение"
         }
     }
     
@@ -130,7 +138,12 @@ enum CombatStat: String, CaseIterable {
         case .initiative: return "bolt.fill"
         case .speed: return "figure.run"
         case .proficiencyBonus: return "star.fill"
+        case .inspiration: return "sparkles"
         }
+    }
+    
+    var iconName: String {
+        return icon
     }
     
     var color: Color {
@@ -139,6 +152,7 @@ enum CombatStat: String, CaseIterable {
         case .initiative: return .yellow
         case .speed: return .green
         case .proficiencyBonus: return .purple
+        case .inspiration: return .orange
         }
     }
     
