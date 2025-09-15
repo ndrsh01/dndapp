@@ -15,6 +15,7 @@ struct CharacterView: View {
     @State private var showingTreasuresView = false
     @State private var showingFeaturesView = false
     @State private var showingPersonalityView = false
+    @Environment(\.colorScheme) private var colorScheme
     
     let onCharacterUpdate: ((Character) -> Void)?
     let onCharacterContextMenu: (() -> Void)?
@@ -29,7 +30,7 @@ struct CharacterView: View {
         ScrollView {
             VStack(spacing: 16) {
                 // Заголовок персонажа
-                EditableCharacterHeader(character: $viewModel.character, onCharacterContextMenu: onCharacterContextMenu)
+                EditableCharacterHeader(character: $viewModel.character, onCharacterContextMenu: onCharacterContextMenu, onCharacterUpdate: onCharacterUpdate)
                     .environmentObject(DataService.shared)
                 
                 // Хиты
@@ -208,9 +209,9 @@ struct CharacterView: View {
                 .scaleEffect(x: 1, y: 2, anchor: .center)
         }
         .padding()
-        .background(Color.white)
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
         .onTapGesture {
             hitPointsType = .current
             showingEditHitPoints = true
@@ -257,9 +258,9 @@ struct CharacterView: View {
             }
         }
         .padding()
-        .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
     }
     
     private var combatStatsSection: some View {
@@ -279,9 +280,9 @@ struct CharacterView: View {
             }
         }
         .padding()
-        .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
     }
     
     private var detailedInfoSection: some View {
@@ -314,7 +315,7 @@ struct CharacterView: View {
                     .foregroundColor(.secondary)
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .center)
-                    .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+                    .background(adaptiveCardBackgroundColor)
                     .cornerRadius(12)
                     .padding(.horizontal)
             } else {
@@ -451,12 +452,37 @@ struct CharacterView: View {
             showingEditCombatStat = true
         }
     }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color(red: 0.95, green: 0.94, blue: 0.92)
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .black.opacity(0.3)
+        case .light:
+            return .black.opacity(0.05)
+        @unknown default:
+            return .black.opacity(0.1)
+        }
+    }
 }
 
 struct CharacterSkillsView: View {
     @Binding var character: Character
     let onCharacterUpdate: ((Character) -> Void)?
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         NavigationView {
@@ -473,7 +499,7 @@ struct CharacterSkillsView: View {
                         .padding(.horizontal)
                     
                     LazyVStack(spacing: 8) {
-                        ForEach(Skill.allCases, id: \.self) { skill in
+                        ForEach(Skill.allCases.sorted(by: { $0.rawValue.localizedCaseInsensitiveCompare($1.rawValue) == .orderedAscending }), id: \.self) { skill in
                             skillRow(skill: skill)
                         }
                     }
@@ -549,7 +575,7 @@ struct CharacterSkillsView: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
-        .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(8)
     }
     
@@ -565,6 +591,19 @@ struct CharacterSkillsView: View {
     private func toggleExpertise(for skill: Skill) {
         character.skillsExpertise[skill.rawValue] = !(character.skillsExpertise[skill.rawValue] ?? false)
         onCharacterUpdate?(character)
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color(red: 0.95, green: 0.94, blue: 0.92)
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
     }
 }
 
@@ -892,6 +931,7 @@ struct ClassResourceInfo {
 struct ClassFeatureCard: View {
     let feature: ClassFeatureWithLevel
     @State private var isExpanded = false
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -927,12 +967,25 @@ struct ClassFeatureCard: View {
             }
         }
         .padding()
-        .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(12)
         .onTapGesture {
             withAnimation(.easeInOut(duration: 0.2)) {
                 isExpanded.toggle()
             }
+        }
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color(red: 0.95, green: 0.94, blue: 0.92)
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
         }
     }
 }
@@ -941,6 +994,7 @@ struct ClassResourceView: View {
     let resource: ClassResource
     let onUse: () -> Void
     let onReset: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(spacing: 8) {
@@ -982,9 +1036,22 @@ struct ClassResourceView: View {
                 }
         }
         .padding(8)
-        .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(12)
         .frame(maxWidth: .infinity)
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color(red: 0.95, green: 0.94, blue: 0.92)
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
     }
 }
 
@@ -992,6 +1059,7 @@ struct ClassResourceInfoCard: View {
     let resource: ClassResourceInfo
     @Binding var character: Character
     let onCharacterUpdate: ((Character) -> Void)?
+    @Environment(\.colorScheme) private var colorScheme
 
     // Найдем соответствующий ресурс в персонаже
     private var characterResource: ClassResource? {
@@ -1086,9 +1154,9 @@ struct ClassResourceInfoCard: View {
         }
         .padding(.vertical, 16)
         .padding(.horizontal, 12)
-        .background(Color(.systemBackground))
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(16)
-        .shadow(color: .black.opacity(0.08), radius: 6, x: 0, y: 3)
+        .shadow(color: adaptiveShadowColor, radius: 6, x: 0, y: 3)
         .frame(maxWidth: .infinity)
     }
 
@@ -1118,6 +1186,30 @@ struct ClassResourceInfoCard: View {
         if let key = character.classResources.first(where: { $0.value.name == resource.name })?.key {
             character.classResources[key] = updatedResource
             onCharacterUpdate?(character)
+        }
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color(.systemBackground)
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .black.opacity(0.3)
+        case .light:
+            return .black.opacity(0.08)
+        @unknown default:
+            return .black.opacity(0.1)
         }
     }
 }

@@ -7,6 +7,7 @@ struct BestiaryView: View {
     @State private var selectedChallengeRatings: Set<String> = []
     @State private var showFilters = false
     @State private var expandedMonsters: Set<UUID> = []
+    @Environment(\.colorScheme) private var colorScheme
 
     var filteredMonsters: [Monster] {
         let searchQuery = searchText.lowercased()
@@ -157,7 +158,7 @@ struct BestiaryView: View {
                 }
             }
         }
-        .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+        .background(adaptiveBackgroundColor)
         .onAppear {
             print("=== BESTIARY VIEW APPEARED ===")
             print("DataService monsters count: \(dataService.monsters.count)")
@@ -184,6 +185,19 @@ struct BestiaryView: View {
                 selectedChallengeRatings: $selectedChallengeRatings,
                 availableChallengeRatings: availableChallengeRatings
             )
+        }
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.systemBackground)
+        case .light:
+            return Color(red: 0.98, green: 0.97, blue: 0.95)
+        @unknown default:
+            return Color(UIColor.systemBackground)
         }
     }
 }
@@ -215,6 +229,7 @@ struct MonsterCardView: View {
     let monster: Monster
     let isExpanded: Bool
     let onTap: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -432,11 +447,35 @@ struct MonsterCardView: View {
             }
         }
         .padding(16)
-        .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
         .onTapGesture {
             onTap()
+        }
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color(red: 0.95, green: 0.94, blue: 0.92)
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .black.opacity(0.3)
+        case .light:
+            return .black.opacity(0.1)
+        @unknown default:
+            return .black.opacity(0.1)
         }
     }
 }

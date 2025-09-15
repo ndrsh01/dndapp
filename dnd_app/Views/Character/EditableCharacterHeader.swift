@@ -6,6 +6,7 @@ struct EditableCharacterHeader: View {
     @EnvironmentObject private var dataService: DataService
     @Environment(\.colorScheme) private var colorScheme
     let onCharacterContextMenu: (() -> Void)?
+    let onCharacterUpdate: ((Character) -> Void)?
     
     var body: some View {
         VStack(spacing: 12) {
@@ -90,7 +91,7 @@ struct EditableCharacterHeader: View {
         .cornerRadius(12)
         .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
         .sheet(isPresented: $showingEditSheet) {
-            EditCharacterHeaderView(character: $character)
+            EditCharacterHeaderView(character: $character, onCharacterUpdate: onCharacterUpdate)
                 .environmentObject(dataService)
         }
     }
@@ -147,6 +148,7 @@ struct EditCharacterHeaderView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var character: Character
     @EnvironmentObject private var dataService: DataService
+    let onCharacterUpdate: ((Character) -> Void)?
     
     @State private var name: String
     @State private var race: String
@@ -156,8 +158,9 @@ struct EditCharacterHeaderView: View {
     @State private var alignment: String
     @State private var level: Int
     
-    init(character: Binding<Character>) {
+    init(character: Binding<Character>, onCharacterUpdate: ((Character) -> Void)? = nil) {
         self._character = character
+        self.onCharacterUpdate = onCharacterUpdate
         self._name = State(initialValue: character.wrappedValue.name)
         self._race = State(initialValue: character.wrappedValue.race)
         self._characterClass = State(initialValue: character.wrappedValue.characterClass)
@@ -225,6 +228,7 @@ struct EditCharacterHeaderView: View {
                         character.alignment = alignment
                         character.level = level
                         character.dateModified = Date()
+                        onCharacterUpdate?(character)
                         dismiss()
                     }
                     .disabled(name.isEmpty)
@@ -273,7 +277,8 @@ struct EditCharacterHeaderView: View {
             alignment: "Хаотично-нейтральный",
             level: 8
         )),
-        onCharacterContextMenu: nil
+        onCharacterContextMenu: nil,
+        onCharacterUpdate: nil
     )
     .environmentObject(DataService.shared)
 }

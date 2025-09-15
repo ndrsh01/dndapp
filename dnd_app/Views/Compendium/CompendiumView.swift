@@ -13,6 +13,7 @@ struct CompendiumView: View {
     @State private var selectedItem: Any?
     @State private var showSheet = false
     @State private var sheetContent: SheetContent = .spells
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         ScrollView {
@@ -86,7 +87,7 @@ struct CompendiumView: View {
                 .padding(.top, 32)
                 .padding(.bottom, 20)
         }
-        .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+        .background(adaptiveBackgroundColor)
         .navigationTitle("Глоссарий")
         .navigationBarTitleDisplayMode(.large)
         .ignoresSafeArea(.all, edges: .bottom)
@@ -109,6 +110,19 @@ struct CompendiumView: View {
             }
         }
     }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.systemBackground)
+        case .light:
+            return Color(red: 0.98, green: 0.97, blue: 0.95)
+        @unknown default:
+            return Color(UIColor.systemBackground)
+        }
+    }
 }
 
 
@@ -123,6 +137,7 @@ struct CompendiumCategoryCard: View {
     let icon: String
     let iconColor: Color
     let action: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         Button(action: action) {
@@ -155,11 +170,35 @@ struct CompendiumCategoryCard: View {
                     .foregroundColor(.gray)
             }
             .padding(16)
-            .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+            .background(adaptiveCardBackgroundColor)
             .cornerRadius(12)
-            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+            .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
         }
         .buttonStyle(PlainButtonStyle())
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color(red: 0.95, green: 0.94, blue: 0.92)
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .black.opacity(0.3)
+        case .light:
+            return .black.opacity(0.05)
+        @unknown default:
+            return .black.opacity(0.1)
+        }
     }
 }
 

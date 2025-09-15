@@ -108,6 +108,7 @@ struct EmptyStateView: View {
     let description: String
     let actionTitle: String?
     let action: (() -> Void)?
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(spacing: 16) {
@@ -119,6 +120,7 @@ struct EmptyStateView: View {
                 Text(title)
                     .font(.title2)
                     .fontWeight(.semibold)
+                    .foregroundColor(adaptiveTextColor)
                 
                 Text(description)
                     .font(.subheadline)
@@ -140,6 +142,17 @@ struct EmptyStateView: View {
             }
         }
         .padding(.horizontal, 32)
+    }
+    
+    private var adaptiveTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .white
+        case .light:
+            return .black
+        @unknown default:
+            return .primary
+        }
     }
 }
 
@@ -229,6 +242,7 @@ struct TabaxiImageView: View {
 struct SearchBar: View {
     @Binding var text: String
     let placeholder: String
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         HStack {
@@ -240,8 +254,19 @@ struct SearchBar: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color(.systemGray6))
+        .background(adaptiveSearchBackgroundColor)
         .cornerRadius(10)
+    }
+    
+    private var adaptiveSearchBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.systemGray6)
+        case .light:
+            return Color(.systemGray6)
+        @unknown default:
+            return Color(.systemGray6)
+        }
     }
 }
 

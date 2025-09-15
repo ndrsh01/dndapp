@@ -9,6 +9,7 @@ struct SpellsView: View {
     @State private var selectedLevels: Set<String> = []
     @State private var selectedSchools: Set<String> = []
     @State private var selectedClasses: Set<String> = []
+    @Environment(\.colorScheme) private var colorScheme
     
     var filteredSpells: [Spell] {
         let spells = dataService.spells
@@ -151,7 +152,7 @@ struct SpellsView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+            .background(adaptiveBackgroundColor)
             .navigationTitle("Заклинания")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -218,6 +219,19 @@ struct SpellsView: View {
             UserDefaults.standard.set(data, forKey: "favoriteSpells")
         }
     }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.systemBackground)
+        case .light:
+            return Color(red: 0.98, green: 0.97, blue: 0.95)
+        @unknown default:
+            return Color(UIColor.systemBackground)
+        }
+    }
 }
 
 // MARK: - Spell Card View
@@ -227,6 +241,7 @@ struct SpellCardView: View {
     let isFavorite: Bool
     let onToggleExpanded: () -> Void
     let onToggleFavorite: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -235,7 +250,7 @@ struct SpellCardView: View {
                 Text(spell.название)
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundColor(.black)
+                    .foregroundColor(adaptiveTextColor)
                     .multilineTextAlignment(.leading)
                 
                 Spacer()
@@ -279,7 +294,7 @@ struct SpellCardView: View {
                     // Description
                     Text(spell.описание)
                         .font(.body)
-                        .foregroundColor(.black)
+                        .foregroundColor(adaptiveTextColor)
                         .multilineTextAlignment(.leading)
                     
                     // Improvements
@@ -293,7 +308,7 @@ struct SpellCardView: View {
                             
                             Text(spell.улучшения)
                                 .font(.body)
-                                .foregroundColor(.black)
+                                .foregroundColor(adaptiveTextColor)
                         }
                     }
                 }
@@ -301,11 +316,46 @@ struct SpellCardView: View {
             }
         }
         .padding(16)
-        .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
         .onTapGesture {
             onToggleExpanded()
+        }
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .white
+        case .light:
+            return .black
+        @unknown default:
+            return .primary
+        }
+    }
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color(red: 0.95, green: 0.94, blue: 0.92)
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .black.opacity(0.3)
+        case .light:
+            return .black.opacity(0.1)
+        @unknown default:
+            return .black.opacity(0.1)
         }
     }
 }

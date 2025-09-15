@@ -59,7 +59,7 @@ struct BackgroundsView: View {
                 }
                 .padding(.bottom, 20)
             }
-            .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+            .background(adaptiveBackgroundColor)
             .navigationTitle("Предыстории")
             .navigationBarTitleDisplayMode(.large)
             .onAppear {
@@ -68,7 +68,7 @@ struct BackgroundsView: View {
                 if dataService.backgrounds.isEmpty {
                     Task {
                         await dataService.loadBackgrounds()
-                        ;print("Backgrounds loaded")
+                        print("Backgrounds loaded")
                     }
                 }
             }
@@ -99,6 +99,19 @@ struct BackgroundsView: View {
         }
     }
     
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.systemBackground)
+        case .light:
+            return Color(red: 0.98, green: 0.97, blue: 0.95)
+        @unknown default:
+            return Color(UIColor.systemBackground)
+        }
+    }
+    
     private func saveFavoriteBackgrounds() {
         if let data = try? JSONEncoder().encode(favoriteBackgrounds) {
             UserDefaults.standard.set(data, forKey: "favoriteBackgrounds")
@@ -112,6 +125,7 @@ struct BackgroundCardView: View {
     let isFavorite: Bool
     let onToggleExpanded: () -> Void
     let onToggleFavorite: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -194,11 +208,35 @@ struct BackgroundCardView: View {
             }
         }
         .padding(16)
-        .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+        .shadow(color: adaptiveShadowColor, radius: 2, x: 0, y: 1)
         .onTapGesture {
             onToggleExpanded()
+        }
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color(red: 0.95, green: 0.94, blue: 0.92)
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .black.opacity(0.3)
+        case .light:
+            return .black.opacity(0.1)
+        @unknown default:
+            return .black.opacity(0.1)
         }
     }
 }

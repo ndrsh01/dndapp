@@ -4,6 +4,7 @@ struct NotesView: View {
     @EnvironmentObject private var viewModel: NotesViewModel
     @State private var showAddNote = false
     @State private var editingNote: Note?
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         NavigationView {
@@ -85,7 +86,7 @@ struct NotesView: View {
                     }
                 }
         }
-        .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+        .background(adaptiveBackgroundColor)
         .navigationTitle("Заметки")
         .navigationBarTitleDisplayMode(.large)
         .ignoresSafeArea(.all, edges: .bottom)
@@ -112,10 +113,24 @@ struct NotesView: View {
         }
         }
     }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.systemBackground)
+        case .light:
+            return Color(red: 0.98, green: 0.97, blue: 0.95)
+        @unknown default:
+            return Color(UIColor.systemBackground)
+        }
+    }
 }
 
 struct NoteCardView: View {
     let note: Note
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -151,9 +166,9 @@ struct NoteCardView: View {
             }
         }
         .padding(16)
-        .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
     }
     
     private var categoryColor: Color {
@@ -275,6 +290,30 @@ struct NoteCardView: View {
             Text(value)
                 .font(.caption2)
                 .foregroundColor(.primary)
+        }
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color(red: 0.95, green: 0.94, blue: 0.92)
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .black.opacity(0.3)
+        case .light:
+            return .black.opacity(0.05)
+        @unknown default:
+            return .black.opacity(0.1)
         }
     }
 }

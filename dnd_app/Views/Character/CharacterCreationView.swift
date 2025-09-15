@@ -2,19 +2,26 @@ import SwiftUI
 
 struct CharacterCreationView: View {
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var dataService: DataService
     @State private var currentStep = 0
-    @State private var character = Character(
-        name: "",
-        race: "Человек",
-        characterClass: "Воин",
-        background: "Солдат",
-        alignment: "Законно-добрый",
-        level: 1
-    )
+    @State private var character: Character
     
     let onSave: (Character) -> Void
     
     private let totalSteps = 5
+    
+    init(onSave: @escaping (Character) -> Void) {
+        self.onSave = onSave
+        // Инициализируем персонажа с базовыми значениями
+        self._character = State(initialValue: Character(
+            name: "",
+            race: "Человек",
+            characterClass: "Воин",
+            background: "Солдат", // Будет обновлено в onAppear
+            alignment: "Законно-добрый",
+            level: 1
+        ))
+    }
     
     var body: some View {
         NavigationView {
@@ -51,6 +58,12 @@ struct CharacterCreationView: View {
                     Button("Отмена") {
                         dismiss()
                     }
+                }
+            }
+            .onAppear {
+                // Устанавливаем первую предысторию из списка, если она доступна
+                if !dataService.backgrounds.isEmpty {
+                    character.background = dataService.backgrounds.first?.название ?? "Солдат"
                 }
             }
         }
@@ -315,8 +328,11 @@ struct AbilityScoresStep: View {
 
 struct BackgroundStep: View {
     @Binding var character: Character
+    @EnvironmentObject private var dataService: DataService
     
-    private let backgrounds = ["Солдат", "Ученый", "Торговец", "Пират", "Следопыт", "Благородный", "Чужеземец", "Преступник", "Отшельник", "Артист"]
+    private var backgrounds: [String] {
+        return dataService.backgrounds.map { $0.название }
+    }
     
     var body: some View {
         ScrollView {

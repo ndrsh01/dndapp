@@ -4,12 +4,13 @@ struct RelationshipsView: View {
     @EnvironmentObject private var viewModel: RelationshipsViewModel
     @State private var showAddRelationship = false
     @State private var editingRelationship: Relationship?
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         NavigationView {
             ZStack {
                 // Фон на весь экран
-                Color(red: 0.98, green: 0.97, blue: 0.95)
+                adaptiveBackgroundColor
                     .ignoresSafeArea(.all)
 
                 VStack(spacing: 0) {
@@ -105,6 +106,7 @@ struct RelationshipsView: View {
     struct RelationshipCardView: View {
         let relationship: Relationship
         let viewModel: RelationshipsViewModel?
+        @Environment(\.colorScheme) private var colorScheme
         
         var body: some View {
             VStack(alignment: .leading, spacing: 12) {
@@ -174,9 +176,9 @@ struct RelationshipsView: View {
                 }
             }
             .padding(16)
-            .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+            .background(adaptiveCardBackgroundColor)
             .cornerRadius(12)
-            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+            .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
         }
         
         private var relationshipStatusText: String {
@@ -201,6 +203,30 @@ struct RelationshipsView: View {
                 return .gray
             case .friend:
                 return .green
+            }
+        }
+        
+        // MARK: - Adaptive Colors
+        
+        private var adaptiveCardBackgroundColor: Color {
+            switch colorScheme {
+            case .dark:
+                return Color(UIColor.secondarySystemBackground)
+            case .light:
+                return Color(red: 0.95, green: 0.94, blue: 0.92)
+            @unknown default:
+                return Color(UIColor.secondarySystemBackground)
+            }
+        }
+        
+        private var adaptiveShadowColor: Color {
+            switch colorScheme {
+            case .dark:
+                return .black.opacity(0.3)
+            case .light:
+                return .black.opacity(0.05)
+            @unknown default:
+                return .black.opacity(0.1)
             }
         }
     }
@@ -464,6 +490,19 @@ struct RelationshipsView: View {
                     }
                 }
             }
+        }
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.systemBackground)
+        case .light:
+            return Color(red: 0.98, green: 0.97, blue: 0.95)
+        @unknown default:
+            return Color(UIColor.systemBackground)
         }
     }
     

@@ -3,6 +3,7 @@ import SwiftUI
 struct FavoritesView: View {
     @ObservedObject private var dataService = DataService.shared
     @State private var selectedTab = 0
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         NavigationView {
@@ -38,10 +39,23 @@ struct FavoritesView: View {
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
-            .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+            .background(adaptiveBackgroundColor)
             .navigationTitle("Избранное")
             .navigationBarTitleDisplayMode(.large)
             .ignoresSafeArea(.all, edges: .bottom)
+        }
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.systemBackground)
+        case .light:
+            return Color(red: 0.98, green: 0.97, blue: 0.95)
+        @unknown default:
+            return Color(UIColor.systemBackground)
         }
     }
 }

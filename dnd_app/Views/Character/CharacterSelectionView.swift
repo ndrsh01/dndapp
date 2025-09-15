@@ -15,6 +15,7 @@ struct CharacterSelectionView: View {
     @State private var showingShareSheet = false
     @State private var exportURL: URL?
     @State private var isExporting = false
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         NavigationView {
@@ -43,6 +44,7 @@ struct CharacterSelectionView: View {
                     characterManager.addCharacter(newCharacter)
                     characterManager.selectCharacter(newCharacter)
                 }
+                .environmentObject(DataService.shared)
             }
             .sheet(isPresented: $showingImportSheet) {
                 DocumentPicker { data in
@@ -461,6 +463,7 @@ struct StatCard: View {
     let value: String
     let icon: String
     let color: Color
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(spacing: 8) {
@@ -471,6 +474,7 @@ struct StatCard: View {
             Text(value)
                 .font(.title2)
                 .fontWeight(.bold)
+                .foregroundColor(adaptiveTextColor)
             
             Text(title)
                 .font(.caption)
@@ -479,8 +483,32 @@ struct StatCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(color.opacity(0.1))
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(12)
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .white
+        case .light:
+            return .black
+        @unknown default:
+            return .primary
+        }
+    }
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return color.opacity(0.1)
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
     }
 }
 
@@ -491,6 +519,7 @@ struct CharacterCard: View {
     let onEdit: () -> Void
     let onExport: () -> Void
     let onDelete: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         HStack(spacing: 16) {
@@ -546,9 +575,9 @@ struct CharacterCard: View {
             }
         }
         .padding()
-        .background(isSelected ? Color.orange.opacity(0.1) : Color.white)
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
         .onTapGesture {
             onSelect()
         }
@@ -559,6 +588,34 @@ struct CharacterCard: View {
                 onExport: onExport,
                 onDelete: onDelete
             )
+        }
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveCardBackgroundColor: Color {
+        if isSelected {
+            return Color.orange.opacity(0.1)
+        } else {
+            switch colorScheme {
+            case .dark:
+                return Color(UIColor.secondarySystemBackground)
+            case .light:
+                return Color.white
+            @unknown default:
+                return Color(UIColor.secondarySystemBackground)
+            }
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .black.opacity(0.3)
+        case .light:
+            return .black.opacity(0.1)
+        @unknown default:
+            return .black.opacity(0.1)
         }
     }
 }

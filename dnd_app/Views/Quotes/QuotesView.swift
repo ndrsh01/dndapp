@@ -3,6 +3,7 @@ import SwiftUI
 struct QuotesView: View {
     @StateObject private var viewModel = QuotesViewModel()
     @State private var showCategoryManagement = false
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         NavigationView {
@@ -17,10 +18,10 @@ struct QuotesView: View {
                                 Text(category)
                                     .font(.system(.headline, design: .rounded))
                                     .fontWeight(.semibold)
-                                    .foregroundColor(.black)
+                                    .foregroundColor(adaptiveTextColor)
                                     .padding(.horizontal, 20)
                                     .padding(.vertical, 12)
-                                    .background(viewModel.selectedCategory == category ? Color.orange.opacity(0.8) : Color.gray.opacity(0.4))
+                                    .background(viewModel.selectedCategory == category ? Color.orange.opacity(0.8) : adaptiveButtonBackgroundColor)
                                     .cornerRadius(20)
                             }
                             .buttonStyle(PlainButtonStyle())
@@ -51,13 +52,13 @@ struct QuotesView: View {
                             .fontWeight(.semibold)
                             .italic()
                             .multilineTextAlignment(.center)
-                            .foregroundColor(.black)
+                            .foregroundColor(adaptiveTextColor)
                             .frame(width: 280)
                             .padding(.horizontal, 24)
                             .padding(.vertical, 20)
-                            .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+                            .background(adaptiveCardBackgroundColor)
                             .cornerRadius(16)
-                            .shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 3)
+                            .shadow(color: adaptiveShadowColor, radius: 6, x: 0, y: 3)
                         
                         // Tabaxi Image без фона - максимальный размер
                         RandomTabaxiImageView()
@@ -94,17 +95,17 @@ struct QuotesView: View {
                     Text("Случайная цитата")
                     .font(.system(.headline, design: .rounded))
                     .fontWeight(.semibold)
-                    .foregroundColor(.black)
+                    .foregroundColor(adaptiveTextColor)
                     .padding(.horizontal, 40)
                     .padding(.vertical, 20)
-                    .background(Color.gray.opacity(0.4))
+                    .background(adaptiveButtonBackgroundColor)
                     .cornerRadius(30)
                 }
                 .padding(.top, 10)
                 .padding(.bottom, 30)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+            .background(adaptiveBackgroundColor)
             .navigationTitle("Цитаты")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
@@ -119,12 +120,69 @@ struct QuotesView: View {
             }
             .onAppear {
                 Task {
-                    await DataService.shared.loadQuotes();
+                    await DataService.shared.loadQuotes()
             }
         }
         .sheet(isPresented: $showCategoryManagement) {
             CategoryManagementView(viewModel: viewModel)
         }
+        }
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.systemBackground)
+        case .light:
+            return Color(red: 0.98, green: 0.97, blue: 0.95)
+        @unknown default:
+            return Color(UIColor.systemBackground)
+        }
+    }
+    
+    private var adaptiveTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .white
+        case .light:
+            return .black
+        @unknown default:
+            return .primary
+        }
+    }
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color(red: 0.95, green: 0.94, blue: 0.92)
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
+    }
+    
+    private var adaptiveButtonBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.systemGray5)
+        case .light:
+            return Color.gray.opacity(0.4)
+        @unknown default:
+            return Color(UIColor.systemGray5)
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .black.opacity(0.3)
+        case .light:
+            return .black.opacity(0.1)
+        @unknown default:
+            return .black.opacity(0.1)
         }
     }
 }
@@ -150,6 +208,7 @@ struct CategoryManagementView: View {
     @State private var showAddCategory = false
     @State private var showEditCategory = false
     @State private var editingCategoryName = ""
+    @Environment(\.colorScheme) private var colorScheme
     @State private var showQuotesList = false
     @State private var selectedCategoryForQuotes = ""
     @StateObject private var globalContextMenu = GlobalContextMenuManager.shared
@@ -244,7 +303,7 @@ struct CategoryManagementView: View {
                     }
                 }
             }
-            .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+            .background(adaptiveBackgroundColor)
             .navigationTitle("Категории цитат")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -289,6 +348,19 @@ struct CategoryManagementView: View {
             }
         }
     }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.systemBackground)
+        case .light:
+            return Color(red: 0.98, green: 0.97, blue: 0.95)
+        @unknown default:
+            return Color(UIColor.systemBackground)
+        }
+    }
 }
 
 struct CategoryCardView: View {
@@ -296,6 +368,7 @@ struct CategoryCardView: View {
     let quoteCount: Int
     let isSelected: Bool
     let onTap: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -311,11 +384,35 @@ struct CategoryCardView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
         .onTapGesture {
             onTap()
+        }
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color(red: 0.95, green: 0.94, blue: 0.92)
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .black.opacity(0.3)
+        case .light:
+            return .black.opacity(0.05)
+        @unknown default:
+            return .black.opacity(0.1)
         }
     }
 }
@@ -401,6 +498,7 @@ struct QuotesListView: View {
     @ObservedObject var viewModel: QuotesViewModel
     @State private var isLoading = true
     @State private var showAddQuote = false
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         NavigationView {
@@ -438,7 +536,7 @@ struct QuotesListView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
                 }
-                .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+                .background(adaptiveBackgroundColor)
                 .allowsHitTesting(true)
                 .highPriorityGesture(
                     DragGesture()
@@ -455,10 +553,10 @@ struct QuotesListView: View {
 
                         Text("Загрузка цитат...")
                             .font(.headline)
-                            .foregroundColor(.black)
+                            .foregroundColor(adaptiveTextColor)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(red: 0.98, green: 0.97, blue: 0.95).opacity(0.9))
+                    .background(adaptiveBackgroundColor.opacity(0.9))
                 }
 
                 // Пустое состояние на весь экран
@@ -471,7 +569,7 @@ struct QuotesListView: View {
                         Text("Нет цитат в категории")
                             .font(.title2)
                             .fontWeight(.semibold)
-                            .foregroundColor(.black)
+                            .foregroundColor(adaptiveTextColor)
 
                         Text("В категории \"\(category)\" пока нет цитат")
                             .font(.body)
@@ -480,7 +578,7 @@ struct QuotesListView: View {
                             .padding(.horizontal, 32)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Color(red: 0.98, green: 0.97, blue: 0.95))
+                    .background(adaptiveBackgroundColor)
                     .onAppear {
                         print("Showing empty state for category: \(category)")
                     }
@@ -525,6 +623,30 @@ struct QuotesListView: View {
             }
         }
     }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.systemBackground)
+        case .light:
+            return Color(red: 0.98, green: 0.97, blue: 0.95)
+        @unknown default:
+            return Color(UIColor.systemBackground)
+        }
+    }
+    
+    private var adaptiveTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .white
+        case .light:
+            return .black
+        @unknown default:
+            return .primary
+        }
+    }
 }
 
 struct QuoteCardView: View {
@@ -532,6 +654,7 @@ struct QuoteCardView: View {
     let onEdit: (() -> Void)?
     let onDelete: (() -> Void)?
     let onDuplicate: (() -> Void)?
+    @Environment(\.colorScheme) private var colorScheme
     
     init(quote: Quote, onEdit: (() -> Void)? = nil, onDelete: (() -> Void)? = nil, onDuplicate: (() -> Void)? = nil) {
         self.quote = quote
@@ -548,14 +671,38 @@ struct QuoteCardView: View {
                 .multilineTextAlignment(.leading)
         }
         .padding(16)
-        .background(Color.white)
+        .background(adaptiveCardBackgroundColor)
         .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+        .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
         .contextMenu(
             onEdit: onEdit ?? {},
             onDelete: onDelete ?? {},
             onDuplicate: onDuplicate ?? {}
         )
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color.white
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .black.opacity(0.3)
+        case .light:
+            return .black.opacity(0.05)
+        @unknown default:
+            return .black.opacity(0.1)
+        }
     }
 }
 
