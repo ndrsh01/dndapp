@@ -257,6 +257,9 @@ struct Character: Codable, Identifiable {
     var skills: [String: Bool] // Название навыка: владеет ли
     var skillsExpertise: [String: Bool] // Название навыка: есть ли компетенция (удваивает бонус владения)
     
+    // Спасброски
+    var savingThrows: [String: Bool] // Название характеристики: владеет ли спасброском
+    
     // Классовые умения
     var classAbilities: [String]
     
@@ -330,6 +333,9 @@ struct Character: Codable, Identifiable {
         self.skills = [:]
         self.skillsExpertise = [:]
         
+        // Спасброски
+        self.savingThrows = [:]
+        
         // Классовые умения
         self.classAbilities = []
         
@@ -379,7 +385,7 @@ struct Character: Codable, Identifiable {
         case id, name, race, characterClass, subclass, background, alignment, level, avatarImageData
         case strength, dexterity, constitution, intelligence, wisdom, charisma
         case armorClass, initiative, speed, hitPoints, maxHitPoints, proficiencyBonus
-        case skills, skillsExpertise, classAbilities, equipment, treasures
+        case skills, skillsExpertise, savingThrows, classAbilities, equipment, treasures
         case copperPieces, silverPieces, electrumPieces, goldPieces, platinumPieces
         case personalityTraits, ideals, bonds, flaws, features, classResources
         case classes, activeEffects, temporaryHitPoints, inspiration
@@ -429,6 +435,8 @@ struct Character: Codable, Identifiable {
         skills = try container.decode([String: Bool].self, forKey: .skills)
         // Безопасное декодирование нового поля skillsExpertise
         skillsExpertise = try container.decodeIfPresent([String: Bool].self, forKey: .skillsExpertise) ?? [:]
+        // Безопасное декодирование нового поля savingThrows
+        savingThrows = try container.decodeIfPresent([String: Bool].self, forKey: .savingThrows) ?? [:]
         
         classAbilities = try container.decode([String].self, forKey: .classAbilities)
         // Безопасное декодирование equipment (для обратной совместимости)
@@ -499,6 +507,7 @@ struct Character: Codable, Identifiable {
 
         try container.encode(skills, forKey: .skills)
         try container.encode(skillsExpertise, forKey: .skillsExpertise)
+        try container.encode(savingThrows, forKey: .savingThrows)
         try container.encode(classAbilities, forKey: .classAbilities)
         try container.encode(equipment, forKey: .equipment)
         try container.encode(treasures, forKey: .treasures)
@@ -583,6 +592,33 @@ struct Character: Codable, Identifiable {
     
     func formatModifier(_ modifier: Int) -> String {
         return modifier >= 0 ? "+\(modifier)" : "\(modifier)"
+    }
+    
+    // MARK: - Saving Throws
+    
+    func savingThrowModifier(for ability: AbilityScore) -> Int {
+        let baseModifier = modifier(for: ability)
+        let abilityName = ability.rawValue
+        
+        if savingThrows[abilityName] == true {
+            return baseModifier + proficiencyBonus
+        }
+        return baseModifier
+    }
+    
+    func formattedSavingThrowModifier(for ability: AbilityScore) -> String {
+        let modifier = savingThrowModifier(for: ability)
+        return formatModifier(modifier)
+    }
+    
+    mutating func toggleSavingThrow(for ability: AbilityScore) {
+        let abilityName = ability.rawValue
+        savingThrows[abilityName] = !(savingThrows[abilityName] ?? false)
+    }
+    
+    func hasSavingThrowProficiency(for ability: AbilityScore) -> Bool {
+        let abilityName = ability.rawValue
+        return savingThrows[abilityName] ?? false
     }
 }
 

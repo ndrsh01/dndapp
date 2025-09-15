@@ -69,3 +69,4 @@ struct CharacterPersonalityView: View {
         onCharacterUpdate: nil
     )
 }
+

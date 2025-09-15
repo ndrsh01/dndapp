@@ -39,14 +39,20 @@ class RelationshipsViewModel: ObservableObject {
     
     func addRelationship(_ relationship: Relationship) {
         dataService.addRelationship(relationship)
+        // Немедленно обновляем локальный массив
+        relationships = dataService.getRelationships(for: selectedCharacterId)
     }
     
     func updateRelationship(_ relationship: Relationship) {
         dataService.updateRelationship(relationship)
+        // Немедленно обновляем локальный массив
+        relationships = dataService.getRelationships(for: selectedCharacterId)
     }
     
     func deleteRelationship(_ relationship: Relationship) {
         dataService.deleteRelationship(relationship)
+        // Немедленно обновляем локальный массив
+        relationships = dataService.getRelationships(for: selectedCharacterId)
     }
     
     func duplicateRelationship(_ relationship: Relationship) {
@@ -57,11 +63,19 @@ class RelationshipsViewModel: ObservableObject {
         var updatedRelationship = relationship
         updatedRelationship.relationshipLevel = level
         updatedRelationship.dateModified = Date()
+        
+        // Обновляем в DataService
         updateRelationship(updatedRelationship)
+        
+        // Немедленно обновляем локальный массив для мгновенного отображения
+        if let index = relationships.firstIndex(where: { $0.id == relationship.id }) {
+            relationships[index] = updatedRelationship
+        }
     }
     
     func setRelationshipType(_ relationship: Relationship, type: RelationshipStatus) {
         var updatedRelationship = relationship
+        // Обновляем уровень отношений, статус автоматически обновится
         switch type {
         case .enemy:
             updatedRelationship.relationshipLevel = 1 // Уровень для врага
@@ -71,7 +85,17 @@ class RelationshipsViewModel: ObservableObject {
             updatedRelationship.relationshipLevel = 6 // Минимальный уровень для друга
         }
         updatedRelationship.dateModified = Date()
+        print("=== SET RELATIONSHIP TYPE ===")
+        print("Setting relationship '\(relationship.name)' to \(type)")
+        print("New level: \(updatedRelationship.relationshipLevel)")
+        
+        // Обновляем в DataService
         updateRelationship(updatedRelationship)
+        
+        // Немедленно обновляем локальный массив для мгновенного отображения
+        if let index = relationships.firstIndex(where: { $0.id == relationship.id }) {
+            relationships[index] = updatedRelationship
+        }
     }
     
     func refreshRelationships() {

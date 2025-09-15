@@ -3,6 +3,7 @@ import SwiftUI
 // MARK: - Card View
 struct CardView<Content: View>: View {
     let content: Content
+    @Environment(\.colorScheme) private var colorScheme
     
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -10,9 +11,31 @@ struct CardView<Content: View>: View {
     
     var body: some View {
         content
-            .background(Color(red: 0.95, green: 0.94, blue: 0.92))
+            .background(adaptiveCardBackgroundColor)
             .cornerRadius(12)
-            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+            .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
+    }
+    
+    private var adaptiveCardBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color(red: 0.95, green: 0.94, blue: 0.92)
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .black.opacity(0.3)
+        case .light:
+            return .black.opacity(0.05)
+        @unknown default:
+            return .black.opacity(0.1)
+        }
     }
 }
 
@@ -20,16 +43,28 @@ struct CardView<Content: View>: View {
 struct TagView: View {
     let text: String
     let color: Color
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         Text(text)
             .font(.caption)
             .fontWeight(.medium)
-            .foregroundColor(.black)
+            .foregroundColor(adaptiveTextColor)
             .padding(.horizontal, 8)
             .padding(.vertical, 4)
             .background(color.opacity(0.2))
             .cornerRadius(8)
+    }
+    
+    private var adaptiveTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .white
+        case .light:
+            return .black
+        @unknown default:
+            return .primary
+        }
     }
 }
 
@@ -37,6 +72,7 @@ struct TagView: View {
 struct InfoRow: View {
     let icon: String
     let text: String
+    @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
         HStack(spacing: 8) {
@@ -47,9 +83,20 @@ struct InfoRow: View {
             
             Text(text)
                 .font(.caption)
-                .foregroundColor(.black)
+                .foregroundColor(adaptiveTextColor)
             
             Spacer()
+        }
+    }
+    
+    private var adaptiveTextColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .white
+        case .light:
+            return .black
+        @unknown default:
+            return .primary
         }
     }
 }

@@ -5,6 +5,7 @@ struct BackgroundsView: View {
     @State private var searchText = ""
     @State private var favoriteBackgrounds: Set<UUID> = []
     @State private var expandedBackgrounds: Set<UUID> = []
+    @Environment(\.colorScheme) private var colorScheme
     
     var filteredBackgrounds: [Background] {
         let backgrounds = dataService.backgrounds

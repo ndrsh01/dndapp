@@ -12,8 +12,11 @@ class CharacterManager: ObservableObject {
     private let selectedCharacterKey = "selected_character_id"
     
     private init() {
+        print("=== CHARACTER MANAGER INIT ===")
+        print("CharacterManager singleton is being initialized")
         loadCharacters()
         loadSelectedCharacter()
+        print("CharacterManager initialization complete")
     }
     
     // MARK: - Character Management
@@ -24,14 +27,31 @@ class CharacterManager: ObservableObject {
     }
     
     func updateCharacter(_ character: Character) {
+        print("=== CHARACTER MANAGER UPDATE ===")
+        print("Updating character: '\(character.name)' with ID: \(character.id)")
+        print("Character class: \(character.characterClass)")
+        print("Character race: \(character.race)")
+        print("Character alignment: \(character.alignment)")
+        print("Current characters count: \(characters.count)")
+        for (index, char) in characters.enumerated() {
+            print("  [\(index)] \(char.name) (ID: \(char.id))")
+        }
+        
         if let index = characters.firstIndex(where: { $0.id == character.id }) {
+            print("Found character at index: \(index)")
             characters[index] = character
             saveCharacters()
             
             // Обновляем выбранного персонажа, если это он
             if selectedCharacter?.id == character.id {
                 selectedCharacter = character
+                print("Updated selected character")
             }
+            
+            print("Character updated successfully in CharacterManager")
+        } else {
+            print("ERROR: Character not found for update: \(character.name)")
+            print("Available character IDs: \(characters.map { $0.id })")
         }
     }
     
@@ -70,16 +90,33 @@ class CharacterManager: ObservableObject {
     // MARK: - Persistence
     
     private func saveCharacters() {
+        print("=== CHARACTER MANAGER SAVE ===")
+        print("Saving \(characters.count) characters to UserDefaults with key: \(charactersKey)")
+        for character in characters {
+            print("- \(character.name): class=\(character.characterClass), race=\(character.race), alignment=\(character.alignment)")
+        }
+        
         if let encoded = try? JSONEncoder().encode(characters) {
             userDefaults.set(encoded, forKey: charactersKey)
+            print("Characters saved successfully to UserDefaults")
+        } else {
+            print("ERROR: Failed to encode characters for saving")
         }
     }
     
     private func loadCharacters() {
+        print("=== CHARACTER MANAGER LOAD ===")
+        print("Loading characters from UserDefaults with key: \(charactersKey)")
+        
         if let data = userDefaults.data(forKey: charactersKey),
            let decoded = try? JSONDecoder().decode([Character].self, from: data) {
             characters = decoded
+            print("Loaded \(characters.count) characters from UserDefaults")
+            for character in characters {
+                print("- \(character.name): class=\(character.characterClass), race=\(character.race), alignment=\(character.alignment)")
+            }
         } else {
+            print("No saved characters found, creating default character")
             // Создаем персонажа по умолчанию, если нет сохраненных
             createDefaultCharacter()
         }
@@ -583,15 +620,26 @@ class CharacterManager: ObservableObject {
             newCharacter.proficiencyBonus = extendedExport.character.proficiencyBonus
             newCharacter.skills = extendedExport.character.skills
             newCharacter.skillsExpertise = extendedExport.character.skillsExpertise
+            newCharacter.savingThrows = extendedExport.character.savingThrows
             newCharacter.classAbilities = extendedExport.character.classAbilities
             newCharacter.equipment = extendedExport.character.equipment
             newCharacter.treasures = extendedExport.character.treasures
+            newCharacter.copperPieces = extendedExport.character.copperPieces
+            newCharacter.silverPieces = extendedExport.character.silverPieces
+            newCharacter.electrumPieces = extendedExport.character.electrumPieces
+            newCharacter.goldPieces = extendedExport.character.goldPieces
+            newCharacter.platinumPieces = extendedExport.character.platinumPieces
             newCharacter.personalityTraits = extendedExport.character.personalityTraits
             newCharacter.ideals = extendedExport.character.ideals
             newCharacter.bonds = extendedExport.character.bonds
             newCharacter.flaws = extendedExport.character.flaws
             newCharacter.features = extendedExport.character.features
             newCharacter.classResources = extendedExport.character.classResources
+            newCharacter.classes = extendedExport.character.classes
+            newCharacter.activeEffects = extendedExport.character.activeEffects
+            newCharacter.temporaryHitPoints = extendedExport.character.temporaryHitPoints
+            newCharacter.inspiration = extendedExport.character.inspiration
+            newCharacter.avatarImageData = extendedExport.character.avatarImageData
             newCharacter.dateCreated = Date()
             newCharacter.dateModified = Date()
             
@@ -686,14 +734,26 @@ class CharacterManager: ObservableObject {
             newCharacter.proficiencyBonus = extendedExport.character.proficiencyBonus
             newCharacter.skills = extendedExport.character.skills
             newCharacter.skillsExpertise = extendedExport.character.skillsExpertise
+            newCharacter.savingThrows = extendedExport.character.savingThrows
             newCharacter.classAbilities = extendedExport.character.classAbilities
             newCharacter.equipment = extendedExport.character.equipment
             newCharacter.treasures = extendedExport.character.treasures
+            newCharacter.copperPieces = extendedExport.character.copperPieces
+            newCharacter.silverPieces = extendedExport.character.silverPieces
+            newCharacter.electrumPieces = extendedExport.character.electrumPieces
+            newCharacter.goldPieces = extendedExport.character.goldPieces
+            newCharacter.platinumPieces = extendedExport.character.platinumPieces
             newCharacter.personalityTraits = extendedExport.character.personalityTraits
             newCharacter.ideals = extendedExport.character.ideals
             newCharacter.bonds = extendedExport.character.bonds
             newCharacter.flaws = extendedExport.character.flaws
             newCharacter.features = extendedExport.character.features
+            newCharacter.classResources = extendedExport.character.classResources
+            newCharacter.classes = extendedExport.character.classes
+            newCharacter.activeEffects = extendedExport.character.activeEffects
+            newCharacter.temporaryHitPoints = extendedExport.character.temporaryHitPoints
+            newCharacter.inspiration = extendedExport.character.inspiration
+            newCharacter.avatarImageData = extendedExport.character.avatarImageData
             newCharacter.dateCreated = Date()
             newCharacter.dateModified = Date()
             

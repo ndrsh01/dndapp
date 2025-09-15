@@ -3,7 +3,13 @@ import SwiftUI
 struct EditCombatStatPopupView: View {
     let stat: CombatStat
     @Binding var value: Int
-    @Environment(\.dismiss) private var dismiss
+    let onDismiss: () -> Void
+    
+    init(stat: CombatStat, value: Binding<Int>, onDismiss: @escaping () -> Void) {
+        self.stat = stat
+        self._value = value
+        self.onDismiss = onDismiss
+    }
     
     var body: some View {
         VStack(spacing: 16) {
@@ -27,12 +33,12 @@ struct EditCombatStatPopupView: View {
             
             HStack(spacing: 16) {
                 Button("Отмена") {
-                    dismiss()
+                    onDismiss()
                 }
                 .buttonStyle(.bordered)
                 
                 Button("Сохранить") {
-                    dismiss()
+                    onDismiss()
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(.orange)
@@ -51,6 +57,6 @@ struct EditCombatStatPopupView: View {
 }
 
 #Preview {
-    EditCombatStatPopupView(stat: .armorClass, value: .constant(15))
+    EditCombatStatPopupView(stat: .armorClass, value: .constant(15), onDismiss: {})
 }
 

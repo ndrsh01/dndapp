@@ -9,3 +9,4 @@ struct Equipment: Codable {
         case optionB = "option_b"
     }
 }
+

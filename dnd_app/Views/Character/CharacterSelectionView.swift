@@ -61,19 +61,7 @@ struct CharacterSelectionView: View {
                         }
                         
                         // Сохраняем избранные заклинания
-                        var favoriteSpells = Set<UUID>()
-                        if let data = UserDefaults.standard.data(forKey: "favoriteSpells"),
-                           let existingFavorites = try? JSONDecoder().decode(Set<UUID>.self, from: data) {
-                            favoriteSpells = existingFavorites
-                        }
-                        
-                        for spell in spells {
-                            favoriteSpells.insert(spell.id)
-                        }
-                        
-                        if let data = try? JSONEncoder().encode(favoriteSpells) {
-                            UserDefaults.standard.set(data, forKey: "favoriteSpells")
-                        }
+                        dataService.addFavoriteSpells(spells, for: character.id)
                         
                         alertMessage = "Персонаж успешно импортирован с дополнительными данными!"
                         showingAlert = true

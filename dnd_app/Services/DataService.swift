@@ -30,7 +30,7 @@ class DataService: ObservableObject {
     @Published var monsters: [Monster] = []
     @Published var relationships: [Relationship] = []
     @Published var notes: [Note] = []
-    @Published var characters: [Character] = []
+    // @Published var characters: [Character] = [] - убрано, персонажи управляются через CharacterManager
     @Published var dndClasses: [DnDClass] = []
     @Published var classTables: [ClassTable] = []
     
@@ -551,7 +551,7 @@ class DataService: ObservableObject {
     private func loadPersistedData() {
         loadRelationships()
         loadNotes()
-        loadCharacters()
+        // loadCharacters() - убрано, персонажи управляются через CharacterManager
         loadSpells()
         loadCustomQuotesData()
     }
@@ -588,12 +588,7 @@ class DataService: ObservableObject {
         }
     }
     
-    private func loadCharacters() {
-        if let data = userDefaults.data(forKey: Keys.characters),
-           let characters = try? JSONDecoder().decode([Character].self, from: data) {
-            self.characters = characters
-        }
-    }
+    // loadCharacters() - убрано, персонажи управляются через CharacterManager
     
     private func loadSpells() {
         if let data = userDefaults.data(forKey: Keys.spells),
@@ -671,11 +666,7 @@ class DataService: ObservableObject {
         }
     }
     
-    private func saveCharacters() {
-        if let data = try? JSONEncoder().encode(characters) {
-            userDefaults.set(data, forKey: Keys.characters)
-        }
-    }
+    // saveCharacters() - убрано, персонажи управляются через CharacterManager
     
     private func saveSpells() {
         if let data = try? JSONEncoder().encode(spells) {
@@ -727,9 +718,16 @@ class DataService: ObservableObject {
     
     func updateRelationship(_ relationship: Relationship) {
         if let index = relationships.firstIndex(where: { $0.id == relationship.id }) {
+            print("=== UPDATE RELATIONSHIP ===")
+            print("Updating relationship: '\(relationship.name)'")
+            print("New status: \(relationship.relationshipStatus)")
+            print("New level: \(relationship.relationshipLevel)")
             relationships[index] = relationship
             saveRelationships()
             objectWillChange.send()
+            print("Relationship updated successfully")
+        } else {
+            print("ERROR: Relationship not found for update: \(relationship.name)")
         }
     }
     
@@ -790,30 +788,8 @@ class DataService: ObservableObject {
     }
     
     // MARK: - Characters
-    func addCharacter(_ character: Character) {
-        characters.append(character)
-        saveCharacters()
-    }
-    
-    func updateCharacter(_ character: Character) {
-        if let index = characters.firstIndex(where: { $0.id == character.id }) {
-            characters[index] = character
-            saveCharacters()
-        }
-    }
-    
-    func deleteCharacter(_ character: Character) {
-        characters.removeAll { $0.id == character.id }
-        saveCharacters()
-    }
-    
-    func duplicateCharacter(_ character: Character) {
-        var newCharacter = character
-        newCharacter.name = "\(character.name) (копия)"
-        newCharacter.dateCreated = Date()
-        newCharacter.dateModified = Date()
-        addCharacter(newCharacter)
-    }
+    // MARK: - Characters (DEPRECATED - use CharacterManager instead)
+    // Эти методы больше не используются, персонажи управляются через CharacterManager
     
     // MARK: - Favorites
     func toggleSpellFavorite(_ spell: Spell, for characterId: UUID? = nil) {
@@ -847,6 +823,24 @@ class DataService: ObservableObject {
         return filteredSpells
     }
     
+    func addFavoriteSpells(_ spells: [Spell], for characterId: UUID) {
+        print("=== ADD FAVORITE SPELLS ===")
+        print("Adding \(spells.count) favorite spells for character: \(characterId.uuidString)")
+        
+        for spell in spells {
+            if let index = self.spells.firstIndex(where: { $0.id == spell.id }) {
+                self.spells[index].isFavorite = true
+                self.spells[index].characterId = characterId
+                print("Added favorite spell: \(spell.название)")
+            } else {
+                print("WARNING: Spell not found in spells array: \(spell.название)")
+            }
+        }
+        
+        saveSpells()
+        print("Favorite spells saved successfully")
+    }
+    
     func toggleFeatFavorite(_ feat: Feat) {
         if let index = feats.firstIndex(where: { $0.id == feat.id }) {
             feats[index].isFavorite.toggle()
@@ -860,17 +854,7 @@ class DataService: ObservableObject {
     }
     
     // MARK: - Session Management
-    func getSelectedCharacter() -> Character? {
-        guard let characterId = userDefaults.string(forKey: Keys.selectedCharacter),
-              let character = characters.first(where: { $0.id.uuidString == characterId }) else {
-            return characters.first
-        }
-        return character
-    }
-    
-    func setSelectedCharacter(_ character: Character) {
-        userDefaults.set(character.id.uuidString, forKey: Keys.selectedCharacter)
-    }
+    // getSelectedCharacter() и setSelectedCharacter() - убрано, используется CharacterManager
     
     func getSelectedQuoteCategory() -> String {
         return userDefaults.string(forKey: Keys.selectedQuoteCategory) ?? "общение"

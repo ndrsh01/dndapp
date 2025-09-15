@@ -9,6 +9,7 @@ struct CharacterView: View {
     @State private var selectedCombatStat: CombatStat?
     @State private var hitPointsType: EditHitPointsPopupView.HitPointsType = .current
     @State private var showingSkillsView = false
+    @State private var showingSavingThrowsView = false
     @State private var showingClassFeaturesView = false
     @State private var showingEquipmentView = false
     @State private var showingTreasuresView = false
@@ -113,7 +114,8 @@ struct CharacterView: View {
                             set: { newValue in
                                 viewModel.updateCombatStat(stat: stat, newValue: newValue)
                             }
-                        )
+                        ),
+                        onDismiss: { showingEditCombatStat = false }
                     )
                     .onDisappear {
                         onCharacterUpdate?(viewModel.character)
@@ -123,6 +125,12 @@ struct CharacterView: View {
         )
         .sheet(isPresented: $showingSkillsView) {
             CharacterSkillsView(
+                character: $viewModel.character,
+                onCharacterUpdate: onCharacterUpdate
+            )
+        }
+        .sheet(isPresented: $showingSavingThrowsView) {
+            SavingThrowsView(
                 character: $viewModel.character,
                 onCharacterUpdate: onCharacterUpdate
             )
@@ -284,6 +292,7 @@ struct CharacterView: View {
             
             VStack(spacing: 8) {
                 detailCard(title: "Навыки", icon: "brain.head.profile", color: .green)
+                detailCard(title: "Спасброски", icon: "shield.checkered", color: .blue)
                 detailCard(title: "Классовые умения", icon: "star.fill", color: .purple)
                 detailCard(title: "Снаряжение", icon: "bag.fill", color: .orange)
                 detailCard(title: "Сокровища", icon: "diamond.fill", color: .yellow)
@@ -368,6 +377,8 @@ struct CharacterView: View {
         .onTapGesture {
             if title == "Навыки" {
                 showingSkillsView = true
+            } else if title == "Спасброски" {
+                showingSavingThrowsView = true
             } else if title == "Классовые умения" {
                 showingClassFeaturesView = true
             } else if title == "Снаряжение" {
@@ -600,6 +611,25 @@ struct CharacterClassFeaturesView: View {
                         }
                     }
                     .padding(.horizontal)
+                    
+                    // Отладочная информация
+                    if availableResources.isEmpty {
+                        VStack {
+                            Text("Отладка: Ресурсы не найдены")
+                                .font(.caption)
+                                .foregroundColor(.red)
+                            Text("Класс: \(character.characterClass), Уровень: \(character.level)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text("Найдено умений: \(availableFeatures.count)")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        .padding()
+                        .background(Color.yellow.opacity(0.1))
+                        .cornerRadius(8)
+                        .padding(.horizontal)
+                    }
                 }
                 .padding(.vertical)
             }
@@ -647,31 +677,40 @@ struct CharacterClassFeaturesView: View {
     }
     
     private func isResourceFeature(_ feature: ClassFeatureWithLevel) -> Bool {
-        // Список умений, которые являются ресурсами и должны быть редактируемыми
-        let resourceFeatureNames = [
+        // Используем ту же логику, что и в isImportantResource
+        let importantResources = [
+            "Ярость",
+            "Урон ярости",
+            "Кость вдохновения",
+            "Заговоры",
+            "Подготовленные заклинания",
             "Очки сосредоточенности",
             "Кубы превосходства",
-            "Кость превосходства",
-            "Кость вдохновения",
             "Божественное вмешательство",
             "Дикий облик",
+            "Кость превосходства",
             "Ячейки заклинаний",
-            "Подготовленные заклинания",
-            "Заговоры",
             "Боевые искусства",
             "Оружейное мастерство",
             "Движение без доспехов"
         ]
         
-        return resourceFeatureNames.contains { feature.name.contains($0) }
+        return importantResources.contains { feature.name.contains($0) } ||
+               feature.name.lowercased().contains("сосредоточен") ||
+               feature.name.lowercased().contains("превосходств") ||
+               feature.name.lowercased().contains("вдохновен")
     }
     
     private var availableResources: [ClassResourceInfo] {
         // Получаем данные из class_tables.json
         guard let classTable = getClassTableForCharacter(),
               let levelRow = classTable.rows.first(where: { $0.level == String(character.level) }) else {
+            print("DEBUG: Class table not found for \(character.characterClass) level \(character.level)")
             return []
         }
+
+        print("DEBUG: Found class table for \(character.characterClass), level \(character.level)")
+        print("DEBUG: Additional data keys: \(levelRow.additionalData.keys)")
 
         var resources: [ClassResourceInfo] = []
 
@@ -684,11 +723,13 @@ struct CharacterClassFeaturesView: View {
 
             // Фильтруем только важные ресурсы
             if isImportantResource(columnName: columnName) {
+                print("DEBUG: Found important resource: \(columnName) = \(value)")
                 let resourceInfo = createResourceInfo(columnName: columnName, value: value)
                 resources.append(resourceInfo)
             }
         }
 
+        print("DEBUG: Total resources found: \(resources.count)")
         return resources
     }
 

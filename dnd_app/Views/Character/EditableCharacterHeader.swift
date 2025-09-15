@@ -4,6 +4,7 @@ struct EditableCharacterHeader: View {
     @Binding var character: Character
     @State private var showingEditSheet = false
     @EnvironmentObject private var dataService: DataService
+    @Environment(\.colorScheme) private var colorScheme
     let onCharacterContextMenu: (() -> Void)?
     
     var body: some View {
@@ -85,9 +86,9 @@ struct EditableCharacterHeader: View {
             }
         }
         .padding()
-        .background(Color.white)
+        .background(adaptiveBackgroundColor)
         .cornerRadius(12)
-        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        .shadow(color: adaptiveShadowColor, radius: 4, x: 0, y: 2)
         .sheet(isPresented: $showingEditSheet) {
             EditCharacterHeaderView(character: $character)
                 .environmentObject(dataService)
@@ -108,11 +109,37 @@ struct EditableCharacterHeader: View {
                 .font(.caption)
                 .fontWeight(.medium)
                 .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.8)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, minHeight: 70)
         .padding(.vertical, 8)
         .background(color.opacity(0.1))
         .cornerRadius(8)
+    }
+    
+    // MARK: - Adaptive Colors
+    
+    private var adaptiveBackgroundColor: Color {
+        switch colorScheme {
+        case .dark:
+            return Color(UIColor.secondarySystemBackground)
+        case .light:
+            return Color.white
+        @unknown default:
+            return Color(UIColor.secondarySystemBackground)
+        }
+    }
+    
+    private var adaptiveShadowColor: Color {
+        switch colorScheme {
+        case .dark:
+            return .black.opacity(0.3)
+        case .light:
+            return .black.opacity(0.1)
+        @unknown default:
+            return .black.opacity(0.1)
+        }
     }
 }
 

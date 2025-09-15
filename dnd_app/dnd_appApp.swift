@@ -9,10 +9,13 @@ import SwiftUI
 
 @main
 struct dnd_appApp: App {
+    @StateObject private var settingsManager = SettingsManager.shared
+    
     var body: some Scene {
         WindowGroup {
             MainTabView()
-                .preferredColorScheme(.light)
+                .environmentObject(settingsManager)
+                .preferredColorScheme(settingsManager.settings.selectedTheme.colorScheme)
         }
     }
 }

@@ -10,6 +10,12 @@ struct CharacterEditView: View {
     init(character: Character, onSave: @escaping (Character) -> Void) {
         self._character = State(initialValue: character)
         self.onSave = onSave
+        
+        print("=== CHARACTER EDIT VIEW INIT ===")
+        print("Character: \(character.name)")
+        print("Alignment: '\(character.alignment)'")
+        print("Available alignments: \(availableAlignments)")
+        print("Is alignment in available: \(availableAlignments.contains(character.alignment))")
     }
     
     var body: some View {
@@ -150,6 +156,13 @@ struct CharacterEditView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Сохранить") {
+                        print("=== CHARACTER EDIT VIEW SAVE ===")
+                        print("Saving character: \(character.name)")
+                        print("Class: \(character.characterClass)")
+                        print("Race: \(character.race)")
+                        print("Alignment: \(character.alignment)")
+                        print("Background: \(character.background)")
+                        
                         character.dateModified = Date()
                         onSave(character)
                         dismiss()

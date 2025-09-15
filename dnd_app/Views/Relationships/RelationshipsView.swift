@@ -4,7 +4,6 @@ struct RelationshipsView: View {
     @EnvironmentObject private var viewModel: RelationshipsViewModel
     @State private var showAddRelationship = false
     @State private var editingRelationship: Relationship?
-    @State private var refreshTrigger = UUID()
 
     var body: some View {
         NavigationView {
@@ -75,7 +74,6 @@ struct RelationshipsView: View {
                     }
                 }
             }
-            .id(refreshTrigger)
         }
         .navigationTitle("Отношения")
         .navigationBarTitleDisplayMode(.large)
@@ -91,20 +89,12 @@ struct RelationshipsView: View {
                 }
             }
         }
-        .sheet(isPresented: $showAddRelationship, onDismiss: {
-            refreshTrigger = UUID()
-            // Принудительно обновляем отношения после добавления
-            viewModel.refreshRelationships()
-        }) {
+        .sheet(isPresented: $showAddRelationship) {
             AddRelationshipView(characterId: viewModel.selectedCharacterId) { relationship in
                 viewModel.addRelationship(relationship)
             }
         }
-        .sheet(item: $editingRelationship, onDismiss: {
-            refreshTrigger = UUID()
-            // Принудительно обновляем отношения после редактирования
-            viewModel.refreshRelationships()
-        }) { relationship in
+        .sheet(item: $editingRelationship) { relationship in
             EditRelationshipView(relationship: relationship) { updatedRelationship in
                 viewModel.updateRelationship(updatedRelationship)
             }
@@ -190,14 +180,17 @@ struct RelationshipsView: View {
         }
         
         private var relationshipStatusText: String {
+            let status: String
             switch relationship.relationshipStatus {
             case .enemy:
-                return "Враг"
+                status = "Враг"
             case .neutral:
-                return "Нейтрал"
+                status = "Нейтрал"
             case .friend:
-                return "Друг"
+                status = "Друг"
             }
+            print("DEBUG: RelationshipCardView - \(relationship.name) status: \(status) (level: \(relationship.relationshipLevel))")
+            return status
         }
         
         private var relationshipStatusColor: Color {
