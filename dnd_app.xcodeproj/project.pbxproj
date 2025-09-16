@@ -76,6 +76,7 @@
 		27BFB5FC2E6AF85300149C08 /* ExternalCharacterFormat.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27BFB5FB2E6AF85300149C08 /* ExternalCharacterFormat.swift */; };
 		27DD686A2E6B522500621182 /* ImagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27DD68692E6B522500621182 /* ImagePicker.swift */; };
 		27FA09562E77E6C800EDCE70 /* SavingThrowsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27FA09552E77E6C800EDCE70 /* SavingThrowsView.swift */; };
+		27FA09582E784AC600EDCE70 /* MulticlassManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27FA09572E784AC600EDCE70 /* MulticlassManagementView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -149,6 +150,7 @@
 		27BFB5FB2E6AF85300149C08 /* ExternalCharacterFormat.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExternalCharacterFormat.swift; sourceTree = "<group>"; };
 		27DD68692E6B522500621182 /* ImagePicker.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ImagePicker.swift; sourceTree = "<group>"; };
 		27FA09552E77E6C800EDCE70 /* SavingThrowsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SavingThrowsView.swift; sourceTree = "<group>"; };
+		27FA09572E784AC600EDCE70 /* MulticlassManagementView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MulticlassManagementView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -316,6 +318,7 @@
 				276653202E716E6900949D0C /* CharacterCoinsView.swift */,
 				276653212E716E6900949D0C /* CharacterEquipmentView.swift */,
 				2766531F2E716E6900949D0C /* CharacterTreasuresView.swift */,
+				27FA09572E784AC600EDCE70 /* MulticlassManagementView.swift */,
 				27FA09552E77E6C800EDCE70 /* SavingThrowsView.swift */,
 				27BFB5EB2E6AE88A00149C08 /* CharacterExportView.swift */,
 				2766531C2E703C5700949D0C /* SimpleEditStatView.swift */,
@@ -482,6 +485,7 @@
 				27AF9E232E6989DC006311EC /* CacheManager.swift in Sources */,
 				27AF9DF82E696FB7006311EC /* MainTabView.swift in Sources */,
 				27AF9E012E696FB7006311EC /* TabaxiImages.swift in Sources */,
+				27FA09582E784AC600EDCE70 /* MulticlassManagementView.swift in Sources */,
 				27AF9DFD2E696FB7006311EC /* CharacterViewModel.swift in Sources */,
 				27AF9E0B2E696FB7006311EC /* SharedComponents.swift in Sources */,
 				276653232E716E6900949D0C /* CharacterCoinsView.swift in Sources */,

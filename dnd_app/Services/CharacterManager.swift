@@ -15,6 +15,7 @@ class CharacterManager: ObservableObject {
         print("=== CHARACTER MANAGER INIT ===")
         print("CharacterManager singleton is being initialized")
         loadCharacters()
+        migrateCharactersToMulticlass()
         loadSelectedCharacter()
         print("CharacterManager initialization complete")
     }
@@ -134,6 +135,28 @@ class CharacterManager: ObservableObject {
         if let selectedIdString = userDefaults.string(forKey: selectedCharacterKey),
            let selectedId = UUID(uuidString: selectedIdString) {
             selectedCharacter = characters.first { $0.id == selectedId }
+        }
+    }
+    
+    // MARK: - Multiclass Migration
+    
+    private func migrateCharactersToMulticlass() {
+        print("=== MULTICLASS MIGRATION ===")
+        var needsSave = false
+        
+        for (index, character) in characters.enumerated() {
+            if character.classes.isEmpty {
+                print("Migrating character '\(character.name)' to multiclass format")
+                characters[index].initializeMulticlass()
+                needsSave = true
+            }
+        }
+        
+        if needsSave {
+            saveCharacters()
+            print("Multiclass migration completed and saved")
+        } else {
+            print("No characters needed migration")
         }
     }
     
@@ -488,16 +511,16 @@ class CharacterManager: ObservableObject {
             isDefault: true,
             jsonType: "character",
             template: "default",
-            name: createTextField(character.name),
+            name: SimpleField(name: "name", value: character.name),
             info: CharacterInfo(
-                charClass: createTextField(character.characterClass),
-                charSubclass: createTextField(character.subclass ?? ""),
-                level: createNumberField(character.level),
-                background: createTextField(character.background),
-                playerName: createTextField(""),
-                race: createTextField(character.race),
-                alignment: createTextField(character.alignment),
-                experience: createTextField("")
+                charClass: SimpleField(name: "charClass", value: character.characterClass),
+                charSubclass: SimpleField(name: "charSubclass", value: character.subclass ?? ""),
+                level: SimpleField(name: "level", value: String(character.level)),
+                background: SimpleField(name: "background", value: character.background),
+                playerName: SimpleField(name: "playerName", value: ""),
+                race: SimpleField(name: "race", value: character.race),
+                alignment: SimpleField(name: "alignment", value: character.alignment),
+                experience: SimpleField(name: "experience", value: "")
             ),
             subInfo: CharacterSubInfo(
                 age: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
@@ -514,6 +537,8 @@ class CharacterManager: ObservableObject {
             ),
             spells: [:],
             spellsPact: [:],
+            spellsLevel0: nil,
+            spellsLevel1: nil,
             proficiency: character.proficiencyBonus,
             stats: CharacterStats(
                 str: CharacterStat(name: "str", score: character.strength, modifier: character.strengthModifier, label: "Сила"),
@@ -565,7 +590,15 @@ class CharacterManager: ObservableObject {
             text: CharacterText(
                 traits: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
                 attacks: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
-                features: CharacterField(value: CharacterFieldValue(data: nil, size: nil))
+                features: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                background: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                allies: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                personality: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                ideals: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                flaws: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                bonds: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                equipment: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                prof: CharacterField(value: CharacterFieldValue(data: nil, size: nil))
             ),
             prof: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
             equipment: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
@@ -580,7 +613,10 @@ class CharacterManager: ObservableObject {
             bonusesSkills: [:],
             bonusesStats: [:],
             conditions: [],
-            createdAt: character.dateCreated.ISO8601Format()
+            createdAt: character.dateCreated.ISO8601Format(),
+            inspiration: false,
+            casterClass: SimpleField(name: "casterClass", value: character.characterClass),
+            avatar: [:]
         )
     }
     
@@ -699,6 +735,12 @@ class CharacterManager: ObservableObject {
     func importCharacterWithData(from jsonString: String) -> (Character, [Relationship], [Note], [Spell])? {
         guard let data = jsonString.data(using: .utf8) else { return nil }
         
+        // Сначала пробуем импорт из Long Story Short
+        if let lssCharacter = importFromLongStoryShort(from: jsonString) {
+            print("Успешно импортирован персонаж из Long Story Short")
+            return (lssCharacter, [], [], [])
+        }
+        
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         
@@ -785,6 +827,12 @@ class CharacterManager: ObservableObject {
     
     func importCharacter(from jsonString: String) -> Character? {
         guard let data = jsonString.data(using: .utf8) else { return nil }
+        
+        // Сначала пробуем импорт из Long Story Short
+        if let lssCharacter = importFromLongStoryShort(from: jsonString) {
+            print("Успешно импортирован персонаж из Long Story Short")
+            return lssCharacter
+        }
         
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
@@ -937,6 +985,11 @@ class CharacterManager: ObservableObject {
     func importExternalCharacter(from jsonString: String) -> Character? {
         guard let data = jsonString.data(using: .utf8) else { return nil }
         
+        // Сначала пробуем импорт из Long Story Short
+        if let lssCharacter = importFromLongStoryShort(from: jsonString) {
+            return lssCharacter
+        }
+        
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
         
@@ -959,17 +1012,17 @@ class CharacterManager: ObservableObject {
             
             // Создаем персонаж из внешних данных
             let character = Character(
-                name: extractStringFromField(characterDataObj.name.value),
-                race: extractStringFromField(characterDataObj.info.race.value),
-                characterClass: extractStringFromField(characterDataObj.info.charClass.value),
-                background: extractStringFromField(characterDataObj.info.background.value),
-                alignment: extractStringFromField(characterDataObj.info.alignment.value),
-                level: extractIntFromField(characterDataObj.info.level.value)
+                name: characterDataObj.name?.value.isEmpty == false ? characterDataObj.name!.value : "Импортированный персонаж",
+                race: characterDataObj.info.race.value,
+                characterClass: characterDataObj.info.charClass.value,
+                background: characterDataObj.info.background.value,
+                alignment: characterDataObj.info.alignment.value,
+                level: Int(characterDataObj.info.level.value) ?? 1
             )
             
             // Обновляем дополнительные свойства
             var newCharacter = character
-            newCharacter.subclass = extractStringFromField(characterDataObj.info.charSubclass.value).isEmpty ? nil : extractStringFromField(characterDataObj.info.charSubclass.value)
+            newCharacter.subclass = characterDataObj.info.charSubclass.value.isEmpty ? nil : characterDataObj.info.charSubclass.value
             newCharacter.strength = characterDataObj.stats.str.score
             newCharacter.dexterity = characterDataObj.stats.dex.score
             newCharacter.constitution = characterDataObj.stats.con.score
@@ -1007,8 +1060,10 @@ class CharacterManager: ObservableObject {
     private func createTextField(_ text: String) -> CharacterField {
         let content = CharacterFieldContent(
             type: "paragraph",
-            content: nil,
-            text: text,
+            content: [
+                CharacterFieldContent(type: "text", content: nil, text: text, marks: nil, attrs: nil)
+            ],
+            text: nil,
             marks: nil,
             attrs: nil
         )
@@ -1023,8 +1078,10 @@ class CharacterManager: ObservableObject {
     private func createNumberField(_ number: Int) -> CharacterField {
         let content = CharacterFieldContent(
             type: "paragraph",
-            content: nil,
-            text: String(number),
+            content: [
+                CharacterFieldContent(type: "text", content: nil, text: String(number), marks: nil, attrs: nil)
+            ],
+            text: nil,
             marks: nil,
             attrs: nil
         )
@@ -1084,5 +1141,296 @@ class CharacterManager: ObservableObject {
             counts[character.race, default: 0] += 1
         }
         return counts
+    }
+    
+    // MARK: - Long Story Short Import/Export
+    
+    func importFromLongStoryShort(from jsonString: String) -> Character? {
+        guard let data = jsonString.data(using: .utf8) else { return nil }
+        
+        do {
+            let externalFormat = try JSONDecoder().decode(ExternalCharacterFormat.self, from: data)
+            
+            // Парсим внутренние данные персонажа
+            guard let characterData = externalFormat.data.data(using: .utf8) else { return nil }
+            let characterDataObject = try JSONDecoder().decode(ExternalCharacterData.self, from: characterData)
+            
+            // Создаем персонажа
+            let characterName = characterDataObject.name?.value.isEmpty == false ? characterDataObject.name!.value : "Импортированный персонаж"
+            let character = Character(
+                name: characterName,
+                race: characterDataObject.info.race.value,
+                characterClass: characterDataObject.info.charClass.value,
+                background: characterDataObject.info.background.value,
+                alignment: characterDataObject.info.alignment.value,
+                level: Int(characterDataObject.info.level.value) ?? 1
+            )
+            
+            var importedCharacter = character
+            
+            // Заполняем характеристики
+            importedCharacter.strength = characterDataObject.stats.str.score
+            importedCharacter.dexterity = characterDataObject.stats.dex.score
+            importedCharacter.constitution = characterDataObject.stats.con.score
+            importedCharacter.intelligence = characterDataObject.stats.int.score
+            importedCharacter.wisdom = characterDataObject.stats.wis.score
+            importedCharacter.charisma = characterDataObject.stats.cha.score
+            
+            // Заполняем боевые характеристики
+            importedCharacter.armorClass = characterDataObject.vitality.ac.value.data?.content?.first?.text.flatMap(Int.init) ?? 10
+            importedCharacter.speed = characterDataObject.vitality.speed.value.data?.content?.first?.text.flatMap(Int.init) ?? 30
+            importedCharacter.maxHitPoints = characterDataObject.vitality.hpMax.value.data?.content?.first?.text.flatMap(Int.init) ?? 8
+            importedCharacter.hitPoints = importedCharacter.maxHitPoints
+            importedCharacter.proficiencyBonus = characterDataObject.proficiency
+            
+            // Заполняем подкласс
+            if !characterDataObject.info.charSubclass.value.isEmpty {
+                importedCharacter.subclass = characterDataObject.info.charSubclass.value
+            }
+            
+            // Заполняем навыки
+            importedCharacter.skills = [:]
+            importedCharacter.skillsExpertise = [:]
+            
+            // Обрабатываем навыки из внешнего формата
+            let skillsMirror = Mirror(reflecting: characterDataObject.skills)
+            for child in skillsMirror.children {
+                if let skillName = child.label,
+                   let skill = child.value as? CharacterSkill {
+                    if let isProf = skill.isProf {
+                        importedCharacter.skills[skillName] = isProf > 0
+                        if isProf > 1 {
+                            importedCharacter.skillsExpertise[skillName] = true
+                        }
+                    }
+                }
+            }
+            
+            // Обрабатываем спасброски
+            importedCharacter.savingThrows = [:]
+            let savesMirror = Mirror(reflecting: characterDataObject.saves)
+            for child in savesMirror.children {
+                if let saveName = child.label,
+                   let save = child.value as? CharacterSave {
+                    importedCharacter.savingThrows[saveName] = save.isProf
+                }
+            }
+            
+            // Обрабатываем ресурсы классов
+            importedCharacter.classResources = [:]
+            for (_, resource) in characterDataObject.resources {
+                let classResource = resource.toClassResource()
+                importedCharacter.classResources[classResource.id] = classResource
+            }
+            
+            // Обрабатываем оружие
+            importedCharacter.equipment = []
+            for weapon in characterDataObject.weaponsList {
+                let weaponName = weapon.name.value.data?.content?.first?.text ?? ""
+                if !weaponName.isEmpty {
+                    let equipment = weapon.toCharacterEquipment()
+                    importedCharacter.equipment.append(equipment)
+                }
+            }
+            
+            // Обрабатываем текстовые поля
+            if let backgroundText = characterDataObject.text.background?.extractText() {
+                importedCharacter.personalityTraits = backgroundText
+            }
+            
+            let featuresText = characterDataObject.text.features.extractText()
+            if !featuresText.isEmpty {
+                importedCharacter.features = featuresText.components(separatedBy: "\n").filter { !$0.isEmpty }
+            }
+            
+            let traitsText = characterDataObject.text.traits.extractText()
+            if !traitsText.isEmpty {
+                importedCharacter.classAbilities = traitsText.components(separatedBy: "\n").filter { !$0.isEmpty }
+            }
+            
+            // Обрабатываем монеты
+            if let gpText = characterDataObject.coins.gp.value.data?.content?.first?.text,
+               let gp = Int(gpText) {
+                importedCharacter.goldPieces = gp
+            }
+            
+            return importedCharacter
+            
+        } catch {
+            print("Ошибка импорта из Long Story Short: \(error)")
+            return nil
+        }
+    }
+    
+    func exportToLongStoryShort(_ character: Character) -> String? {
+        // Создаем структуру данных для экспорта
+        let characterData = ExternalCharacterData(
+            isDefault: false,
+            jsonType: "character",
+            template: "default",
+            name: SimpleField(name: "name", value: character.name),
+            info: CharacterInfo(
+                charClass: SimpleField(name: "charClass", value: character.characterClass),
+                charSubclass: SimpleField(name: "charSubclass", value: character.subclass ?? ""),
+                level: SimpleField(name: "level", value: String(character.level)),
+                background: SimpleField(name: "background", value: character.background),
+                playerName: SimpleField(name: "playerName", value: ""),
+                race: SimpleField(name: "race", value: character.race),
+                alignment: SimpleField(name: "alignment", value: character.alignment),
+                experience: SimpleField(name: "experience", value: "")
+            ),
+            subInfo: CharacterSubInfo(
+                age: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                height: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                weight: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                eyes: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                skin: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                hair: CharacterField(value: CharacterFieldValue(data: nil, size: nil))
+            ),
+            spellsInfo: CharacterSpellsInfo(
+                base: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                save: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                mod: CharacterField(value: CharacterFieldValue(data: nil, size: nil))
+            ),
+            spells: [:],
+            spellsPact: [:],
+            spellsLevel0: nil,
+            spellsLevel1: nil,
+            proficiency: character.proficiencyBonus,
+            stats: CharacterStats(
+                str: CharacterStat(name: "str", score: character.strength, modifier: character.strengthModifier, label: "Сила"),
+                dex: CharacterStat(name: "dex", score: character.dexterity, modifier: character.dexterityModifier, label: "Ловкость"),
+                con: CharacterStat(name: "con", score: character.constitution, modifier: character.constitutionModifier, label: "Телосложение"),
+                int: CharacterStat(name: "int", score: character.intelligence, modifier: character.intelligenceModifier, label: "Интеллект"),
+                wis: CharacterStat(name: "wis", score: character.wisdom, modifier: character.wisdomModifier, label: "Мудрость"),
+                cha: CharacterStat(name: "cha", score: character.charisma, modifier: character.charismaModifier, label: "Харизма")
+            ),
+            saves: CharacterSaves(
+                str: CharacterSave(name: "str", isProf: character.savingThrows["str"] ?? false),
+                dex: CharacterSave(name: "dex", isProf: character.savingThrows["dex"] ?? false),
+                con: CharacterSave(name: "con", isProf: character.savingThrows["con"] ?? false),
+                int: CharacterSave(name: "int", isProf: character.savingThrows["int"] ?? false),
+                wis: CharacterSave(name: "wis", isProf: character.savingThrows["wis"] ?? false),
+                cha: CharacterSave(name: "cha", isProf: character.savingThrows["cha"] ?? false)
+            ),
+            skills: CharacterSkills(
+                acrobatics: CharacterSkill(baseStat: "dex", name: "acrobatics", isProf: character.skills["acrobatics"] == true ? 1 : 0),
+                investigation: CharacterSkill(baseStat: "int", name: "investigation", isProf: character.skills["investigation"] == true ? 1 : 0),
+                athletics: CharacterSkill(baseStat: "str", name: "athletics", isProf: character.skills["athletics"] == true ? 1 : 0),
+                perception: CharacterSkill(baseStat: "wis", name: "perception", isProf: character.skills["perception"] == true ? 1 : 0),
+                survival: CharacterSkill(baseStat: "wis", name: "survival", isProf: character.skills["survival"] == true ? 1 : 0),
+                performance: CharacterSkill(baseStat: "cha", name: "performance", isProf: character.skills["performance"] == true ? 1 : 0),
+                intimidation: CharacterSkill(baseStat: "cha", name: "intimidation", isProf: character.skills["intimidation"] == true ? 1 : 0),
+                history: CharacterSkill(baseStat: "int", name: "history", isProf: character.skills["history"] == true ? 1 : 0),
+                sleightOfHand: CharacterSkill(baseStat: "dex", name: "sleight of hand", isProf: character.skills["sleightOfHand"] == true ? 1 : 0),
+                arcana: CharacterSkill(baseStat: "int", name: "arcana", isProf: character.skills["arcana"] == true ? 1 : 0),
+                medicine: CharacterSkill(baseStat: "wis", name: "medicine", isProf: character.skills["medicine"] == true ? 1 : 0),
+                deception: CharacterSkill(baseStat: "cha", name: "deception", isProf: character.skills["deception"] == true ? 1 : 0),
+                nature: CharacterSkill(baseStat: "int", name: "nature", isProf: character.skills["nature"] == true ? 1 : 0),
+                insight: CharacterSkill(baseStat: "wis", name: "insight", isProf: character.skills["insight"] == true ? 1 : 0),
+                religion: CharacterSkill(baseStat: "int", name: "religion", isProf: character.skills["religion"] == true ? 1 : 0),
+                stealth: CharacterSkill(baseStat: "dex", name: "stealth", isProf: character.skills["stealth"] == true ? 1 : 0),
+                persuasion: CharacterSkill(baseStat: "cha", name: "persuasion", isProf: character.skills["persuasion"] == true ? 1 : 0),
+                animalHandling: CharacterSkill(baseStat: "wis", name: "animal handling", isProf: character.skills["animalHandling"] == true ? 1 : 0)
+            ),
+            vitality: CharacterVitality(
+                hpDiceCurrent: createNumberField(1),
+                hpDiceMulti: [:],
+                speed: createNumberField(character.speed),
+                hpMax: createNumberField(character.maxHitPoints),
+                ac: createNumberField(character.armorClass),
+                isDying: false
+            ),
+            attunementsList: [],
+            weaponsList: character.equipment.compactMap { equipment in
+                guard equipment.type == .weapon else { return nil }
+                return WeaponItem(
+                    id: equipment.id.uuidString,
+                    name: CharacterField(value: CharacterFieldValue(data: CharacterFieldData(type: "doc", content: [
+                        CharacterFieldContent(type: "paragraph", content: [
+                            CharacterFieldContent(type: "text", content: nil, text: equipment.name, marks: nil, attrs: nil)
+                        ], text: nil, marks: nil, attrs: nil)
+                    ]), size: nil)),
+                    mod: createTextField("+\(equipment.attackBonus ?? 0)"),
+                    dmg: createTextField(equipment.damage ?? ""),
+                    ability: nil,
+                    isProf: true,
+                    modBonus: nil
+                )
+            },
+            weapons: [:],
+            text: CharacterText(
+                traits: createTextField(character.classAbilities.joined(separator: "\n")),
+                attacks: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                features: createTextField(character.features.joined(separator: "\n")),
+                background: createTextField(character.personalityTraits),
+                allies: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                personality: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                ideals: createTextField(character.ideals),
+                flaws: createTextField(character.flaws),
+                bonds: createTextField(character.bonds),
+                equipment: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+                prof: CharacterField(value: CharacterFieldValue(data: nil, size: nil))
+            ),
+            prof: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+            equipment: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+            background: createTextField(character.background),
+            allies: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+            personality: CharacterField(value: CharacterFieldValue(data: nil, size: nil)),
+            ideals: createTextField(character.ideals),
+            flaws: createTextField(character.flaws),
+            bonds: createTextField(character.bonds),
+            coins: CharacterCoins(gp: createNumberField(character.goldPieces)),
+            resources: Dictionary(uniqueKeysWithValues: character.classResources.map { (key, resource) in
+                (key, CharacterResource(
+                    id: resource.id,
+                    name: resource.name,
+                    current: resource.currentValue,
+                    max: resource.maxValue,
+                    location: resource.location,
+                    isLongRest: resource.isLongRest,
+                    icon: resource.icon,
+                    isShortRest: resource.isShortRest
+                ))
+            }),
+            bonusesSkills: [:],
+            bonusesStats: [:],
+            conditions: [],
+            createdAt: character.dateCreated.ISO8601Format(),
+            inspiration: false,
+            casterClass: SimpleField(name: "casterClass", value: character.characterClass),
+            avatar: [:]
+        )
+        
+        // Конвертируем в JSON строку
+        do {
+            let data = try JSONEncoder().encode(characterData)
+            let dataString = String(data: data, encoding: .utf8) ?? ""
+            
+            let externalFormat = ExternalCharacterFormat(
+                tags: [],
+                disabledBlocks: DisabledBlocks(
+                    infoLeft: [],
+                    infoRight: [],
+                    subinfoLeft: [],
+                    subinfoRight: [],
+                    notesLeft: [],
+                    notesRight: [],
+                    id: UUID().uuidString
+                ),
+                edition: "2014",
+                spells: SpellsInfo(mode: "text", prepared: [], book: []),
+                data: dataString,
+                jsonType: "character",
+                version: "2"
+            )
+            
+            let finalData = try JSONEncoder().encode(externalFormat)
+            return String(data: finalData, encoding: .utf8)
+            
+        } catch {
+            print("Ошибка экспорта в Long Story Short: \(error)")
+            return nil
+        }
     }
 }

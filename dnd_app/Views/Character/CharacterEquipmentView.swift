@@ -6,7 +6,9 @@ struct CharacterEquipmentView: View {
     let onCharacterUpdate: ((Character) -> Void)?
     @Environment(\.dismiss) private var dismiss
     @State private var showingAdvancedAddItem = false
+    @State private var showingEditItem = false
     @State private var newEquipment = CharacterEquipment(name: "")
+    @State private var editingEquipment: CharacterEquipment?
     
     var body: some View {
         NavigationView {
@@ -27,6 +29,11 @@ struct CharacterEquipmentView: View {
         .sheet(isPresented: $showingAdvancedAddItem) {
             advancedAddEquipmentSheet
         }
+        .sheet(isPresented: $showingEditItem) {
+            if let editingEquipment = editingEquipment {
+                editEquipmentSheet(equipment: editingEquipment)
+            }
+        }
     }
     
     private var equipmentHeader: some View {
@@ -37,7 +44,7 @@ struct CharacterEquipmentView: View {
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
-                    Text("\(totalWeight) кг")
+                    Text("\(String(format: "%.2f", totalWeight)) кг")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
@@ -80,7 +87,7 @@ struct CharacterEquipmentView: View {
                     
                     Spacer()
                     
-                    Text("\(maxCarryingCapacity) кг макс.")
+                    Text("\(String(format: "%.0f", maxCarryingCapacity)) кг макс.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -135,7 +142,7 @@ struct CharacterEquipmentView: View {
                 }
                 
                 HStack {
-                    Text("\(item.weight) кг")
+                    Text("\(String(format: "%.2f", item.weight)) кг")
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
@@ -161,21 +168,25 @@ struct CharacterEquipmentView: View {
                     }
                 }
             }
-            
-            // Кнопка удаления
-            Button(action: {
-                removeEquipment(item: item)
-            }) {
-                Image(systemName: "trash")
-                    .font(.caption)
-                    .foregroundColor(.red)
-            }
-            .buttonStyle(PlainButtonStyle())
         }
         .padding()
         .background(Color(.systemBackground))
         .cornerRadius(8)
         .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+        .contextMenu {
+            Button(action: {
+                editEquipment(item: item)
+            }) {
+                Label("Редактировать", systemImage: "pencil")
+            }
+            
+            Button(action: {
+                removeEquipment(item: item)
+            }) {
+                Label("Удалить", systemImage: "trash")
+                    .foregroundColor(.red)
+            }
+        }
     }
     
     private var emptyStateView: some View {
@@ -472,6 +483,146 @@ struct CharacterEquipmentView: View {
     
     private func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+    
+    private func editEquipment(item: CharacterEquipment) {
+        editingEquipment = item
+        newEquipment = item
+        showingEditItem = true
+    }
+    
+    private func editEquipmentSheet(equipment: CharacterEquipment) -> some View {
+        NavigationView {
+            Form {
+                Section("Основная информация") {
+                    TextField("Название предмета", text: $newEquipment.name)
+                    
+                    Picker("Тип", selection: $newEquipment.type) {
+                        ForEach(EquipmentType.allCases, id: \.self) { type in
+                            HStack {
+                                Image(systemName: type.icon)
+                                    .foregroundColor(type.color)
+                                Text(type.rawValue)
+                            }
+                            .tag(type)
+                        }
+                    }
+                    
+                    Picker("Редкость", selection: $newEquipment.rarity) {
+                        ForEach(Rarity.allCases, id: \.self) { rarity in
+                            HStack {
+                                Circle()
+                                    .fill(rarity.color)
+                                    .frame(width: 12, height: 12)
+                                Text(rarity.rawValue)
+                            }
+                            .tag(rarity)
+                        }
+                    }
+                }
+                
+                Section("Характеристики") {
+                    HStack {
+                        Text("Стоимость")
+                        Spacer()
+                        TextField("0", value: $newEquipment.cost, format: .number)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .keyboardType(.numberPad)
+                            .frame(width: 80)
+                            .toolbar {
+                                ToolbarItemGroup(placement: .keyboard) {
+                                    Spacer()
+                                    Button("Готово") {
+                                        hideKeyboard()
+                                    }
+                                }
+                            }
+                        Text("медных монет")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    HStack {
+                        Text("Вес")
+                        Spacer()
+                        TextField("0.0", value: $newEquipment.weight, format: .number)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .keyboardType(.decimalPad)
+                            .frame(width: 80)
+                        Text("кг")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                // Для оружия
+                if newEquipment.type == .weapon {
+                    Section("Боевые характеристики") {
+                        HStack {
+                            Text("Бонус к попаданию")
+                            Spacer()
+                            TextField("0", value: Binding(
+                                get: { newEquipment.attackBonus ?? 0 },
+                                set: { newEquipment.attackBonus = $0 }
+                            ), format: .number)
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .keyboardType(.numberPad)
+                            .frame(width: 80)
+                        }
+                        
+                        HStack {
+                            Text("Урон")
+                            Spacer()
+                            TextField("1d4", text: Binding(
+                                get: { newEquipment.damage ?? "" },
+                                set: { newEquipment.damage = $0 }
+                            ))
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            .frame(width: 120)
+                        }
+                    }
+                }
+                
+                Section("Описание") {
+                    TextField("Описание предмета", text: $newEquipment.description, axis: .vertical)
+                        .lineLimit(3...6)
+                }
+            }
+            .navigationTitle("Редактировать предмет")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Отмена") {
+                        showingEditItem = false
+                        editingEquipment = nil
+                        newEquipment = CharacterEquipment(name: "")
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Сохранить") {
+                        updateEquipment(original: equipment)
+                    }
+                    .disabled(newEquipment.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+    }
+    
+    private func updateEquipment(original: CharacterEquipment) {
+        let trimmedName = newEquipment.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+        
+        if let index = character.equipment.firstIndex(where: { $0.id == original.id }) {
+            character.equipment[index] = newEquipment
+            character.equipment[index].name = trimmedName
+            character.dateModified = Date()
+            onCharacterUpdate?(character)
+        }
+        
+        newEquipment = CharacterEquipment(name: "")
+        editingEquipment = nil
+        showingEditItem = false
     }
 }
 

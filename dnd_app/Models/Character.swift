@@ -581,7 +581,7 @@ struct Character: Codable, Identifiable {
         case .armorClass: return armorClass
         case .initiative: return initiative
         case .speed: return speed
-        case .proficiencyBonus: return proficiencyBonus
+        case .proficiencyBonus: return updatedProficiencyBonus
         case .inspiration: return inspiration ? 1 : 0
         }
     }
@@ -601,7 +601,7 @@ struct Character: Codable, Identifiable {
         let abilityName = ability.rawValue
         
         if savingThrows[abilityName] == true {
-            return baseModifier + proficiencyBonus
+            return baseModifier + updatedProficiencyBonus
         }
         return baseModifier
     }
@@ -620,14 +620,123 @@ struct Character: Codable, Identifiable {
         let abilityName = ability.rawValue
         return savingThrows[abilityName] ?? false
     }
+    
+    // MARK: - Multiclass Support
+    
+    /// Общий уровень персонажа (сумма всех уровней классов)
+    var totalLevel: Int {
+        if classes.isEmpty {
+            return level
+        }
+        return classes.reduce(0) { $0 + $1.level }
+    }
+    
+    /// Эффективный бонус владения для мультикласса
+    var effectiveProficiencyBonus: Int {
+        return (totalLevel - 1) / 4 + 2
+    }
+    
+    /// Обновленный бонус владения (использует эффективный для мультикласса)
+    var updatedProficiencyBonus: Int {
+        return effectiveProficiencyBonus
+    }
+    
+    /// Отображение классов для UI
+    var classDisplayText: String {
+        if classes.count > 1 {
+            // Мультикласс: "Воин 5 / Маг 3"
+            return classes
+                .sorted(by: { $0.level > $1.level })
+                .map { "\($0.name) \($0.level)" }
+                .joined(separator: " / ")
+        } else if let firstClass = classes.first {
+            return "\(firstClass.name) \(firstClass.level)"
+        } else {
+            return "\(characterClass) \(level)"
+        }
+    }
+    
+    /// Отображение подклассов для UI
+    var subclassDisplayText: String {
+        if classes.count > 1 {
+            // Мультикласс: показываем все подклассы
+            let subclasses = classes
+                .sorted(by: { $0.level > $1.level })
+                .compactMap { classInfo in
+                    if let subclass = classInfo.subclass, !subclass.isEmpty {
+                        return "\(classInfo.name): \(subclass)"
+                    } else {
+                        return "\(classInfo.name): Нет подкласса"
+                    }
+                }
+            return subclasses.joined(separator: " | ")
+        } else if let firstClass = classes.first {
+            return firstClass.subclass ?? "Нет подкласса"
+        } else {
+            return subclass ?? "Нет подкласса"
+        }
+    }
+    
+    /// Проверка, является ли персонаж мультиклассом
+    var isMulticlass: Bool {
+        return classes.count > 1
+    }
+    
+    /// Получить основной класс (с наибольшим уровнем)
+    var primaryClass: CharacterClass? {
+        return classes.max(by: { $0.level < $1.level })
+    }
+    
+    /// Инициализация мультикласса из основного класса
+    mutating func initializeMulticlass() {
+        if classes.isEmpty {
+            classes = [CharacterClass(name: characterClass, level: level, subclass: subclass)]
+        }
+    }
+    
+    /// Добавить новый класс к мультиклассу
+    mutating func addClass(_ className: String, level: Int = 1, subclass: String? = nil) {
+        let newClass = CharacterClass(name: className, level: level, subclass: subclass)
+        classes.append(newClass)
+        
+        // Обновить общий уровень
+        self.level = totalLevel
+    }
+    
+    /// Удалить класс из мультикласса
+    mutating func removeClass(_ classId: UUID) {
+        classes.removeAll { $0.id == classId }
+        
+        // Обновить общий уровень
+        self.level = totalLevel
+        
+        // Если остался только один класс, обновить основной класс
+        if classes.count == 1 {
+            let remainingClass = classes.first!
+            characterClass = remainingClass.name
+            subclass = remainingClass.subclass
+        }
+    }
+    
+    /// Обновить уровень класса
+    mutating func updateClassLevel(_ classId: UUID, newLevel: Int) {
+        if let index = classes.firstIndex(where: { $0.id == classId }) {
+            classes[index].level = newLevel
+            self.level = totalLevel
+        }
+    }
 }
 
 struct ClassResource: Codable {
+    let id: String
     let name: String
     let icon: String
     let maxValue: Int
     var currentValue: Int
     let type: ResourceType
+    let location: String // "traits", "spells", etc.
+    let isLongRest: Bool
+    let isShortRest: Bool?
     
     enum ResourceType: String, Codable {
         case rage = "rage"
@@ -640,6 +749,190 @@ struct ClassResource: Codable {
         case superiorityDice = "superiority_dice"
         case channelDivinity = "channel_divinity"
         case wildShape = "wild_shape"
+        case lucky = "lucky" // Везучий
+        case innateSpellcasting = "innate_spellcasting" // Врожденное чародейство
+        case wildMagic = "wild_magic" // Волны хаоса
         case other = "other"
+    }
+    
+    init(id: String = UUID().uuidString, name: String, icon: String, maxValue: Int, currentValue: Int = 0, type: ResourceType, location: String = "traits", isLongRest: Bool = true, isShortRest: Bool? = nil) {
+        self.id = id
+        self.name = name
+        self.icon = icon
+        self.maxValue = maxValue
+        self.currentValue = currentValue
+        self.type = type
+        self.location = location
+        self.isLongRest = isLongRest
+        self.isShortRest = isShortRest
+    }
+    
+    // Динамическое определение типа ресурса на основе контекста
+    static func determineResourceType(from name: String, icon: String, location: String) -> ResourceType {
+        // Создаем контекст для анализа
+        let context = ResourceContext(name: name, icon: icon, location: location)
+        
+        // Используем систему правил для определения типа
+        return ResourceTypeClassifier.classify(context)
+    }
+}
+
+// MARK: - Resource Classification System
+
+struct ResourceContext {
+    let name: String
+    let icon: String
+    let location: String
+    
+    var lowercasedName: String { name.lowercased() }
+    var lowercasedIcon: String { icon.lowercased() }
+    var lowercasedLocation: String { location.lowercased() }
+}
+
+struct ResourceTypeClassifier {
+    // Конфигурируемые правила для определения типа ресурса
+    private static let classificationRules: [ClassificationRule] = [
+        // Правила для ярости
+        ClassificationRule(
+            type: .rage,
+            namePatterns: ["ярость", "rage"],
+            iconPatterns: ["sword", "weapon", "anger"],
+            locationPatterns: ["trait", "ability"]
+        ),
+        
+        // Правила для ячеек заклинаний
+        ClassificationRule(
+            type: .spellSlot,
+            namePatterns: ["ячейк", "slot", "заклинани"],
+            iconPatterns: ["spell", "magic", "star"],
+            locationPatterns: ["spell", "magic"]
+        ),
+        
+        // Правила для очков чародейства
+        ClassificationRule(
+            type: .sorceryPoints,
+            namePatterns: ["очк", "point", "чародейств"],
+            iconPatterns: ["point", "dot", "magic"],
+            locationPatterns: ["trait", "ability"]
+        ),
+        
+        // Правила для вдохновения барда
+        ClassificationRule(
+            type: .bardInspiration,
+            namePatterns: ["вдохновен", "inspiration", "бард"],
+            iconPatterns: ["music", "note", "sound"],
+            locationPatterns: ["trait", "ability"]
+        ),
+        
+        // Правила для очков сосредоточенности
+        ClassificationRule(
+            type: .ki,
+            namePatterns: ["сосредоточен", "ki", "мона"],
+            iconPatterns: ["heart", "life", "energy"],
+            locationPatterns: ["trait", "ability"]
+        ),
+        
+        // Правила для призывов колдуна
+        ClassificationRule(
+            type: .eldritchInvocations,
+            namePatterns: ["призыв", "invocation", "колдун"],
+            iconPatterns: ["eye", "tentacle", "eldritch"],
+            locationPatterns: ["trait", "ability"]
+        ),
+        
+        // Правила для концентрации
+        ClassificationRule(
+            type: .concentrationPoints,
+            namePatterns: ["концентрац", "concentration", "фокус"],
+            iconPatterns: ["focus", "target", "center"],
+            locationPatterns: ["trait", "ability"]
+        ),
+        
+        // Правила для костей превосходства
+        ClassificationRule(
+            type: .superiorityDice,
+            namePatterns: ["превосходств", "superiority", "кост"],
+            iconPatterns: ["dice", "cube", "battle"],
+            locationPatterns: ["trait", "ability"]
+        ),
+        
+        // Правила для божественной силы
+        ClassificationRule(
+            type: .channelDivinity,
+            namePatterns: ["божествен", "divinity", "жрец"],
+            iconPatterns: ["holy", "cross", "divine"],
+            locationPatterns: ["trait", "ability"]
+        ),
+        
+        // Правила для дикой формы
+        ClassificationRule(
+            type: .wildShape,
+            namePatterns: ["дикий", "wild", "форма", "shape", "друид"],
+            iconPatterns: ["paw", "animal", "nature"],
+            locationPatterns: ["trait", "ability"]
+        ),
+        
+        // Правила для дикой магии
+        ClassificationRule(
+            type: .wildMagic,
+            namePatterns: ["дикий", "wild", "маги", "magic", "хаос"],
+            iconPatterns: ["chaos", "random", "wild"],
+            locationPatterns: ["trait", "ability"]
+        ),
+        
+        // Правила для везучести
+        ClassificationRule(
+            type: .lucky,
+            namePatterns: ["везуч", "lucky", "удач"],
+            iconPatterns: ["clover", "star", "lucky"],
+            locationPatterns: ["trait", "ability"]
+        ),
+        
+        // Правила для врожденного чародейства
+        ClassificationRule(
+            type: .innateSpellcasting,
+            namePatterns: ["врожденн", "innate", "природн"],
+            iconPatterns: ["natural", "born", "innate"],
+            locationPatterns: ["trait", "ability"]
+        )
+    ]
+    
+    static func classify(_ context: ResourceContext) -> ClassResource.ResourceType {
+        // Ищем наиболее подходящее правило
+        for rule in classificationRules {
+            if rule.matches(context) {
+                return rule.type
+            }
+        }
+        
+        // Если ничего не подошло, возвращаем other
+        return .other
+    }
+}
+
+struct ClassificationRule {
+    let type: ClassResource.ResourceType
+    let namePatterns: [String]
+    let iconPatterns: [String]
+    let locationPatterns: [String]
+    
+    func matches(_ context: ResourceContext) -> Bool {
+        // Проверяем соответствие по названию
+        let nameMatches = namePatterns.contains { pattern in
+            context.lowercasedName.contains(pattern)
+        }
+        
+        // Проверяем соответствие по иконке
+        let iconMatches = iconPatterns.contains { pattern in
+            context.lowercasedIcon.contains(pattern)
+        }
+        
+        // Проверяем соответствие по локации
+        let locationMatches = locationPatterns.contains { pattern in
+            context.lowercasedLocation.contains(pattern)
+        }
+        
+        // Ресурс подходит, если совпадает хотя бы по одному критерию
+        return nameMatches || iconMatches || locationMatches
     }
 }

@@ -42,12 +42,14 @@ struct ExternalCharacterData: Codable {
     let isDefault: Bool
     let jsonType: String
     let template: String
-    let name: CharacterField
+    let name: SimpleField?
     let info: CharacterInfo
     let subInfo: CharacterSubInfo
     let spellsInfo: CharacterSpellsInfo
     let spells: [String: String]
     let spellsPact: [String: String]
+    let spellsLevel0: CharacterField?
+    let spellsLevel1: CharacterField?
     let proficiency: Int
     let stats: CharacterStats
     let saves: CharacterSaves
@@ -71,10 +73,126 @@ struct ExternalCharacterData: Codable {
     let bonusesStats: [String: String]
     let conditions: [String]
     let createdAt: String
+    let inspiration: Bool
+    let casterClass: SimpleField
+    let avatar: [String: String]
+    
+    // Кастомный инициализатор для правильной обработки опциональных полей
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        isDefault = try container.decode(Bool.self, forKey: .isDefault)
+        jsonType = try container.decode(String.self, forKey: .jsonType)
+        template = try container.decode(String.self, forKey: .template)
+        
+        // Безопасное декодирование поля name
+        if container.contains(.name) {
+            name = try container.decode(SimpleField.self, forKey: .name)
+        } else {
+            name = nil
+        }
+        info = try container.decode(CharacterInfo.self, forKey: .info)
+        subInfo = try container.decode(CharacterSubInfo.self, forKey: .subInfo)
+        spellsInfo = try container.decode(CharacterSpellsInfo.self, forKey: .spellsInfo)
+        spells = try container.decode([String: String].self, forKey: .spells)
+        spellsPact = try container.decode([String: String].self, forKey: .spellsPact)
+        spellsLevel0 = try container.decodeIfPresent(CharacterField.self, forKey: .spellsLevel0)
+        spellsLevel1 = try container.decodeIfPresent(CharacterField.self, forKey: .spellsLevel1)
+        proficiency = try container.decode(Int.self, forKey: .proficiency)
+        stats = try container.decode(CharacterStats.self, forKey: .stats)
+        saves = try container.decode(CharacterSaves.self, forKey: .saves)
+        skills = try container.decode(CharacterSkills.self, forKey: .skills)
+        vitality = try container.decode(CharacterVitality.self, forKey: .vitality)
+        attunementsList = try container.decode([AttunementItem].self, forKey: .attunementsList)
+        weaponsList = try container.decode([WeaponItem].self, forKey: .weaponsList)
+        weapons = try container.decode([String: String].self, forKey: .weapons)
+        text = try container.decode(CharacterText.self, forKey: .text)
+        prof = try container.decode(CharacterField.self, forKey: .prof)
+        equipment = try container.decode(CharacterField.self, forKey: .equipment)
+        background = try container.decode(CharacterField.self, forKey: .background)
+        allies = try container.decode(CharacterField.self, forKey: .allies)
+        personality = try container.decode(CharacterField.self, forKey: .personality)
+        ideals = try container.decode(CharacterField.self, forKey: .ideals)
+        flaws = try container.decode(CharacterField.self, forKey: .flaws)
+        bonds = try container.decode(CharacterField.self, forKey: .bonds)
+        coins = try container.decode(CharacterCoins.self, forKey: .coins)
+        resources = try container.decode([String: CharacterResource].self, forKey: .resources)
+        bonusesSkills = try container.decode([String: String].self, forKey: .bonusesSkills)
+        bonusesStats = try container.decode([String: String].self, forKey: .bonusesStats)
+        conditions = try container.decode([String].self, forKey: .conditions)
+        createdAt = try container.decode(String.self, forKey: .createdAt)
+        inspiration = try container.decode(Bool.self, forKey: .inspiration)
+        casterClass = try container.decode(SimpleField.self, forKey: .casterClass)
+        avatar = try container.decode([String: String].self, forKey: .avatar)
+    }
+    
+    // Кастомный инициализатор для создания объектов
+    init(isDefault: Bool, jsonType: String, template: String, name: SimpleField?, info: CharacterInfo, subInfo: CharacterSubInfo, spellsInfo: CharacterSpellsInfo, spells: [String: String], spellsPact: [String: String], spellsLevel0: CharacterField?, spellsLevel1: CharacterField?, proficiency: Int, stats: CharacterStats, saves: CharacterSaves, skills: CharacterSkills, vitality: CharacterVitality, attunementsList: [AttunementItem], weaponsList: [WeaponItem], weapons: [String: String], text: CharacterText, prof: CharacterField, equipment: CharacterField, background: CharacterField, allies: CharacterField, personality: CharacterField, ideals: CharacterField, flaws: CharacterField, bonds: CharacterField, coins: CharacterCoins, resources: [String: CharacterResource], bonusesSkills: [String: String], bonusesStats: [String: String], conditions: [String], createdAt: String, inspiration: Bool, casterClass: SimpleField, avatar: [String: String]) {
+        self.isDefault = isDefault
+        self.jsonType = jsonType
+        self.template = template
+        self.name = name
+        self.info = info
+        self.subInfo = subInfo
+        self.spellsInfo = spellsInfo
+        self.spells = spells
+        self.spellsPact = spellsPact
+        self.spellsLevel0 = spellsLevel0
+        self.spellsLevel1 = spellsLevel1
+        self.proficiency = proficiency
+        self.stats = stats
+        self.saves = saves
+        self.skills = skills
+        self.vitality = vitality
+        self.attunementsList = attunementsList
+        self.weaponsList = weaponsList
+        self.weapons = weapons
+        self.text = text
+        self.prof = prof
+        self.equipment = equipment
+        self.background = background
+        self.allies = allies
+        self.personality = personality
+        self.ideals = ideals
+        self.flaws = flaws
+        self.bonds = bonds
+        self.coins = coins
+        self.resources = resources
+        self.bonusesSkills = bonusesSkills
+        self.bonusesStats = bonusesStats
+        self.conditions = conditions
+        self.createdAt = createdAt
+        self.inspiration = inspiration
+        self.casterClass = casterClass
+        self.avatar = avatar
+    }
 }
 
 struct CharacterField: Codable {
     let value: CharacterFieldValue
+    
+    // Извлечение текста из поля
+    func extractText() -> String {
+        guard let data = value.data,
+              let content = data.content else {
+            return ""
+        }
+        
+        var text = ""
+        for item in content {
+            if let itemText = item.text {
+                text += itemText
+            }
+            if let subContent = item.content {
+                for subItem in subContent {
+                    if let subText = subItem.text {
+                        text += subText
+                    }
+                }
+            }
+        }
+        return text
+    }
 }
 
 struct CharacterFieldValue: Codable {
@@ -101,14 +219,40 @@ struct CharacterFieldMark: Codable {
 }
 
 struct CharacterInfo: Codable {
-    let charClass: CharacterField
-    let charSubclass: CharacterField
-    let level: CharacterField
-    let background: CharacterField
-    let playerName: CharacterField
-    let race: CharacterField
-    let alignment: CharacterField
-    let experience: CharacterField
+    let charClass: SimpleField
+    let charSubclass: SimpleField
+    let level: SimpleField
+    let background: SimpleField
+    let playerName: SimpleField
+    let race: SimpleField
+    let alignment: SimpleField
+    let experience: SimpleField
+}
+
+struct SimpleField: Codable {
+    let name: String?
+    let value: String
+    
+    // Кастомный инициализатор для обработки разных структур
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Пытаемся декодировать name, если его нет - устанавливаем nil
+        name = try container.decodeIfPresent(String.self, forKey: .name)
+        
+        // value всегда должен быть
+        value = try container.decode(String.self, forKey: .value)
+    }
+    
+    // Программный инициализатор
+    init(name: String?, value: String) {
+        self.name = name
+        self.value = value
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case name, value
+    }
 }
 
 struct CharacterSubInfo: Codable {
@@ -219,14 +363,40 @@ struct WeaponItem: Codable {
     let name: CharacterField
     let mod: CharacterField
     let dmg: CharacterField
-    let ability: String
+    let ability: String?
     let isProf: Bool
+    let modBonus: CharacterField?
+    
+    // Конвертация в CharacterEquipment
+    func toCharacterEquipment() -> CharacterEquipment {
+        let weaponName = name.value.data?.content?.first?.text ?? "Неизвестное оружие"
+        let damage = dmg.value.data?.content?.first?.text ?? ""
+        let attackBonus = mod.value.data?.content?.first?.text ?? "+0"
+        
+        // Парсим бонус атаки
+        let bonus = Int(attackBonus.replacingOccurrences(of: "+", with: "")) ?? 0
+        
+        return CharacterEquipment(
+            name: weaponName,
+            type: .weapon,
+            attackBonus: bonus,
+            damage: damage
+        )
+    }
 }
 
 struct CharacterText: Codable {
     let traits: CharacterField
     let attacks: CharacterField
     let features: CharacterField
+    let background: CharacterField?
+    let allies: CharacterField?
+    let personality: CharacterField?
+    let ideals: CharacterField?
+    let flaws: CharacterField?
+    let bonds: CharacterField?
+    let equipment: CharacterField?
+    let prof: CharacterField?
 }
 
 struct CharacterCoins: Codable {
@@ -242,4 +412,21 @@ struct CharacterResource: Codable {
     let isLongRest: Bool
     let icon: String
     let isShortRest: Bool?
+    
+    // Конвертация в ClassResource с динамическим определением типа
+    func toClassResource() -> ClassResource {
+        let resourceType = ClassResource.determineResourceType(from: name, icon: icon, location: location)
+        
+        return ClassResource(
+            id: id,
+            name: name,
+            icon: icon,
+            maxValue: max,
+            currentValue: current,
+            type: resourceType,
+            location: location,
+            isLongRest: isLongRest,
+            isShortRest: isShortRest
+        )
+    }
 }

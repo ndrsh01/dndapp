@@ -15,6 +15,7 @@ struct CharacterView: View {
     @State private var showingTreasuresView = false
     @State private var showingFeaturesView = false
     @State private var showingPersonalityView = false
+    @State private var showingMulticlassView = false
     @Environment(\.colorScheme) private var colorScheme
     
     let onCharacterUpdate: ((Character) -> Void)?
@@ -167,6 +168,13 @@ struct CharacterView: View {
                 onCharacterUpdate: onCharacterUpdate
             )
         }
+        .sheet(isPresented: $showingMulticlassView) {
+            MulticlassManagementView(
+                character: $viewModel.character,
+                onCharacterUpdate: onCharacterUpdate
+            )
+            .environmentObject(DataService.shared)
+        }
     }
     
     
@@ -295,6 +303,7 @@ struct CharacterView: View {
                 detailCard(title: "Навыки", icon: "brain.head.profile", color: .green)
                 detailCard(title: "Спасброски", icon: "shield.checkered", color: .blue)
                 detailCard(title: "Классовые умения", icon: "star.fill", color: .purple)
+                detailCard(title: "Мультикласс", icon: "person.2.fill", color: .indigo)
                 detailCard(title: "Снаряжение", icon: "bag.fill", color: .orange)
                 detailCard(title: "Сокровища", icon: "diamond.fill", color: .yellow)
                 detailCard(title: "Личность", icon: "person.crop.square.fill", color: .pink)
@@ -382,6 +391,8 @@ struct CharacterView: View {
                 showingSavingThrowsView = true
             } else if title == "Классовые умения" {
                 showingClassFeaturesView = true
+            } else if title == "Мультикласс" {
+                showingMulticlassView = true
             } else if title == "Снаряжение" {
                 showingEquipmentView = true
             } else if title == "Сокровища" {
@@ -523,7 +534,7 @@ struct CharacterSkillsView: View {
         let isProficient = character.skills[skill.rawValue] ?? false
         let hasExpertise = character.skillsExpertise[skill.rawValue] ?? false
         let abilityModifier = character.modifier(for: skill.ability)
-        let proficiencyBonus = character.proficiencyBonus
+        let proficiencyBonus = character.updatedProficiencyBonus
         
         let skillBonus = abilityModifier + (isProficient ? (hasExpertise ? proficiencyBonus * 2 : proficiencyBonus) : 0)
         
@@ -622,10 +633,17 @@ struct CharacterClassFeaturesView: View {
                         .fontWeight(.bold)
                         .padding(.horizontal)
                     
-                    Text("Умения класса \(character.characterClass) до \(character.level) уровня")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal)
+                    if character.isMulticlass {
+                        Text("Умения всех классов (общий уровень: \(character.totalLevel))")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal)
+                    } else {
+                        Text("Умения класса \(character.characterClass) до \(character.level) уровня")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal)
+                    }
                     
                     // Все классовые умения
                     LazyVStack(spacing: 12) {
@@ -685,9 +703,12 @@ struct CharacterClassFeaturesView: View {
     }
     
     private var availableFeatures: [ClassFeatureWithLevel] {
-        guard let dndClass = dataService.dndClasses.first(where: { $0.nameRu == character.characterClass }) else {
-            return []
-        }
+        if character.isMulticlass {
+            return getAllMulticlassFeatures()
+        } else {
+            guard let dndClass = dataService.dndClasses.first(where: { $0.nameRu == character.characterClass }) else {
+                return []
+            }
         
         var features: [ClassFeatureWithLevel] = []
         
@@ -713,6 +734,35 @@ struct CharacterClassFeaturesView: View {
         }
         
         return features
+        }
+    }
+    
+    private func getAllMulticlassFeatures() -> [ClassFeatureWithLevel] {
+        var allFeatures: [ClassFeatureWithLevel] = []
+        
+        for classInfo in character.classes {
+            guard let dndClass = dataService.dndClasses.first(where: { $0.nameRu == classInfo.name }) else {
+                continue
+            }
+            
+            // Получаем умения до уровня этого класса
+            for levelData in dndClass.levelProgression {
+                if levelData.level <= classInfo.level {
+                    if let levelFeatures = levelData.features {
+                        for feature in levelFeatures {
+                            allFeatures.append(ClassFeatureWithLevel(
+                                name: "[\(classInfo.name)] \(feature.name)",
+                                description: feature.description,
+                                level: levelData.level
+                            ))
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Сортируем по уровню получения
+        return allFeatures.sorted { $0.level < $1.level }
     }
     
     private func isResourceFeature(_ feature: ClassFeatureWithLevel) -> Bool {
@@ -741,12 +791,15 @@ struct CharacterClassFeaturesView: View {
     }
     
     private var availableResources: [ClassResourceInfo] {
-        // Получаем данные из class_tables.json
-        guard let classTable = getClassTableForCharacter(),
-              let levelRow = classTable.rows.first(where: { $0.level == String(character.level) }) else {
-            print("DEBUG: Class table not found for \(character.characterClass) level \(character.level)")
-            return []
-        }
+        if character.isMulticlass {
+            return getAllMulticlassResources()
+        } else {
+            // Получаем данные из class_tables.json
+            guard let classTable = getClassTableForCharacter(),
+                  let levelRow = classTable.rows.first(where: { $0.level == String(character.level) }) else {
+                print("DEBUG: Class table not found for \(character.characterClass) level \(character.level)")
+                return []
+            }
 
         print("DEBUG: Found class table for \(character.characterClass), level \(character.level)")
         print("DEBUG: Additional data keys: \(levelRow.additionalData.keys)")
@@ -770,6 +823,51 @@ struct CharacterClassFeaturesView: View {
 
         print("DEBUG: Total resources found: \(resources.count)")
         return resources
+        }
+    }
+    
+    private func getAllMulticlassResources() -> [ClassResourceInfo] {
+        var allResources: [ClassResourceInfo] = []
+        
+        for classInfo in character.classes {
+            // Мапим русские названия классов на slug'и
+            let classSlugMapping: [String: String] = [
+                "Варвар": "barbarian",
+                "Бард": "bard",
+                "Жрец": "cleric",
+                "Друид": "druid",
+                "Воин": "fighter",
+                "Монах": "monk",
+                "Паладин": "paladin",
+                "Следопыт": "ranger",
+                "Плут": "rogue",
+                "Чародей": "sorcerer",
+                "Колдун": "warlock",
+                "Волшебник": "wizard"
+            ]
+            
+            guard let slug = classSlugMapping[classInfo.name],
+                  let classTable = dataService.classTables.first(where: { $0.slug == slug }),
+                  let levelRow = classTable.rows.first(where: { $0.level == String(classInfo.level) }) else {
+                continue
+            }
+            
+            // Обрабатываем все дополнительные данные из таблицы класса
+            for (columnName, value) in levelRow.additionalData {
+                // Пропускаем пустые значения и прочерки
+                if value == "-" || value == "—" || value.isEmpty {
+                    continue
+                }
+                
+                // Фильтруем только важные ресурсы
+                if isImportantResource(columnName: columnName) {
+                    let resourceInfo = createResourceInfo(columnName: "[\(classInfo.name)] \(columnName)", value: value)
+                    allResources.append(resourceInfo)
+                }
+            }
+        }
+        
+        return allResources
     }
 
     private func isImportantResource(columnName: String) -> Bool {

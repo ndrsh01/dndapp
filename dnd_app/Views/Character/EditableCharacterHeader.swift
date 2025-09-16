@@ -34,7 +34,7 @@ struct EditableCharacterHeader: View {
                             .foregroundColor(.secondary)
                     }
                     
-                    Text("Уровень \(character.level)")
+                    Text("Уровень \(character.totalLevel)")
                         .font(.caption)
                         .foregroundColor(.white)
                         .padding(.horizontal, 8)
@@ -58,15 +58,15 @@ struct EditableCharacterHeader: View {
             // Информация о классе и предыстории
             HStack(spacing: 12) {
                 infoCard(
-                    title: "Класс",
-                    value: character.characterClass,
-                    icon: "star.fill",
-                    color: .green
+                    title: character.isMulticlass ? "Классы" : "Класс",
+                    value: character.classDisplayText,
+                    icon: character.isMulticlass ? "person.2.fill" : "star.fill",
+                    color: character.isMulticlass ? .indigo : .green
                 )
                 
                 infoCard(
-                    title: "Подкласс",
-                    value: character.subclass ?? "Нет подкласса",
+                    title: character.isMulticlass ? "Подклассы" : "Подкласс",
+                    value: character.subclassDisplayText,
                     icon: "star.fill",
                     color: .orange
                 )
@@ -182,7 +182,7 @@ struct EditCharacterHeaderView: View {
                 }
                 
                 Section("Класс и подкласс") {
-                    Picker("Класс", selection: $characterClass) {
+                    Picker("Основной класс", selection: $characterClass) {
                         ForEach(availableClasses, id: \.self) { className in
                             Text(className).tag(className)
                         }
@@ -191,6 +191,20 @@ struct EditCharacterHeaderView: View {
                     Picker("Подкласс", selection: $subclass) {
                         ForEach(availableSubclasses, id: \.self) { subclassName in
                             Text(subclassName).tag(subclassName)
+                        }
+                    }
+                    
+                    // Кнопка управления мультиклассом
+                    NavigationLink(destination: MulticlassManagementView(character: $character, onCharacterUpdate: onCharacterUpdate)) {
+                        HStack {
+                            Image(systemName: "person.2.fill")
+                                .foregroundColor(.indigo)
+                            Text("Управление мультиклассом")
+                            Spacer()
+                            if character.isMulticlass {
+                                Text("\(character.classes.count) классов")
+                                    .foregroundColor(.secondary)
+                            }
                         }
                     }
                 }
@@ -228,6 +242,12 @@ struct EditCharacterHeaderView: View {
                         character.alignment = alignment
                         character.level = level
                         character.dateModified = Date()
+                        
+                        // Обновляем основной класс в мультиклассе
+                        if character.isMulticlass, let primaryClass = character.primaryClass {
+                            character.updateClassLevel(primaryClass.id, newLevel: level)
+                        }
+                        
                         onCharacterUpdate?(character)
                         dismiss()
                     }
