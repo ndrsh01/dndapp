@@ -629,14 +629,19 @@ class CharacterManager: ObservableObject {
         do {
             let extendedExport = try decoder.decode(ExtendedCharacterExport.self, from: data)
             
+            // Проверяем, есть ли данные персонажа
+            guard let characterData = extendedExport.character else {
+                throw NSError(domain: "CharacterManager", code: 3, userInfo: [NSLocalizedDescriptionKey: "Отсутствуют данные персонажа в экспорте"])
+            }
+            
             // Создаем новый персонаж с новым ID для импорта
             let importedCharacter = Character(
-                name: extendedExport.character.name,
-                race: extendedExport.character.race,
-                characterClass: extendedExport.character.characterClass,
-                background: extendedExport.character.background,
-                alignment: extendedExport.character.alignment,
-                level: extendedExport.character.level
+                name: characterData.name,
+                race: characterData.race,
+                characterClass: characterData.characterClass,
+                background: characterData.background,
+                alignment: characterData.alignment,
+                level: characterData.level
             )
             
             // Копируем остальные свойства
@@ -680,7 +685,7 @@ class CharacterManager: ObservableObject {
             newCharacter.dateModified = Date()
             
             // Обновляем связанные данные с новым ID персонажа
-            let newRelationships = extendedExport.relationships.map { relationship in
+            let newRelationships = (extendedExport.relationships ?? []).map { relationship in
                 Relationship(
                     name: relationship.name,
                     description: relationship.description,

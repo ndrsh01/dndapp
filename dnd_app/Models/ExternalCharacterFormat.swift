@@ -171,6 +171,20 @@ struct ExternalCharacterData: Codable {
 struct CharacterField: Codable {
     let value: CharacterFieldValue
     
+    // Кастомный инициализатор для обработки разных структур
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        // Пытаемся декодировать как сложную структуру
+        if let complexValue = try? container.decode(CharacterFieldValue.self, forKey: .value) {
+            value = complexValue
+        } else {
+            // Если не получилось, создаем простую структуру из примитивного значения
+            let simpleValue = try container.decode(SimpleFieldValue.self, forKey: .value)
+            value = CharacterFieldValue(data: CharacterFieldData(type: "text", content: [CharacterFieldContent(type: "text", content: nil, text: simpleValue.text, marks: nil, attrs: nil)]), size: nil)
+        }
+    }
+    
     // Извлечение текста из поля
     func extractText() -> String {
         guard let data = value.data,
@@ -192,6 +206,32 @@ struct CharacterField: Codable {
             }
         }
         return text
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case value
+    }
+}
+
+// Вспомогательная структура для простых значений
+struct SimpleFieldValue: Codable {
+    let text: String
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        
+        if let stringValue = try? container.decode(String.self) {
+            text = stringValue
+        } else if let intValue = try? container.decode(Int.self) {
+            text = String(intValue)
+        } else if let doubleValue = try? container.decode(Double.self) {
+            text = String(Int(doubleValue))
+        } else {
+            throw DecodingError.typeMismatch(String.self, DecodingError.Context(
+                codingPath: container.codingPath,
+                debugDescription: "Expected String, Int, or Double"
+            ))
+        }
     }
 }
 
@@ -240,8 +280,19 @@ struct SimpleField: Codable {
         // Пытаемся декодировать name, если его нет - устанавливаем nil
         name = try container.decodeIfPresent(String.self, forKey: .name)
         
-        // value всегда должен быть
-        value = try container.decode(String.self, forKey: .value)
+        // value может быть как строкой, так и числом
+        if let stringValue = try? container.decode(String.self, forKey: .value) {
+            value = stringValue
+        } else if let intValue = try? container.decode(Int.self, forKey: .value) {
+            value = String(intValue)
+        } else if let doubleValue = try? container.decode(Double.self, forKey: .value) {
+            value = String(Int(doubleValue))
+        } else {
+            throw DecodingError.typeMismatch(String.self, DecodingError.Context(
+                codingPath: container.codingPath,
+                debugDescription: "Expected String, Int, or Double for value"
+            ))
+        }
     }
     
     // Программный инициализатор

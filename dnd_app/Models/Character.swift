@@ -726,6 +726,14 @@ struct Character: Codable, Identifiable {
             self.level = totalLevel
         }
     }
+    
+    /// Инициализация ресурсов для персонажа
+    mutating func initializeResources() {
+        classResources.removeAll()
+        
+        // Получаем ресурсы из availableResources (логика из CharacterView)
+        // Это будет вызываться при создании персонажа или изменении класса/уровня
+    }
 }
 
 struct ClassResource: Codable {

@@ -6,6 +6,8 @@ struct MulticlassManagementView: View {
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var dataService: DataService
     @State private var editingClass: CharacterClass?
+    @State private var showingAddClass = false
+    @State private var showingEditMainClass = false
     
     var body: some View {
         ScrollView {
@@ -34,8 +36,9 @@ struct MulticlassManagementView: View {
                                 .padding(.horizontal)
                             
                             let mainClass = CharacterClass(name: character.characterClass, level: character.level, subclass: character.subclass)
-                            NavigationLink(destination: EditMainClassView(character: $character, onCharacterUpdate: onCharacterUpdate)
-                                .environmentObject(dataService)) {
+                            Button(action: {
+                                showingEditMainClass = true
+                            }) {
                                 ClassLevelCard(
                                     classInfo: mainClass,
                                     character: $character,
@@ -65,8 +68,9 @@ struct MulticlassManagementView: View {
                     }
                     
                     // Кнопка добавления класса
-                    NavigationLink(destination: AddClassView(character: $character, onCharacterUpdate: onCharacterUpdate)
-                        .environmentObject(dataService)) {
+                    Button(action: {
+                        showingAddClass = true
+                    }) {
                         HStack {
                             Image(systemName: "plus.circle.fill")
                                 .font(.title2)
@@ -87,6 +91,20 @@ struct MulticlassManagementView: View {
             }
             .background(adaptiveBackgroundColor)
             .navigationBarTitleDisplayMode(.inline)
+        .fullScreenCover(isPresented: $showingAddClass) {
+            NavigationView {
+                AddClassView(character: $character, onCharacterUpdate: onCharacterUpdate)
+                    .environmentObject(dataService)
+            }
+            .navigationViewStyle(StackNavigationViewStyle())
+        }
+        .fullScreenCover(isPresented: $showingEditMainClass) {
+            NavigationView {
+                EditMainClassView(character: $character, onCharacterUpdate: onCharacterUpdate)
+                    .environmentObject(dataService)
+            }
+            .navigationViewStyle(StackNavigationViewStyle())
+        }
         .sheet(item: $editingClass) { classInfo in
             EditClassView(classInfo: classInfo, character: $character, onCharacterUpdate: onCharacterUpdate)
                 .environmentObject(dataService)
@@ -273,75 +291,83 @@ struct AddClassView: View {
     }
     
     var body: some View {
-        NavigationView {
-            Form {
-                Section("Новый класс") {
-                    Picker("Класс", selection: $selectedClass) {
-                        if !classesLoaded || dataService.dndClasses.isEmpty {
-                            Text("Загрузка классов...").tag("")
-                        } else {
-                            ForEach(availableClasses, id: \.self) { className in
-                                Text(className).tag(className)
-                            }
+        Form {
+            Section("Новый класс") {
+                Picker("Класс", selection: $selectedClass) {
+                    if !classesLoaded || dataService.dndClasses.isEmpty {
+                        Text("Загрузка классов...").tag("")
+                    } else {
+                        ForEach(availableClasses, id: \.self) { className in
+                            Text(className).tag(className)
                         }
                     }
-                    .onChange(of: selectedClass) { newClass in
-                        // Сбрасываем подкласс при изменении класса
-                        selectedSubclass = ""
-                    }
-                    
-                    if classesLoaded && !availableSubclasses.isEmpty {
-                        Picker("Подкласс", selection: $selectedSubclass) {
-                            Text("Нет подкласса").tag("")
-                            ForEach(availableSubclasses.filter { !$0.isEmpty }, id: \.self) { subclassName in
-                                Text(subclassName).tag(subclassName)
-                            }
-                        }
-                    }
-                    
-                    Stepper("Уровень: \(level)", value: $level, in: 1...20)
                 }
-            }
-            .navigationTitle("Добавить новый класс")
-            .navigationBarTitleDisplayMode(.inline)
-            .onAppear {
-                dataService.ensureClassesLoaded()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    classesLoaded = !dataService.dndClasses.isEmpty
-                if selectedClass.isEmpty && !dataService.dndClasses.isEmpty {
-                    selectedClass = dataService.dndClasses.first?.nameRu ?? ""
-                }
-                }
-            }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Отмена") {
-                        dismiss()
-                    }
-                    .foregroundColor(.orange)
+                .onChange(of: selectedClass) { newClass in
+                    // Сбрасываем подкласс при изменении класса
+                    selectedSubclass = ""
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Сохранить") {
-                        addClass()
+                if classesLoaded && !availableSubclasses.isEmpty {
+                    Picker("Подкласс", selection: $selectedSubclass) {
+                        Text("Нет подкласса").tag("")
+                        ForEach(availableSubclasses.filter { !$0.isEmpty }, id: \.self) { subclassName in
+                            Text(subclassName).tag(subclassName)
+                        }
                     }
-                    .disabled(selectedClass.isEmpty)
-                    .foregroundColor(.orange)
                 }
+                
+                Stepper("Уровень: \(level)", value: $level, in: 1...20)
             }
         }
-        .navigationViewStyle(StackNavigationViewStyle())
+        .navigationTitle("Добавить новый класс")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            dataService.ensureClassesLoaded()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                classesLoaded = !dataService.dndClasses.isEmpty
+            if selectedClass.isEmpty && !dataService.dndClasses.isEmpty {
+                selectedClass = dataService.dndClasses.first?.nameRu ?? ""
+            }
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Отмена") {
+                    dismiss()
+                }
+                .foregroundColor(.orange)
+            }
+            
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Сохранить") {
+                    addClass()
+                }
+                .disabled(selectedClass.isEmpty)
+                .foregroundColor(.orange)
+            }
+        }
     }
     
     private func addClass() {
+        print("DEBUG: addClass() called")
         guard !selectedClass.isEmpty else { 
+            print("DEBUG: selectedClass is empty, returning")
             return 
         }
+        print("DEBUG: Adding class \(selectedClass), level \(level), subclass \(selectedSubclass)")
         let subclass = selectedSubclass.isEmpty ? nil : selectedSubclass
         
+        print("DEBUG: Calling character.addClass")
         character.addClass(selectedClass, level: level, subclass: subclass)
+        print("DEBUG: character.addClass completed")
+        
+        print("DEBUG: Calling onCharacterUpdate")
         onCharacterUpdate?(character)
+        print("DEBUG: onCharacterUpdate completed")
+        
+        print("DEBUG: Calling dismiss")
         dismiss()
+        print("DEBUG: dismiss completed")
     }
 }
 
@@ -438,58 +464,61 @@ struct EditMainClassView: View {
     }
     
     var body: some View {
-        NavigationView {
-            Form {
-                Section("Основной класс") {
-                    Picker("Класс", selection: $selectedClass) {
-                        ForEach(availableClasses, id: \.self) { className in
-                            Text(className).tag(className)
-                        }
+        Form {
+            Section("Основной класс") {
+                Picker("Класс", selection: $selectedClass) {
+                    ForEach(availableClasses, id: \.self) { className in
+                        Text(className).tag(className)
                     }
-                    .onChange(of: selectedClass) { newClass in
-                        selectedSubclass = "Нет подкласса"
-                    }
-                    
-                    Picker("Подкласс", selection: $selectedSubclass) {
-                        ForEach(availableSubclasses, id: \.self) { subclassName in
-                            Text(subclassName).tag(subclassName)
-                        }
-                    }
-                    
-                    Stepper("Уровень: \(level)", value: $level, in: 1...20)
                 }
-            }
-            .navigationTitle("Редактировать основной класс")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Отмена") {
-                        dismiss()
-                    }
-                    .foregroundColor(.orange)
+                .onChange(of: selectedClass) { newClass in
+                    selectedSubclass = "Нет подкласса"
                 }
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Сохранить") {
-                        character.characterClass = selectedClass
-                        character.subclass = selectedSubclass == "Нет подкласса" ? nil : selectedSubclass
-                        character.level = level
-                        character.dateModified = Date()
-                        
-                        // Обновляем мультикласс если он инициализирован
-                        if !character.classes.isEmpty {
-                            let newSubclass = selectedSubclass == "Нет подкласса" ? nil : selectedSubclass
-                            character.classes[0] = CharacterClass(name: selectedClass, level: level, subclass: newSubclass)
-                        }
-                        
-                        onCharacterUpdate?(character)
-                        dismiss()
+                Picker("Подкласс", selection: $selectedSubclass) {
+                    ForEach(availableSubclasses, id: \.self) { subclassName in
+                        Text(subclassName).tag(subclassName)
                     }
-                    .foregroundColor(.orange)
                 }
+                
+                Stepper("Уровень: \(level)", value: $level, in: 1...20)
             }
         }
-        .navigationViewStyle(StackNavigationViewStyle())
+        .navigationTitle("Редактировать основной класс")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Отмена") {
+                    dismiss()
+                }
+                .foregroundColor(.orange)
+            }
+            
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Сохранить") {
+                    print("DEBUG: EditMainClassView Save button pressed")
+                    character.characterClass = selectedClass
+                    character.subclass = selectedSubclass == "Нет подкласса" ? nil : selectedSubclass
+                    character.level = level
+                    character.dateModified = Date()
+                    
+                    // Обновляем мультикласс если он инициализирован
+                    if !character.classes.isEmpty {
+                        let newSubclass = selectedSubclass == "Нет подкласса" ? nil : selectedSubclass
+                        character.classes[0] = CharacterClass(name: selectedClass, level: level, subclass: newSubclass)
+                    }
+                    
+                    print("DEBUG: Calling onCharacterUpdate")
+                    onCharacterUpdate?(character)
+                    print("DEBUG: onCharacterUpdate completed")
+                    
+                    print("DEBUG: Calling dismiss")
+                    dismiss()
+                    print("DEBUG: dismiss completed")
+                }
+                .foregroundColor(.orange)
+            }
+        }
     }
 }
 

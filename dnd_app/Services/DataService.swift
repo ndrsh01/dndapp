@@ -579,6 +579,12 @@ class DataService: ObservableObject {
         }
     }
     
+    func ensureClassTablesLoaded() {
+        if classTables.isEmpty {
+            loadClassTables()
+        }
+    }
+    
     
     private func loadRelationships() {
         if let data = userDefaults.data(forKey: Keys.relationships),
