@@ -3,15 +3,12 @@ import SwiftUI
 struct MulticlassManagementView: View {
     @Binding var character: Character
     let onCharacterUpdate: ((Character) -> Void)?
-    @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
     @EnvironmentObject private var dataService: DataService
-    @State private var showingAddClass = false
     @State private var editingClass: CharacterClass?
     
     var body: some View {
-        NavigationView {
-            ScrollView {
+        ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     // Заголовок
                     VStack(alignment: .leading, spacing: 8) {
@@ -29,24 +26,47 @@ struct MulticlassManagementView: View {
                     }
                     .padding(.horizontal)
                     
-                    // Список классов
-                    LazyVStack(spacing: 12) {
-                        ForEach(character.classes) { classInfo in
-                            ClassLevelCard(
-                                classInfo: classInfo,
-                                character: $character,
-                                onCharacterUpdate: onCharacterUpdate,
-                                onEdit: { editingClass = classInfo },
-                                onDelete: { deleteClass(classInfo) }
-                            )
+                    // Основной класс (если не мультикласс)
+                    if !character.isMulticlass {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Основной класс")
+                                .font(.headline)
+                                .padding(.horizontal)
+                            
+                            let mainClass = CharacterClass(name: character.characterClass, level: character.level, subclass: character.subclass)
+                            NavigationLink(destination: EditMainClassView(character: $character, onCharacterUpdate: onCharacterUpdate)
+                                .environmentObject(dataService)) {
+                                ClassLevelCard(
+                                    classInfo: mainClass,
+                                    character: $character,
+                                    onCharacterUpdate: onCharacterUpdate,
+                                    onEdit: { },
+                                    onDelete: nil
+                                )
+                            }
+                            .buttonStyle(PlainButtonStyle())
                         }
                     }
-                    .padding(.horizontal)
+                    
+                    // Список классов (для мультикласса)
+                    if character.isMulticlass {
+                        LazyVStack(spacing: 12) {
+                            ForEach(character.classes) { classInfo in
+                                ClassLevelCard(
+                                    classInfo: classInfo,
+                                    character: $character,
+                                    onCharacterUpdate: onCharacterUpdate,
+                                    onEdit: { editingClass = classInfo },
+                                    onDelete: { deleteClass(classInfo) }
+                                )
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
                     
                     // Кнопка добавления класса
-                    Button(action: {
-                        showingAddClass = true
-                    }) {
+                    NavigationLink(destination: AddClassView(character: $character, onCharacterUpdate: onCharacterUpdate)
+                        .environmentObject(dataService)) {
                         HStack {
                             Image(systemName: "plus.circle.fill")
                                 .font(.title2)
@@ -59,6 +79,7 @@ struct MulticlassManagementView: View {
                         .background(Color.orange)
                         .cornerRadius(12)
                     }
+                    .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal)
                     .padding(.top, 8)
                 }
@@ -66,23 +87,13 @@ struct MulticlassManagementView: View {
             }
             .background(adaptiveBackgroundColor)
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Готово") {
-                        dismiss()
-                    }
-                }
-            }
-        }
-        .sheet(isPresented: $showingAddClass) {
-            AddClassView(character: $character, onCharacterUpdate: onCharacterUpdate)
-                .environmentObject(dataService)
-        }
         .sheet(item: $editingClass) { classInfo in
             EditClassView(classInfo: classInfo, character: $character, onCharacterUpdate: onCharacterUpdate)
                 .environmentObject(dataService)
         }
         .onAppear {
+            dataService.ensureClassesLoaded()
+            
             // Инициализируем мультикласс если нужно
             if character.classes.isEmpty {
                 character.initializeMulticlass()
@@ -115,7 +126,7 @@ struct ClassLevelCard: View {
     @Binding var character: Character
     let onCharacterUpdate: ((Character) -> Void)?
     let onEdit: () -> Void
-    let onDelete: () -> Void
+    let onDelete: (() -> Void)?
     @Environment(\.colorScheme) private var colorScheme
     
     var body: some View {
@@ -160,10 +171,12 @@ struct ClassLevelCard: View {
                         .foregroundColor(.blue)
                 }
                 
-                Button(action: onDelete) {
-                    Image(systemName: "trash.circle.fill")
-                        .font(.title2)
-                        .foregroundColor(.red)
+                if let onDelete = onDelete {
+                    Button(action: onDelete) {
+                        Image(systemName: "trash.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(.red)
+                    }
                 }
             }
         }
@@ -174,39 +187,41 @@ struct ClassLevelCard: View {
     }
     
     private var classColor: Color {
-        switch classInfo.name {
-        case "Воин": return .red
-        case "Маг": return .blue
-        case "Жрец": return .white
-        case "Плут": return .yellow
-        case "Бард": return .purple
-        case "Варвар": return .orange
-        case "Паладин": return .pink
-        case "Следопыт": return .green
-        case "Монах": return .brown
-        case "Друид": return .mint
-        case "Колдун": return .indigo
-        case "Чародей": return .cyan
-        default: return .gray
-        }
+        // Универсальная система цветов для классов
+        let colors: [String: Color] = [
+            "Варвар": .orange,
+            "Бард": .purple,
+            "Жрец": .white,
+            "Друид": .mint,
+            "Воин": .red,
+            "Монах": .brown,
+            "Паладин": .pink,
+            "Следопыт": .green,
+            "Плут": .yellow,
+            "Чародей": .cyan,
+            "Колдун": .indigo,
+            "Волшебник": .blue
+        ]
+        return colors[classInfo.name] ?? .gray
     }
     
     private var classIcon: String {
-        switch classInfo.name {
-        case "Воин": return "sword.fill"
-        case "Маг": return "wand.and.stars"
-        case "Жрец": return "cross.fill"
-        case "Плут": return "eye.fill"
-        case "Бард": return "music.note"
-        case "Варвар": return "flame.fill"
-        case "Паладин": return "shield.fill"
-        case "Следопыт": return "leaf.fill"
-        case "Монах": return "figure.martial.arts"
-        case "Друид": return "tree.fill"
-        case "Колдун": return "hexagon.fill"
-        case "Чародей": return "sparkles"
-        default: return "star.fill"
-        }
+        // Универсальная система иконок для классов
+        let icons: [String: String] = [
+            "Варвар": "flame.fill",
+            "Бард": "music.note",
+            "Жрец": "cross.fill",
+            "Друид": "tree.fill",
+            "Воин": "sword.fill",
+            "Монах": "figure.martial.arts",
+            "Паладин": "shield.fill",
+            "Следопыт": "leaf.fill",
+            "Плут": "eye.fill",
+            "Чародей": "sparkles",
+            "Колдун": "hexagon.fill",
+            "Волшебник": "wand.and.stars"
+        ]
+        return icons[classInfo.name] ?? "star.fill"
     }
     
     // MARK: - Adaptive Colors
@@ -239,35 +254,46 @@ struct AddClassView: View {
     let onCharacterUpdate: ((Character) -> Void)?
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var dataService: DataService
-    @State private var selectedClass = ""
+    @State private var selectedClass: String = ""
     @State private var selectedSubclass = ""
     @State private var level = 1
+    @State private var classesLoaded = false
     
     private var availableClasses: [String] {
         return dataService.dndClasses.map { $0.nameRu }
     }
     
     private var availableSubclasses: [String] {
-        guard let dndClass = dataService.dndClasses.first(where: { $0.nameRu == selectedClass }) else {
-            return []
+        var subclasses = [""] // Пустая строка для "Нет подкласса"
+        guard !selectedClass.isEmpty, let dndClass = dataService.dndClasses.first(where: { $0.nameRu == selectedClass }) else {
+            return subclasses
         }
-        return dndClass.subclassNames
+        subclasses.append(contentsOf: dndClass.subclassNames)
+        return subclasses
     }
     
     var body: some View {
         NavigationView {
             Form {
-                Section("Выбор класса") {
+                Section("Новый класс") {
                     Picker("Класс", selection: $selectedClass) {
-                        ForEach(availableClasses, id: \.self) { className in
-                            Text(className).tag(className)
+                        if !classesLoaded || dataService.dndClasses.isEmpty {
+                            Text("Загрузка классов...").tag("")
+                        } else {
+                            ForEach(availableClasses, id: \.self) { className in
+                                Text(className).tag(className)
+                            }
                         }
                     }
+                    .onChange(of: selectedClass) { newClass in
+                        // Сбрасываем подкласс при изменении класса
+                        selectedSubclass = ""
+                    }
                     
-                    if !availableSubclasses.isEmpty {
+                    if classesLoaded && !availableSubclasses.isEmpty {
                         Picker("Подкласс", selection: $selectedSubclass) {
                             Text("Нет подкласса").tag("")
-                            ForEach(availableSubclasses, id: \.self) { subclassName in
+                            ForEach(availableSubclasses.filter { !$0.isEmpty }, id: \.self) { subclassName in
                                 Text(subclassName).tag(subclassName)
                             }
                         }
@@ -276,27 +302,43 @@ struct AddClassView: View {
                     Stepper("Уровень: \(level)", value: $level, in: 1...20)
                 }
             }
-            .navigationTitle("Добавить класс")
+            .navigationTitle("Добавить новый класс")
             .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                dataService.ensureClassesLoaded()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    classesLoaded = !dataService.dndClasses.isEmpty
+                if selectedClass.isEmpty && !dataService.dndClasses.isEmpty {
+                    selectedClass = dataService.dndClasses.first?.nameRu ?? ""
+                }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Отмена") {
                         dismiss()
                     }
+                    .foregroundColor(.orange)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Добавить") {
+                    Button("Сохранить") {
                         addClass()
                     }
                     .disabled(selectedClass.isEmpty)
+                    .foregroundColor(.orange)
                 }
             }
         }
+        .navigationViewStyle(StackNavigationViewStyle())
     }
     
     private func addClass() {
+        guard !selectedClass.isEmpty else { 
+            return 
+        }
         let subclass = selectedSubclass.isEmpty ? nil : selectedSubclass
+        
         character.addClass(selectedClass, level: level, subclass: subclass)
         onCharacterUpdate?(character)
         dismiss()
@@ -319,7 +361,6 @@ struct EditClassView: View {
     }
     
     var body: some View {
-        NavigationView {
             Form {
                 Section("Информация о классе") {
                     HStack {
@@ -348,21 +389,107 @@ struct EditClassView: View {
                     Button("Отмена") {
                         dismiss()
                     }
+                    .foregroundColor(.orange)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Сохранить") {
                         saveChanges()
                     }
+                    .foregroundColor(.orange)
                 }
             }
-        }
     }
     
     private func saveChanges() {
         character.updateClassLevel(classInfo.id, newLevel: level)
         onCharacterUpdate?(character)
         dismiss()
+    }
+}
+
+struct EditMainClassView: View {
+    @Binding var character: Character
+    let onCharacterUpdate: ((Character) -> Void)?
+    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var dataService: DataService
+    @State private var selectedClass: String
+    @State private var selectedSubclass: String
+    @State private var level: Int
+    
+    init(character: Binding<Character>, onCharacterUpdate: ((Character) -> Void)?) {
+        self._character = character
+        self.onCharacterUpdate = onCharacterUpdate
+        self._selectedClass = State(initialValue: character.wrappedValue.characterClass)
+        self._selectedSubclass = State(initialValue: character.wrappedValue.subclass ?? "Нет подкласса")
+        self._level = State(initialValue: character.wrappedValue.level)
+    }
+    
+    private var availableClasses: [String] {
+        return dataService.dndClasses.map { $0.nameRu }
+    }
+    
+    private var availableSubclasses: [String] {
+        var subclasses = ["Нет подкласса"]
+        if let dndClass = dataService.dndClasses.first(where: { $0.nameRu == selectedClass }) {
+            subclasses.append(contentsOf: dndClass.subclassNames)
+        }
+        return subclasses
+    }
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section("Основной класс") {
+                    Picker("Класс", selection: $selectedClass) {
+                        ForEach(availableClasses, id: \.self) { className in
+                            Text(className).tag(className)
+                        }
+                    }
+                    .onChange(of: selectedClass) { newClass in
+                        selectedSubclass = "Нет подкласса"
+                    }
+                    
+                    Picker("Подкласс", selection: $selectedSubclass) {
+                        ForEach(availableSubclasses, id: \.self) { subclassName in
+                            Text(subclassName).tag(subclassName)
+                        }
+                    }
+                    
+                    Stepper("Уровень: \(level)", value: $level, in: 1...20)
+                }
+            }
+            .navigationTitle("Редактировать основной класс")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Отмена") {
+                        dismiss()
+                    }
+                    .foregroundColor(.orange)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Сохранить") {
+                        character.characterClass = selectedClass
+                        character.subclass = selectedSubclass == "Нет подкласса" ? nil : selectedSubclass
+                        character.level = level
+                        character.dateModified = Date()
+                        
+                        // Обновляем мультикласс если он инициализирован
+                        if !character.classes.isEmpty {
+                            let newSubclass = selectedSubclass == "Нет подкласса" ? nil : selectedSubclass
+                            character.classes[0] = CharacterClass(name: selectedClass, level: level, subclass: newSubclass)
+                        }
+                        
+                        onCharacterUpdate?(character)
+                        dismiss()
+                    }
+                    .foregroundColor(.orange)
+                }
+            }
+        }
+        .navigationViewStyle(StackNavigationViewStyle())
     }
 }
 

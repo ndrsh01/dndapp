@@ -8,14 +8,18 @@ struct CharacterEditView: View {
     let onSave: (Character) -> Void
     
     init(character: Character, onSave: @escaping (Character) -> Void) {
-        self._character = State(initialValue: character)
+        // Очищаем лишние пробелы в мировоззрении
+        var cleanCharacter = character
+        cleanCharacter.alignment = character.alignment.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        self._character = State(initialValue: cleanCharacter)
         self.onSave = onSave
         
         print("=== CHARACTER EDIT VIEW INIT ===")
-        print("Character: \(character.name)")
-        print("Alignment: '\(character.alignment)'")
+        print("Character: \(cleanCharacter.name)")
+        print("Alignment: '\(cleanCharacter.alignment)'")
         print("Available alignments: \(availableAlignments)")
-        print("Is alignment in available: \(availableAlignments.contains(character.alignment))")
+        print("Is alignment in available: \(availableAlignments.contains(cleanCharacter.alignment))")
     }
     
     var body: some View {
@@ -24,21 +28,6 @@ struct CharacterEditView: View {
                 Section("Основная информация") {
                     TextField("Имя", text: $character.name)
                     TextField("Раса", text: $character.race)
-                    
-                    Picker("Класс", selection: $character.characterClass) {
-                        ForEach(dataService.dndClasses, id: \.nameRu) { dndClass in
-                            Text(dndClass.nameRu).tag(dndClass.nameRu)
-                        }
-                    }
-                    
-                    Picker("Подкласс", selection: Binding(
-                        get: { character.subclass ?? "Нет подкласса" },
-                        set: { character.subclass = $0 == "Нет подкласса" ? nil : $0 }
-                    )) {
-                        ForEach(availableSubclasses, id: \.self) { subclass in
-                            Text(subclass).tag(subclass)
-                        }
-                    }
                     
                     Picker("Предыстория", selection: $character.background) {
                         ForEach(dataService.backgrounds, id: \.название) { background in
@@ -52,7 +41,6 @@ struct CharacterEditView: View {
                         }
                     }
                     
-                    Stepper("Уровень: \(character.level)", value: $character.level, in: 1...20)
                 }
                 
                 Section("Основные характеристики") {
@@ -152,6 +140,7 @@ struct CharacterEditView: View {
                     Button("Отмена") {
                         dismiss()
                     }
+                    .foregroundColor(.orange)
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -168,17 +157,12 @@ struct CharacterEditView: View {
                         dismiss()
                     }
                     .disabled(character.name.isEmpty)
+                    .foregroundColor(.orange)
                 }
             }
         }
     }
     
-    private var availableSubclasses: [String] {
-        if let selectedClass = dataService.dndClasses.first(where: { $0.nameRu == character.characterClass }) {
-            return selectedClass.subclassNames
-        }
-        return ["Нет подкласса"]
-    }
     
     private var availableAlignments: [String] {
         return [
@@ -186,13 +170,11 @@ struct CharacterEditView: View {
             "Нейтрально-добрый",
             "Хаотично-добрый",
             "Законно-нейтральный",
-            "Истинно-нейтральный",
+            "Нейтральный",
             "Хаотично-нейтральный",
             "Законно-злой",
             "Нейтрально-злой",
-            "Хаотично-злой",
-            // Добавляем сокращенные варианты для совместимости
-            "ЗД", "НД", "ХД", "ЗН", "Н", "ХН", "ЗЗ", "НЗ", "ХЗ"
+            "Хаотично-злой"
         ]
     }
 }

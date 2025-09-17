@@ -573,6 +573,12 @@ class DataService: ObservableObject {
         }
     }
     
+    func ensureClassesLoaded() {
+        if dndClasses.isEmpty {
+            loadDnDClasses()
+        }
+    }
+    
     
     private func loadRelationships() {
         if let data = userDefaults.data(forKey: Keys.relationships),
@@ -599,32 +605,64 @@ class DataService: ObservableObject {
     
     
     private func loadDnDClasses() {
-        guard let url = Bundle.main.url(forResource: "classes", withExtension: "json") else {
-            print("classes.json not found in bundle")
+        // Если данные уже загружены, выходим
+        if !dndClasses.isEmpty {
+            print("D&D classes already loaded: \(dndClasses.count) classes")
+            return
+        }
+        
+        var url: URL?
+        
+        // Сначала пробуем найти в bundle
+        url = Bundle.main.url(forResource: "classes", withExtension: "json")
+        
+        // Если не нашли в bundle, пробуем найти в исходной директории проекта
+        if url == nil {
+            let projectPath = "/Users/alexanderaferenok/Documents/GitHub/dndapp/dnd_app/Sources/Resources/classes.json"
+            if FileManager.default.fileExists(atPath: projectPath) {
+                url = URL(fileURLWithPath: projectPath)
+            }
+        }
+        
+        guard let finalUrl = url else {
+            print("classes.json not found in bundle or project directory")
             return
         }
         
         do {
-            let data = try Data(contentsOf: url)
+            let data = try Data(contentsOf: finalUrl)
             let classesData = try JSONDecoder().decode(DnDClassesData.self, from: data)
             self.dndClasses = classesData.classes
-            print("Loaded \(classesData.classes.count) D&D classes")
         } catch {
-            print("Error loading D&D classes: \(error)")
+            print("ERROR loading D&D classes: \(error)")
+            print("ERROR details: \(error.localizedDescription)")
         }
     }
     
     private func loadClassTables() {
-        guard let url = Bundle.main.url(forResource: "class_tables", withExtension: "json") else {
-            print("class_tables.json not found in bundle")
+        var url: URL?
+        
+        // Сначала пробуем найти в bundle
+        url = Bundle.main.url(forResource: "class_tables", withExtension: "json")
+        
+        // Если не нашли в bundle, пробуем найти в исходной директории проекта
+        if url == nil {
+            let projectPath = "/Users/alexanderaferenok/Documents/GitHub/dndapp/dnd_app/Sources/Resources/class_tables.json"
+            if FileManager.default.fileExists(atPath: projectPath) {
+                url = URL(fileURLWithPath: projectPath)
+            }
+        }
+        
+        guard let finalUrl = url else {
+            print("class_tables.json not found in bundle or project directory")
             return
         }
         
         do {
-            let data = try Data(contentsOf: url)
+            let data = try Data(contentsOf: finalUrl)
             let classTablesData = try JSONDecoder().decode(ClassTablesData.self, from: data)
             self.classTables = classTablesData
-            print("Loaded \(classTablesData.count) class tables")
+            print("Loaded \(classTablesData.count) class tables from: \(finalUrl.path)")
         } catch {
             print("Error loading class tables: \(error)")
         }

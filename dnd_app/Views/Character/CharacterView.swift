@@ -15,8 +15,8 @@ struct CharacterView: View {
     @State private var showingTreasuresView = false
     @State private var showingFeaturesView = false
     @State private var showingPersonalityView = false
-    @State private var showingMulticlassView = false
     @Environment(\.colorScheme) private var colorScheme
+    @EnvironmentObject private var dataService: DataService
     
     let onCharacterUpdate: ((Character) -> Void)?
     let onCharacterContextMenu: (() -> Void)?
@@ -32,7 +32,6 @@ struct CharacterView: View {
             VStack(spacing: 16) {
                 // Заголовок персонажа
                 EditableCharacterHeader(character: $viewModel.character, onCharacterContextMenu: onCharacterContextMenu, onCharacterUpdate: onCharacterUpdate)
-                    .environmentObject(DataService.shared)
                 
                 // Хиты
                 hitPointsSection
@@ -142,7 +141,6 @@ struct CharacterView: View {
                 character: $viewModel.character,
                 onCharacterUpdate: onCharacterUpdate
             )
-            .environmentObject(DataService.shared)
         }
         .sheet(isPresented: $showingEquipmentView) {
             CharacterEquipmentView(
@@ -167,13 +165,6 @@ struct CharacterView: View {
                 character: $viewModel.character,
                 onCharacterUpdate: onCharacterUpdate
             )
-        }
-        .sheet(isPresented: $showingMulticlassView) {
-            MulticlassManagementView(
-                character: $viewModel.character,
-                onCharacterUpdate: onCharacterUpdate
-            )
-            .environmentObject(DataService.shared)
         }
     }
     
@@ -303,7 +294,6 @@ struct CharacterView: View {
                 detailCard(title: "Навыки", icon: "brain.head.profile", color: .green)
                 detailCard(title: "Спасброски", icon: "shield.checkered", color: .blue)
                 detailCard(title: "Классовые умения", icon: "star.fill", color: .purple)
-                detailCard(title: "Мультикласс", icon: "person.2.fill", color: .indigo)
                 detailCard(title: "Снаряжение", icon: "bag.fill", color: .orange)
                 detailCard(title: "Сокровища", icon: "diamond.fill", color: .yellow)
                 detailCard(title: "Личность", icon: "person.crop.square.fill", color: .pink)
@@ -391,8 +381,6 @@ struct CharacterView: View {
                 showingSavingThrowsView = true
             } else if title == "Классовые умения" {
                 showingClassFeaturesView = true
-            } else if title == "Мультикласс" {
-                showingMulticlassView = true
             } else if title == "Снаряжение" {
                 showingEquipmentView = true
             } else if title == "Сокровища" {
@@ -647,7 +635,7 @@ struct CharacterClassFeaturesView: View {
                     
                     // Все классовые умения
                     LazyVStack(spacing: 12) {
-                        ForEach(availableFeatures, id: \.name) { feature in
+                        ForEach(Array(availableFeatures.enumerated()), id: \.offset) { index, feature in
                             // Проверяем, является ли это умение ресурсом
                             if isResourceFeature(feature) {
                                 // Показываем как редактируемый ресурс
@@ -669,24 +657,6 @@ struct CharacterClassFeaturesView: View {
                     }
                     .padding(.horizontal)
                     
-                    // Отладочная информация
-                    if availableResources.isEmpty {
-                        VStack {
-                            Text("Отладка: Ресурсы не найдены")
-                                .font(.caption)
-                                .foregroundColor(.red)
-                            Text("Класс: \(character.characterClass), Уровень: \(character.level)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text("Найдено умений: \(availableFeatures.count)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                        .padding()
-                        .background(Color.yellow.opacity(0.1))
-                        .cornerRadius(8)
-                        .padding(.horizontal)
-                    }
                 }
                 .padding(.vertical)
             }
@@ -709,17 +679,26 @@ struct CharacterClassFeaturesView: View {
             guard let dndClass = dataService.dndClasses.first(where: { $0.nameRu == character.characterClass }) else {
                 return []
             }
+            
         
         var features: [ClassFeatureWithLevel] = []
         
         // Получаем умения до текущего уровня
-        for levelData in dndClass.levelProgression {
-            if levelData.level <= character.level {
-                if let levelFeatures = levelData.features {
-                    for feature in levelFeatures {
+        if let levelFeatures = dndClass.levelFeatures {
+            for levelData in levelFeatures {
+                if levelData.level <= character.level {
+                    if let featuresAtLevel = levelData.features {
+                        for feature in featuresAtLevel {
+                            features.append(ClassFeatureWithLevel(
+                                name: feature.name,
+                                description: feature.description,
+                                level: levelData.level
+                            ))
+                        }
+                    } else if let name = levelData.name, let description = levelData.description {
                         features.append(ClassFeatureWithLevel(
-                            name: feature.name,
-                            description: feature.description,
+                            name: name,
+                            description: description,
                             level: levelData.level
                         ))
                     }
@@ -727,11 +706,27 @@ struct CharacterClassFeaturesView: View {
             }
         }
         
-        // Фильтруем по подклассу если есть
+        // Добавляем умения подкласса если есть
         if let subclass = character.subclass, !subclass.isEmpty {
-            // Здесь можно добавить фильтрацию по подклассу
-            // Пока что показываем все умения
+            if let subclasses = dndClass.subclasses,
+               let selectedSubclass = subclasses.first(where: { $0.nameRu == subclass }) {
+                if let subclassFeatures = selectedSubclass.features {
+                    for subclassFeature in subclassFeatures {
+                        if subclassFeature.level <= character.level {
+                            features.append(ClassFeatureWithLevel(
+                                name: subclassFeature.name,
+                                description: subclassFeature.description,
+                                level: subclassFeature.level
+                            ))
+                        }
+                    }
+                }
+            }
         }
+        
+        // Сортируем по уровню получения
+        features.sort { $0.level < $1.level }
+        
         
         return features
         }
@@ -746,23 +741,54 @@ struct CharacterClassFeaturesView: View {
             }
             
             // Получаем умения до уровня этого класса
-            for levelData in dndClass.levelProgression {
-                if levelData.level <= classInfo.level {
-                    if let levelFeatures = levelData.features {
-                        for feature in levelFeatures {
+            if let levelFeatures = dndClass.levelFeatures {
+                for levelData in levelFeatures {
+                    if levelData.level <= classInfo.level {
+                        if let featuresAtLevel = levelData.features {
+                            for feature in featuresAtLevel {
+                                allFeatures.append(ClassFeatureWithLevel(
+                                    name: "[\(classInfo.name)] \(feature.name)",
+                                    description: feature.description,
+                                    level: levelData.level
+                                ))
+                            }
+                        } else if let name = levelData.name, let description = levelData.description {
                             allFeatures.append(ClassFeatureWithLevel(
-                                name: "[\(classInfo.name)] \(feature.name)",
-                                description: feature.description,
+                                name: "[\(classInfo.name)] \(name)",
+                                description: description,
                                 level: levelData.level
                             ))
                         }
                     }
                 }
             }
+            
+            // Добавляем умения подкласса если есть
+            if let subclass = classInfo.subclass, !subclass.isEmpty {
+                if let subclasses = dndClass.subclasses,
+                   let selectedSubclass = subclasses.first(where: { $0.nameRu == subclass }) {
+                    if let subclassFeatures = selectedSubclass.features {
+                        for subclassFeature in subclassFeatures {
+                            if subclassFeature.level <= classInfo.level {
+                                allFeatures.append(ClassFeatureWithLevel(
+                                    name: "[\(classInfo.name)] \(subclassFeature.name)",
+                                    description: subclassFeature.description,
+                                    level: subclassFeature.level
+                                ))
+                            }
+                        }
+                    }
+                }
+            }
         }
         
-        // Сортируем по уровню получения
-        return allFeatures.sorted { $0.level < $1.level }
+        // Сортируем по уровню получения, затем по названию класса
+        return allFeatures.sorted { 
+            if $0.level != $1.level {
+                return $0.level < $1.level
+            }
+            return $0.name < $1.name
+        }
     }
     
     private func isResourceFeature(_ feature: ClassFeatureWithLevel) -> Bool {
@@ -794,34 +820,52 @@ struct CharacterClassFeaturesView: View {
         if character.isMulticlass {
             return getAllMulticlassResources()
         } else {
-            // Получаем данные из class_tables.json
-            guard let classTable = getClassTableForCharacter(),
-                  let levelRow = classTable.rows.first(where: { $0.level == String(character.level) }) else {
-                print("DEBUG: Class table not found for \(character.characterClass) level \(character.level)")
+            guard let dndClass = dataService.dndClasses.first(where: { $0.nameRu == character.characterClass }) else {
                 return []
             }
 
-        print("DEBUG: Found class table for \(character.characterClass), level \(character.level)")
-        print("DEBUG: Additional data keys: \(levelRow.additionalData.keys)")
 
         var resources: [ClassResourceInfo] = []
 
-        // Обрабатываем все дополнительные данные из таблицы класса
-        for (columnName, value) in levelRow.additionalData {
-            // Пропускаем пустые значения и прочерки
-            if value == "-" || value == "—" || value.isEmpty {
-                continue
+        // Получаем ресурсы со всех уровней до текущего
+        if let levelFeatures = dndClass.levelFeatures {
+            for levelData in levelFeatures {
+                if levelData.level <= character.level {
+                    // Обрабатываем все возможные ресурсы универсально
+                    let levelResources = extractResourcesFromLevelData(levelData, className: character.characterClass)
+                    resources.append(contentsOf: levelResources)
+                }
             }
-
-            // Фильтруем только важные ресурсы
-            if isImportantResource(columnName: columnName) {
-                print("DEBUG: Found important resource: \(columnName) = \(value)")
-                let resourceInfo = createResourceInfo(columnName: columnName, value: value)
-                resources.append(resourceInfo)
+        }
+        
+        // Добавляем ресурсы подкласса если есть
+        if let subclass = character.subclass, !subclass.isEmpty {
+            if let subclasses = dndClass.subclasses,
+               let selectedSubclass = subclasses.first(where: { $0.nameRu == subclass }) {
+                if let subclassFeatures = selectedSubclass.features {
+                    for subclassFeature in subclassFeatures {
+                        if subclassFeature.level <= character.level {
+                            // Проверяем, является ли умение подкласса ресурсом
+                            if isResourceFeature(ClassFeatureWithLevel(
+                                name: subclassFeature.name,
+                                description: subclassFeature.description,
+                                level: subclassFeature.level
+                            )) {
+                                // Создаем ресурс для умения подкласса
+                                let resourceInfo = ClassResourceInfo(
+                                    name: subclassFeature.name,
+                                    icon: getIconForResource(columnName: subclassFeature.name),
+                                    maxValue: 1, // По умолчанию 1, можно настроить
+                                    description: subclassFeature.description
+                                )
+                                resources.append(resourceInfo)
+                            }
+                        }
+                    }
+                }
             }
         }
 
-        print("DEBUG: Total resources found: \(resources.count)")
         return resources
         }
     }
@@ -830,44 +874,236 @@ struct CharacterClassFeaturesView: View {
         var allResources: [ClassResourceInfo] = []
         
         for classInfo in character.classes {
-            // Мапим русские названия классов на slug'и
-            let classSlugMapping: [String: String] = [
-                "Варвар": "barbarian",
-                "Бард": "bard",
-                "Жрец": "cleric",
-                "Друид": "druid",
-                "Воин": "fighter",
-                "Монах": "monk",
-                "Паладин": "paladin",
-                "Следопыт": "ranger",
-                "Плут": "rogue",
-                "Чародей": "sorcerer",
-                "Колдун": "warlock",
-                "Волшебник": "wizard"
-            ]
-            
-            guard let slug = classSlugMapping[classInfo.name],
-                  let classTable = dataService.classTables.first(where: { $0.slug == slug }),
-                  let levelRow = classTable.rows.first(where: { $0.level == String(classInfo.level) }) else {
+            guard let dndClass = dataService.dndClasses.first(where: { $0.nameRu == classInfo.name }) else {
                 continue
             }
             
-            // Обрабатываем все дополнительные данные из таблицы класса
-            for (columnName, value) in levelRow.additionalData {
-                // Пропускаем пустые значения и прочерки
-                if value == "-" || value == "—" || value.isEmpty {
-                    continue
+            // Получаем ресурсы со всех уровней до текущего уровня этого класса
+            if let levelFeatures = dndClass.levelFeatures {
+                for levelData in levelFeatures {
+                    if levelData.level <= classInfo.level {
+                        // Обрабатываем все возможные ресурсы универсально
+                        let levelResources = extractResourcesFromLevelData(levelData, className: classInfo.name, isMulticlass: true)
+                        allResources.append(contentsOf: levelResources)
+                    }
                 }
-                
-                // Фильтруем только важные ресурсы
-                if isImportantResource(columnName: columnName) {
-                    let resourceInfo = createResourceInfo(columnName: "[\(classInfo.name)] \(columnName)", value: value)
-                    allResources.append(resourceInfo)
+            }
+            
+            // Добавляем ресурсы подкласса если есть
+            if let subclass = classInfo.subclass, !subclass.isEmpty {
+                if let subclasses = dndClass.subclasses,
+                   let selectedSubclass = subclasses.first(where: { $0.nameRu == subclass }) {
+                    if let subclassFeatures = selectedSubclass.features {
+                        for subclassFeature in subclassFeatures {
+                            if subclassFeature.level <= classInfo.level {
+                                // Проверяем, является ли умение подкласса ресурсом
+                                if isResourceFeature(ClassFeatureWithLevel(
+                                    name: subclassFeature.name,
+                                    description: subclassFeature.description,
+                                    level: subclassFeature.level
+                                )) {
+                                    // Создаем ресурс для умения подкласса
+                                    let resourceInfo = ClassResourceInfo(
+                                        name: "[\(classInfo.name)] \(subclassFeature.name)",
+                                        icon: getIconForResource(columnName: subclassFeature.name),
+                                        maxValue: 1, // По умолчанию 1, можно настроить
+                                        description: subclassFeature.description
+                                    )
+                                    allResources.append(resourceInfo)
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
         
         return allResources
+    }
+    
+    private func extractResourcesFromLevelData(_ levelData: LevelFeature, className: String, isMulticlass: Bool = false) -> [ClassResourceInfo] {
+        var resources: [ClassResourceInfo] = []
+        let prefix = isMulticlass ? "[\(className)] " : ""
+        
+        // Ярость (Варвар)
+        if let rages = levelData.rages {
+            let resourceInfo = ClassResourceInfo(
+                name: "\(prefix)Ярость",
+                icon: "flame.fill",
+                maxValue: rages,
+                description: "Использований ярости на \(levelData.level) уровне"
+            )
+            resources.append(resourceInfo)
+        }
+        
+        // Урон ярости (Варвар)
+        if let rageDamage = levelData.rageDamage {
+            let resourceInfo = ClassResourceInfo(
+                name: "\(prefix)Урон ярости",
+                icon: "bolt.fill",
+                maxValue: rageDamage,
+                description: "Дополнительный урон от ярости: +\(rageDamage)"
+            )
+            resources.append(resourceInfo)
+        }
+        
+        // Оружейное мастерство (Варвар)
+        if let weaponMastery = levelData.weaponMastery {
+            let resourceInfo = ClassResourceInfo(
+                name: "\(prefix)Оружейное мастерство",
+                icon: "sword.fill",
+                maxValue: weaponMastery,
+                description: "Видов оружия с мастерством: \(weaponMastery)"
+            )
+            resources.append(resourceInfo)
+        }
+        
+        // Заговоры (Бард, Чародей, Колдун, Волшебник)
+        if let cantripsKnown = levelData.cantripsKnown {
+            let resourceInfo = ClassResourceInfo(
+                name: "\(prefix)Заговоры",
+                icon: "sparkles",
+                maxValue: cantripsKnown,
+                description: "Известных заговоров: \(cantripsKnown)"
+            )
+            resources.append(resourceInfo)
+        }
+        
+        // Подготовленные заклинания (Бард, Жрец, Друид, Паладин, Следопыт)
+        if let spellsKnown = levelData.spellsKnown {
+            let resourceInfo = ClassResourceInfo(
+                name: "\(prefix)Подготовленные заклинания",
+                icon: "book.fill",
+                maxValue: spellsKnown,
+                description: "Подготовленных заклинаний: \(spellsKnown)"
+            )
+            resources.append(resourceInfo)
+        }
+        
+        // Ячейки заклинаний (все заклинатели)
+        if let spellSlots = levelData.spellSlots {
+            for (index, slots) in spellSlots.enumerated() {
+                if slots > 0 {
+                    let level = index + 1
+                    let resourceInfo = ClassResourceInfo(
+                        name: "\(prefix)Ячейки \(level)-го уровня",
+                        icon: "\(level).circle.fill",
+                        maxValue: slots,
+                        description: "Ячеек заклинаний \(level)-го уровня: \(slots)"
+                    )
+                    resources.append(resourceInfo)
+                }
+            }
+        }
+        
+        // Кость вдохновения (Бард)
+        if let bardicInspirationDie = levelData.bardicInspirationDie {
+            let dieValue = extractDieValue(from: bardicInspirationDie)
+            let resourceInfo = ClassResourceInfo(
+                name: "\(prefix)Кость вдохновения",
+                icon: "dice.fill",
+                maxValue: dieValue,
+                description: "Кость вдохновения барда: \(bardicInspirationDie)"
+            )
+            resources.append(resourceInfo)
+        }
+        
+        // Очки ки (Монах)
+        if let kiPoints = levelData.kiPoints {
+            let resourceInfo = ClassResourceInfo(
+                name: "\(prefix)Очки ки",
+                icon: "circle.dotted",
+                maxValue: kiPoints,
+                description: "Очков ки: \(kiPoints)"
+            )
+            resources.append(resourceInfo)
+        }
+        
+        // Боевые искусства (Монах)
+        if let martialArtsDie = levelData.martialArtsDie {
+            let dieValue = extractDieValue(from: martialArtsDie)
+            let resourceInfo = ClassResourceInfo(
+                name: "\(prefix)Боевые искусства",
+                icon: "figure.martial.arts",
+                maxValue: dieValue,
+                description: "Урон боевых искусств: \(martialArtsDie)"
+            )
+            resources.append(resourceInfo)
+        }
+        
+        // Божественное вмешательство (Жрец)
+        if let channelDivinity = levelData.channelDivinity {
+            let resourceInfo = ClassResourceInfo(
+                name: "\(prefix)Божественное вмешательство",
+                icon: "sparkles",
+                maxValue: channelDivinity,
+                description: "Использований божественного вмешательства: \(channelDivinity)"
+            )
+            resources.append(resourceInfo)
+        }
+        
+        // Пул исцеления (Паладин)
+        if let layOnHandsPool = levelData.layOnHandsPool {
+            let resourceInfo = ClassResourceInfo(
+                name: "\(prefix)Пул исцеления",
+                icon: "heart.fill",
+                maxValue: layOnHandsPool,
+                description: "Пул исцеления: \(layOnHandsPool)"
+            )
+            resources.append(resourceInfo)
+        }
+        
+        // Дикий облик (Друид)
+        if let wildShapeUses = levelData.wildShapeUses {
+            let resourceInfo = ClassResourceInfo(
+                name: "\(prefix)Дикий облик",
+                icon: "leaf.fill",
+                maxValue: wildShapeUses,
+                description: "Использований дикого облика: \(wildShapeUses)"
+            )
+            resources.append(resourceInfo)
+        }
+        
+        // Очки чародейства (Чародей)
+        if let sorceryPoints = levelData.sorceryPoints {
+            let resourceInfo = ClassResourceInfo(
+                name: "\(prefix)Очки чародейства",
+                icon: "sparkles",
+                maxValue: sorceryPoints,
+                description: "Очков чародейства: \(sorceryPoints)"
+            )
+            resources.append(resourceInfo)
+        }
+        
+        // Ячейки заклинаний колдуна (Колдун)
+        if let warlockSpellSlots = levelData.warlockSpellSlots {
+            let resourceInfo = ClassResourceInfo(
+                name: "\(prefix)Ячейки заклинаний",
+                icon: "hexagon.fill",
+                maxValue: warlockSpellSlots,
+                description: "Ячеек заклинаний колдуна: \(warlockSpellSlots)"
+            )
+            resources.append(resourceInfo)
+        }
+        
+        // Известные заклинания волшебника (Волшебник)
+        if let wizardSpellsKnown = levelData.wizardSpellsKnown {
+            let resourceInfo = ClassResourceInfo(
+                name: "\(prefix)Известные заклинания",
+                icon: "book.fill",
+                maxValue: wizardSpellsKnown,
+                description: "Известных заклинаний: \(wizardSpellsKnown)"
+            )
+            resources.append(resourceInfo)
+        }
+        
+        return resources
+    }
+    
+    private func extractDieValue(from dieString: String) -> Int {
+        // Извлекаем число из строки типа "к6", "к8", "к10", "к12"
+        let numbers = dieString.components(separatedBy: CharacterSet.decimalDigits.inverted).compactMap { Int($0) }
+        return numbers.first ?? 6
     }
 
     private func isImportantResource(columnName: String) -> Bool {

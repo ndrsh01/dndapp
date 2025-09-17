@@ -3,6 +3,7 @@ import SwiftUI
 struct MainTabView: View {
     @StateObject private var globalContextMenu = GlobalContextMenuManager.shared
     @ObservedObject private var characterManager = CharacterManager.shared
+    @EnvironmentObject private var dataService: DataService
     @StateObject private var notesViewModel = NotesViewModel()
     @StateObject private var relationshipsViewModel = RelationshipsViewModel()
     @StateObject private var compendiumViewModel = CompendiumViewModel()
@@ -16,6 +17,7 @@ struct MainTabView: View {
             ZStack {
                 TabView {
                 QuotesView()
+                    .environmentObject(dataService)
                     .tabItem {
                         Image(systemName: "quote.bubble")
                         Text("Цитаты")
@@ -23,6 +25,7 @@ struct MainTabView: View {
 
                 RelationshipsView()
                     .environmentObject(relationshipsViewModel)
+                    .environmentObject(dataService)
                     .tabItem {
                         Image(systemName: "person.2")
                         Text("Отношения")
@@ -30,6 +33,7 @@ struct MainTabView: View {
 
                 CompendiumView()
                     .environmentObject(compendiumViewModel)
+                    .environmentObject(dataService)
                     .tabItem {
                         Image(systemName: "book")
                         Text("Глоссарий")
@@ -37,6 +41,7 @@ struct MainTabView: View {
 
                 NotesView()
                     .environmentObject(notesViewModel)
+                    .environmentObject(dataService)
                     .tabItem {
                         Image(systemName: "note.text")
                         Text("Заметки")
@@ -46,6 +51,7 @@ struct MainTabView: View {
                         showCharacterContextMenu()
                     })
                     .environmentObject(characterManager)
+                    .environmentObject(dataService)
                     .tabItem {
                         Image(systemName: "person")
                         Text("Персонаж")
@@ -123,6 +129,7 @@ struct MainTabView: View {
                 characterManager.addCharacter(newCharacter)
             }
             .environmentObject(characterManager)
+            .environmentObject(dataService)
         }
         .sheet(isPresented: $showingCharacterEdit) {
             if let selectedCharacter = characterManager.selectedCharacter {
@@ -130,12 +137,13 @@ struct MainTabView: View {
                     characterManager.updateCharacter(updatedCharacter)
                 }
                 .environmentObject(characterManager)
-                .environmentObject(DataService.shared)
+                .environmentObject(dataService)
             }
         }
         .sheet(isPresented: $showingCharacterSelection) {
             CharacterSelectionView()
                 .environmentObject(characterManager)
+                .environmentObject(dataService)
         }
     }
     

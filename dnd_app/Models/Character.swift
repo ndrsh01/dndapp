@@ -690,7 +690,8 @@ struct Character: Codable, Identifiable {
     /// Инициализация мультикласса из основного класса
     mutating func initializeMulticlass() {
         if classes.isEmpty {
-            classes = [CharacterClass(name: characterClass, level: level, subclass: subclass)]
+            let newClass = CharacterClass(name: characterClass, level: level, subclass: subclass)
+            classes = [newClass]
         }
     }
     

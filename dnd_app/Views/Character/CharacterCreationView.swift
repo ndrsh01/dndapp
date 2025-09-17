@@ -197,9 +197,13 @@ struct BasicInfoStep: View {
 
 struct RaceClassStep: View {
     @Binding var character: Character
+    @EnvironmentObject private var dataService: DataService
     
     private let races = ["Человек", "Эльф", "Дварф", "Халфлинг", "Драконорожденный", "Гном", "Полуэльф", "Полуорк", "Тифлинг"]
-    private let classes = ["Воин", "Маг", "Клирик", "Плут", "Бард", "Друид", "Паладин", "Следопыт", "Чернокнижник", "Монах", "Варвар", "Изобретатель"]
+    
+    private var classes: [String] {
+        return dataService.dndClasses.map { $0.nameRu }
+    }
     
     var body: some View {
         ScrollView {

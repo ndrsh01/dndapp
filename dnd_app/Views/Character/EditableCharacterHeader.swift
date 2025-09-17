@@ -152,22 +152,17 @@ struct EditCharacterHeaderView: View {
     
     @State private var name: String
     @State private var race: String
-    @State private var characterClass: String
-    @State private var subclass: String
     @State private var background: String
     @State private var alignment: String
-    @State private var level: Int
     
     init(character: Binding<Character>, onCharacterUpdate: ((Character) -> Void)? = nil) {
         self._character = character
         self.onCharacterUpdate = onCharacterUpdate
         self._name = State(initialValue: character.wrappedValue.name)
         self._race = State(initialValue: character.wrappedValue.race)
-        self._characterClass = State(initialValue: character.wrappedValue.characterClass)
-        self._subclass = State(initialValue: character.wrappedValue.subclass ?? "")
         self._background = State(initialValue: character.wrappedValue.background)
-        self._alignment = State(initialValue: character.wrappedValue.alignment)
-        self._level = State(initialValue: character.wrappedValue.level)
+        // Очищаем лишние пробелы в мировоззрении
+        self._alignment = State(initialValue: character.wrappedValue.alignment.trimmingCharacters(in: .whitespacesAndNewlines))
     }
     
     var body: some View {
@@ -178,28 +173,15 @@ struct EditCharacterHeaderView: View {
                     
                     TextField("Раса", text: $race)
                     
-                    Stepper("Уровень: \(level)", value: $level, in: 1...20)
                 }
                 
-                Section("Класс и подкласс") {
-                    Picker("Основной класс", selection: $characterClass) {
-                        ForEach(availableClasses, id: \.self) { className in
-                            Text(className).tag(className)
-                        }
-                    }
-                    
-                    Picker("Подкласс", selection: $subclass) {
-                        ForEach(availableSubclasses, id: \.self) { subclassName in
-                            Text(subclassName).tag(subclassName)
-                        }
-                    }
-                    
+                Section("Управление классом") {
                     // Кнопка управления мультиклассом
                     NavigationLink(destination: MulticlassManagementView(character: $character, onCharacterUpdate: onCharacterUpdate)) {
                         HStack {
                             Image(systemName: "person.2.fill")
                                 .foregroundColor(.indigo)
-                            Text("Управление мультиклассом")
+                            Text("Управление классом/мультиклассом")
                             Spacer()
                             if character.isMulticlass {
                                 Text("\(character.classes.count) классов")
@@ -236,17 +218,10 @@ struct EditCharacterHeaderView: View {
                     Button("Сохранить") {
                         character.name = name
                         character.race = race
-                        character.characterClass = characterClass
-                        character.subclass = subclass.isEmpty ? nil : subclass
                         character.background = background
-                        character.alignment = alignment
-                        character.level = level
+                        character.alignment = alignment.trimmingCharacters(in: .whitespacesAndNewlines)
                         character.dateModified = Date()
                         
-                        // Обновляем основной класс в мультиклассе
-                        if character.isMulticlass, let primaryClass = character.primaryClass {
-                            character.updateClassLevel(primaryClass.id, newLevel: level)
-                        }
                         
                         onCharacterUpdate?(character)
                         dismiss()
@@ -257,16 +232,6 @@ struct EditCharacterHeaderView: View {
         }
     }
     
-    private var availableClasses: [String] {
-        return dataService.dndClasses.map { $0.nameRu }
-    }
-    
-    private var availableSubclasses: [String] {
-        if let selectedClass = dataService.dndClasses.first(where: { $0.nameRu == characterClass }) {
-            return selectedClass.subclassNames
-        }
-        return ["Нет подкласса"]
-    }
     
     private var availableBackgrounds: [String] {
         return dataService.backgrounds.map { $0.название }
