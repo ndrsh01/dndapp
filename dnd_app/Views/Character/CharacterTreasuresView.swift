@@ -293,8 +293,13 @@ struct CharacterTreasuresView: View {
     private var advancedAddTreasureSheet: some View {
         NavigationView {
             Form {
-                Section("Основная информация") {
-                    TextField("Название сокровища", text: $newTreasure.name)
+                Section {
+                    HStack {
+                        Image(systemName: "diamond.fill")
+                            .foregroundColor(.yellow)
+                            .font(.title2)
+                        TextField("Название сокровища", text: $newTreasure.name)
+                    }
                     
                     Picker("Категория", selection: $newTreasure.category) {
                         ForEach(TreasureCategory.allCases, id: \.self) { category in
@@ -311,29 +316,34 @@ struct CharacterTreasuresView: View {
                         Text("Количество")
                         Spacer()
                         TextField("1", value: $newTreasure.quantity, format: .number)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
                             .keyboardType(.numberPad)
                             .frame(width: 80)
+                            .multilineTextAlignment(.trailing)
+                            .background(Color(.systemBackground))
                     }
+                } header: {
+                    Text("Основная информация")
                 }
                 
-                Section("Стоимость") {
+                Section {
                     HStack {
-                        Text("Стоимость")
-                        Spacer()
-                        TextField("0", value: $newTreasure.value, format: .number)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                        Image(systemName: "dollarsign.circle.fill")
+                            .foregroundColor(.green)
+                        TextField("Стоимость", value: $newTreasure.value, format: .number)
                             .keyboardType(.numberPad)
-                            .frame(width: 80)
-                        Text("золотых монет")
-                            .font(.caption)
+                            .background(Color(.systemBackground))
+                        Text("золотых")
                             .foregroundColor(.secondary)
                     }
+                } header: {
+                    Text("Стоимость")
                 }
                 
-                Section("Описание") {
+                Section {
                     TextField("Описание сокровища", text: $newTreasure.description, axis: .vertical)
                         .lineLimit(3...6)
+                } header: {
+                    Text("Описание")
                 }
             }
             .navigationTitle("Новое сокровище")
@@ -367,6 +377,7 @@ struct CharacterTreasuresView: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
+
 
 #Preview {
     CharacterTreasuresView(

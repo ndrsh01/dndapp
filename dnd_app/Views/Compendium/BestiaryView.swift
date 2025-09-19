@@ -87,7 +87,7 @@ struct BestiaryView: View {
                 Button(action: {
                     showFilters = true
                 }) {
-                    Image(systemName: "line.3.horizontal.decrease")
+                    Image(systemName: "line.3.horizontal.decrease.circle")
                         .font(.title2)
                         .foregroundColor(.orange)
                 }

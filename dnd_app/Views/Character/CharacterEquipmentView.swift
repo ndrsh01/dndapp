@@ -23,6 +23,13 @@ struct CharacterEquipmentView: View {
             .navigationTitle("Снаряжение")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Добавить") {
+                        showingAdvancedAddItem = true
+                    }
+                    .foregroundColor(.blue)
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Готово") {
                         dismiss()
@@ -102,49 +109,66 @@ struct CharacterEquipmentView: View {
             
             // Прогресс бар загрузки
             if maxCarryingCapacity > 0 {
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(Color(.systemGray5))
-                            .frame(height: 8)
+                VStack(spacing: 8) {
+                    HStack {
+                        Text("Загрузка")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
                         
-                        RoundedRectangle(cornerRadius: 4)
-                            .fill(loadColor)
-                            .frame(width: geometry.size.width * loadPercentage, height: 8)
-                            .animation(.easeInOut(duration: 0.3), value: loadPercentage)
+                        Spacer()
+                        
+                        Text("\(String(format: "%.1f", totalWeight)) / \(String(format: "%.1f", maxCarryingCapacity)) кг")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    GeometryReader { geometry in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color(.systemGray5))
+                                .frame(height: 8)
+                            
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(loadColor)
+                                .frame(width: geometry.size.width * loadPercentage, height: 8)
+                                .animation(.easeInOut(duration: 0.3), value: loadPercentage)
+                        }
+                    }
+                    .frame(height: 8)
+                    
+                    HStack {
+                        Text(loadPercentage <= 0.5 ? "Легкая загрузка" : loadPercentage <= 0.75 ? "Средняя загрузка" : "Тяжелая загрузка")
+                            .font(.caption)
+                            .foregroundColor(loadColor)
+                        
+                        Spacer()
+                        
+                        Text("\(Int(loadPercentage * 100))%")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
-                .frame(height: 8)
-                
-                HStack {
-                    Text("\(Int(loadPercentage * 100))% от максимальной грузоподъемности")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Spacer()
-                    
-                    Text("\(String(format: "%.0f", maxCarryingCapacity)) кг макс.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color(.systemBackground))
+                        .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
+                )
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(12)
         .padding(.horizontal)
         .padding(.top)
     }
     
     private var equipmentList: some View {
         ScrollView {
-            LazyVStack(spacing: 8) {
-                ForEach(character.equipment) { item in
-                    equipmentItemRow(item: item)
-                }
-                
+            LazyVStack(spacing: 12) {
                 if character.equipment.isEmpty {
                     emptyStateView
+                } else {
+                    ForEach(character.equipment, id: \.id) { item in
+                        equipmentItemRow(item: item)
+                    }
                 }
             }
             .padding(.horizontal)
@@ -243,7 +267,6 @@ struct CharacterEquipmentView: View {
                 removeEquipment(item: item)
             }) {
                 Label("Удалить", systemImage: "trash")
-                    .foregroundColor(.red)
             }
         }
     }
@@ -271,12 +294,16 @@ struct CharacterEquipmentView: View {
         .padding(40)
     }
     
-    
     private var advancedAddEquipmentSheet: some View {
         NavigationView {
             Form {
-                Section("Основная информация") {
-                    TextField("Название предмета", text: $newEquipment.name)
+                Section {
+                    HStack {
+                        Image(systemName: "backpack.fill")
+                            .foregroundColor(.blue)
+                            .font(.title2)
+                        TextField("Название предмета", text: $newEquipment.name)
+                    }
                     
                     Picker("Тип", selection: $newEquipment.type) {
                         ForEach(EquipmentType.allCases, id: \.self) { type in
@@ -300,45 +327,36 @@ struct CharacterEquipmentView: View {
                             .tag(rarity)
                         }
                     }
+                } header: {
+                    Text("Основная информация")
                 }
                 
-                Section("Характеристики") {
+                Section {
                     HStack {
-                        Text("Стоимость")
-                        Spacer()
-                        TextField("0", value: $newEquipment.cost, format: .number)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                        Image(systemName: "dollarsign.circle.fill")
+                            .foregroundColor(.green)
+                        TextField("Стоимость", value: $newEquipment.cost, format: .number)
                             .keyboardType(.numberPad)
-                            .frame(width: 80)
-                            .toolbar {
-                                ToolbarItemGroup(placement: .keyboard) {
-                                    Spacer()
-                                    Button("Готово") {
-                                        hideKeyboard()
-                                    }
-                                }
-                            }
-                        Text("медных монет")
-                            .font(.caption)
+                            .background(Color(.systemBackground))
+                        Text("медных")
                             .foregroundColor(.secondary)
                     }
                     
                     HStack {
-                        Text("Вес")
-                        Spacer()
-                        TextField("0.0", value: $newEquipment.weight, format: .number)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                        Image(systemName: "scalemass.fill")
+                            .foregroundColor(.blue)
+                        TextField("Вес", value: $newEquipment.weight, format: .number)
                             .keyboardType(.decimalPad)
-                            .frame(width: 80)
+                            .background(Color(.systemBackground))
                         Text("кг")
-                            .font(.caption)
                             .foregroundColor(.secondary)
                     }
+                } header: {
+                    Text("Характеристики")
                 }
                 
-                // Для оружия
                 if newEquipment.type == .weapon {
-                    Section("Боевые характеристики") {
+                    Section {
                         HStack {
                             Text("Бонус к попаданию")
                             Spacer()
@@ -346,9 +364,9 @@ struct CharacterEquipmentView: View {
                                 get: { newEquipment.attackBonus ?? 0 },
                                 set: { newEquipment.attackBonus = $0 }
                             ), format: .number)
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
                             .keyboardType(.numberPad)
                             .frame(width: 80)
+                            .multilineTextAlignment(.trailing)
                         }
                         
                         HStack {
@@ -358,18 +376,15 @@ struct CharacterEquipmentView: View {
                                 get: { newEquipment.damage ?? "" },
                                 set: { newEquipment.damage = $0 }
                             ))
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
                             .frame(width: 120)
+                            .multilineTextAlignment(.trailing)
                         }
+                    } header: {
+                        Text("Боевые характеристики")
                     }
                 }
-                
-                Section("Описание") {
-                    TextField("Описание предмета", text: $newEquipment.description, axis: .vertical)
-                        .lineLimit(3...6)
-                }
             }
-            .navigationTitle("Новый предмет")
+            .navigationTitle("Новое снаряжение")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -385,169 +400,15 @@ struct CharacterEquipmentView: View {
                     }
                     .disabled(newEquipment.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
+                
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Готово") {
+                        hideKeyboard()
+                    }
+                }
             }
         }
-    }
-    
-    // MARK: - Computed Properties
-    
-    private var totalWeight: Double {
-        character.equipment.reduce(0) { total, item in
-            total + item.weight
-        }
-    }
-    
-    private var maxCarryingCapacity: Double {
-        // Базовая грузоподъемность: 15 * СИЛ
-        let strengthScore = character.strength
-        return Double(strengthScore * 15)
-    }
-    
-    private var loadPercentage: Double {
-        guard maxCarryingCapacity > 0 else { return 0 }
-        return min(totalWeight / maxCarryingCapacity, 1.0)
-    }
-    
-    private var loadColor: Color {
-        if loadPercentage <= 0.5 {
-            return .green
-        } else if loadPercentage <= 0.75 {
-            return .yellow
-        } else {
-            return .red
-        }
-    }
-    
-    
-    // MARK: - Helper Functions
-    
-    private func estimatedWeight(for item: String) -> Double {
-        let itemLower = item.lowercased()
-        
-        // Примерные веса предметов
-        if itemLower.contains("меч") || itemLower.contains("sword") {
-            return 1.5
-        } else if itemLower.contains("щит") || itemLower.contains("shield") {
-            return 3.0
-        } else if itemLower.contains("лук") || itemLower.contains("bow") {
-            return 1.0
-        } else if itemLower.contains("стрел") || itemLower.contains("arrow") {
-            return 0.05
-        } else if itemLower.contains("доспех") || itemLower.contains("armor") {
-            return 15.0
-        } else if itemLower.contains("кольцо") || itemLower.contains("ring") {
-            return 0.01
-        } else if itemLower.contains("зелье") || itemLower.contains("potion") {
-            return 0.5
-        } else if itemLower.contains("свиток") || itemLower.contains("scroll") {
-            return 0.1
-        } else if itemLower.contains("веревк") || itemLower.contains("rope") {
-            return 2.0
-        } else if itemLower.contains("факел") || itemLower.contains("torch") {
-            return 0.5
-        } else if itemLower.contains("еда") || itemLower.contains("food") {
-            return 0.5
-        } else if itemLower.contains("вода") || itemLower.contains("water") {
-            return 1.0
-        } else {
-            return 1.0 // Вес по умолчанию
-        }
-    }
-    
-    private func itemIcon(for item: String) -> String {
-        let itemLower = item.lowercased()
-        
-        if itemLower.contains("меч") || itemLower.contains("sword") {
-            return "sword.fill"
-        } else if itemLower.contains("щит") || itemLower.contains("shield") {
-            return "shield.fill"
-        } else if itemLower.contains("лук") || itemLower.contains("bow") {
-            return "bow.and.arrow"
-        } else if itemLower.contains("стрел") || itemLower.contains("arrow") {
-            return "arrow"
-        } else if itemLower.contains("доспех") || itemLower.contains("armor") {
-            return "shield.lefthalf.filled"
-        } else if itemLower.contains("кольцо") || itemLower.contains("ring") {
-            return "circle.fill"
-        } else if itemLower.contains("зелье") || itemLower.contains("potion") {
-            return "drop.fill"
-        } else if itemLower.contains("свиток") || itemLower.contains("scroll") {
-            return "scroll.fill"
-        } else if itemLower.contains("веревк") || itemLower.contains("rope") {
-            return "line.3.horizontal"
-        } else if itemLower.contains("факел") || itemLower.contains("torch") {
-            return "flame.fill"
-        } else if itemLower.contains("еда") || itemLower.contains("food") {
-            return "fork.knife"
-        } else if itemLower.contains("вода") || itemLower.contains("water") {
-            return "drop"
-        } else {
-            return "bag.fill"
-        }
-    }
-    
-    private func itemColor(for item: String) -> Color {
-        let itemLower = item.lowercased()
-        
-        if itemLower.contains("меч") || itemLower.contains("sword") {
-            return .gray
-        } else if itemLower.contains("щит") || itemLower.contains("shield") {
-            return .blue
-        } else if itemLower.contains("лук") || itemLower.contains("bow") {
-            return .brown
-        } else if itemLower.contains("стрел") || itemLower.contains("arrow") {
-            return .brown
-        } else if itemLower.contains("доспех") || itemLower.contains("armor") {
-            return .blue
-        } else if itemLower.contains("кольцо") || itemLower.contains("ring") {
-            return .yellow
-        } else if itemLower.contains("зелье") || itemLower.contains("potion") {
-            return .red
-        } else if itemLower.contains("свиток") || itemLower.contains("scroll") {
-            return .purple
-        } else if itemLower.contains("веревк") || itemLower.contains("rope") {
-            return .brown
-        } else if itemLower.contains("факел") || itemLower.contains("torch") {
-            return .orange
-        } else if itemLower.contains("еда") || itemLower.contains("food") {
-            return .green
-        } else if itemLower.contains("вода") || itemLower.contains("water") {
-            return .blue
-        } else {
-            return .gray
-        }
-    }
-    
-    
-    private func removeEquipment(item: CharacterEquipment) {
-        character.equipment.removeAll { $0.id == item.id }
-        character.dateModified = Date()
-        onCharacterUpdate?(character)
-    }
-    
-    private func addAdvancedEquipment() {
-        let trimmedName = newEquipment.name.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedName.isEmpty else { return }
-        
-        var equipment = newEquipment
-        equipment.name = trimmedName
-        
-        character.equipment.append(equipment)
-        character.dateModified = Date()
-        onCharacterUpdate?(character)
-        
-        newEquipment = CharacterEquipment(name: "")
-        showingAdvancedAddItem = false
-    }
-    
-    private func hideKeyboard() {
-        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-    }
-    
-    private func editEquipment(item: CharacterEquipment) {
-        editingEquipment = item
-        newEquipment = item
-        showingEditItem = true
     }
     
     private func editEquipmentSheet(equipment: CharacterEquipment) -> some View {
@@ -588,14 +449,7 @@ struct CharacterEquipmentView: View {
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .keyboardType(.numberPad)
                             .frame(width: 80)
-                            .toolbar {
-                                ToolbarItemGroup(placement: .keyboard) {
-                                    Spacer()
-                                    Button("Готово") {
-                                        hideKeyboard()
-                                    }
-                                }
-                            }
+                            .background(Color(.systemBackground))
                         Text("медных монет")
                             .font(.caption)
                             .foregroundColor(.secondary)
@@ -608,6 +462,7 @@ struct CharacterEquipmentView: View {
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .keyboardType(.decimalPad)
                             .frame(width: 80)
+                            .background(Color(.systemBackground))
                         Text("кг")
                             .font(.caption)
                             .foregroundColor(.secondary)
@@ -641,11 +496,6 @@ struct CharacterEquipmentView: View {
                         }
                     }
                 }
-                
-                Section("Описание") {
-                    TextField("Описание предмета", text: $newEquipment.description, axis: .vertical)
-                        .lineLimit(3...6)
-                }
             }
             .navigationTitle("Редактировать предмет")
             .navigationBarTitleDisplayMode(.inline)
@@ -660,7 +510,7 @@ struct CharacterEquipmentView: View {
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Сохранить") {
-                        updateEquipment(original: equipment)
+                        updateEquipment()
                     }
                     .disabled(newEquipment.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
@@ -668,11 +518,42 @@ struct CharacterEquipmentView: View {
         }
     }
     
-    private func updateEquipment(original: CharacterEquipment) {
+    // MARK: - Helper Functions
+    
+    private func addAdvancedEquipment() {
         let trimmedName = newEquipment.name.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedName.isEmpty else { return }
         
-        if let index = character.equipment.firstIndex(where: { $0.id == original.id }) {
+        var equipment = newEquipment
+        equipment.name = trimmedName
+        
+        character.equipment.append(equipment)
+        character.dateModified = Date()
+        onCharacterUpdate?(character)
+        
+        newEquipment = CharacterEquipment(name: "")
+        showingAdvancedAddItem = false
+    }
+    
+    private func editEquipment(item: CharacterEquipment) {
+        editingEquipment = item
+        newEquipment = item
+        showingEditItem = true
+    }
+    
+    private func removeEquipment(item: CharacterEquipment) {
+        character.equipment.removeAll { $0.id == item.id }
+        character.dateModified = Date()
+        onCharacterUpdate?(character)
+    }
+    
+    private func updateEquipment() {
+        guard let editingEquipment = editingEquipment else { return }
+        
+        let trimmedName = newEquipment.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return }
+        
+        if let index = character.equipment.firstIndex(where: { $0.id == editingEquipment.id }) {
             character.equipment[index] = newEquipment
             character.equipment[index].name = trimmedName
             character.dateModified = Date()
@@ -680,8 +561,40 @@ struct CharacterEquipmentView: View {
         }
         
         newEquipment = CharacterEquipment(name: "")
-        editingEquipment = nil
         showingEditItem = false
+        self.editingEquipment = nil
+    }
+    
+    private func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+    
+    // MARK: - Computed Properties
+    
+    private var totalWeight: Double {
+        character.equipment.reduce(0) { total, item in
+            total + item.weight
+        }
+    }
+    
+    private var maxCarryingCapacity: Double {
+        let strength = character.strength
+        return Double(strength * 15) // Базовое правило D&D
+    }
+    
+    private var loadPercentage: Double {
+        guard maxCarryingCapacity > 0 else { return 0 }
+        return min(totalWeight / maxCarryingCapacity, 1.0)
+    }
+    
+    private var loadColor: Color {
+        if loadPercentage <= 0.5 {
+            return .green
+        } else if loadPercentage <= 0.75 {
+            return .yellow
+        } else {
+            return .red
+        }
     }
 }
 

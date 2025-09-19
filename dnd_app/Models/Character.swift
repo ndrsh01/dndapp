@@ -52,7 +52,7 @@ enum EquipmentType: String, CaseIterable, Codable {
     var icon: String {
         switch self {
         case .weapon:
-            return "sword.fill"
+            return "sword"
         case .armor:
             return "shield.lefthalf.filled"
         case .shield:

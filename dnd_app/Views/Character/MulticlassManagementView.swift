@@ -230,7 +230,7 @@ struct ClassLevelCard: View {
             "Бард": "music.note",
             "Жрец": "cross.fill",
             "Друид": "tree.fill",
-            "Воин": "sword.fill",
+            "Воин": "sword",
             "Монах": "figure.martial.arts",
             "Паладин": "shield.fill",
             "Следопыт": "leaf.fill",
