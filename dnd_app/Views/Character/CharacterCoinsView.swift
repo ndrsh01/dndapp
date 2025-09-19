@@ -24,6 +24,13 @@ struct CharacterCoinsView: View {
                         dismiss()
                     }
                 }
+                
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Готово") {
+                        hideKeyboard()
+                    }
+                }
             }
         }
         .sheet(isPresented: $showingExchange) {
@@ -133,14 +140,6 @@ struct CharacterCoinsView: View {
                 .keyboardType(.numberPad)
                 .frame(width: 80)
                 .multilineTextAlignment(.center)
-                .toolbar {
-                    ToolbarItemGroup(placement: .keyboard) {
-                        Spacer()
-                        Button("Готово") {
-                            hideKeyboard()
-                        }
-                    }
-                }
                 
                 // Кнопка увеличения
                 Button(action: {

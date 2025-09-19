@@ -12,14 +12,16 @@ struct ExtendedCharacterExport: Codable {
     let relationships: [Relationship]?
     let notes: [Note]?
     let favoriteSpells: [Spell]?
+    let favoriteMonsters: [Monster]?
     
-    init(character: Character, relationships: [Relationship], notes: [Note], favoriteSpells: [Spell]) {
+    init(character: Character, relationships: [Relationship], notes: [Note], favoriteSpells: [Spell], favoriteMonsters: [Monster]) {
         self.version = "1.0"
         self.exportDate = Date()
         self.character = character
         self.relationships = relationships
         self.notes = notes
         self.favoriteSpells = favoriteSpells
+        self.favoriteMonsters = favoriteMonsters
     }
     
     // Кастомный инициализатор для декодирования
@@ -32,9 +34,10 @@ struct ExtendedCharacterExport: Codable {
         relationships = try container.decodeIfPresent([Relationship].self, forKey: .relationships)
         notes = try container.decodeIfPresent([Note].self, forKey: .notes)
         favoriteSpells = try container.decodeIfPresent([Spell].self, forKey: .favoriteSpells)
+        favoriteMonsters = try container.decodeIfPresent([Monster].self, forKey: .favoriteMonsters)
     }
     
     enum CodingKeys: String, CodingKey {
-        case version, exportDate, character, relationships, notes, favoriteSpells
+        case version, exportDate, character, relationships, notes, favoriteSpells, favoriteMonsters
     }
 }

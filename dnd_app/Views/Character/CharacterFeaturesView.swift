@@ -62,6 +62,7 @@ struct CharacterFeaturesView: View {
                     Button("Готово") {
                         dismiss()
                     }
+                    .foregroundColor(.orange)
                 }
             }
         }

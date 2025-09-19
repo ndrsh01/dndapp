@@ -20,6 +20,7 @@ struct EditAbilityPopupView: View {
             HStack {
                 TextField("", value: $value, format: .number)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .background(Color(.systemBackground).opacity(0.8))
                     .frame(width: 80)
                     .multilineTextAlignment(.center)
                     .keyboardType(.numberPad)
@@ -43,7 +44,7 @@ struct EditAbilityPopupView: View {
             }
         }
         .padding(20)
-        .background(Color(.systemBackground))
+        .background(Color(.systemBackground).opacity(0.95))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.1), radius: 8)
     }

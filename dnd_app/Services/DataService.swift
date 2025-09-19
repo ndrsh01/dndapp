@@ -45,6 +45,7 @@ class DataService: ObservableObject {
         static let notes = "notes"
         static let characters = "characters"
         static let spells = "spells"
+        static let monsters = "monsters"
         static let selectedCharacter = "selectedCharacter"
         static let selectedQuoteCategory = "selectedQuoteCategory"
     }
@@ -553,6 +554,7 @@ class DataService: ObservableObject {
         loadNotes()
         // loadCharacters() - убрано, персонажи управляются через CharacterManager
         loadSpells()
+        loadMonsters()
         loadCustomQuotesData()
     }
     
@@ -606,6 +608,13 @@ class DataService: ObservableObject {
         if let data = userDefaults.data(forKey: Keys.spells),
            let spells = try? JSONDecoder().decode([Spell].self, from: data) {
             self.spells = spells
+        }
+    }
+    
+    private func loadMonsters() {
+        if let data = userDefaults.data(forKey: Keys.monsters),
+           let monsters = try? JSONDecoder().decode([Monster].self, from: data) {
+            self.monsters = monsters
         }
     }
     
@@ -715,6 +724,12 @@ class DataService: ObservableObject {
     private func saveSpells() {
         if let data = try? JSONEncoder().encode(spells) {
             userDefaults.set(data, forKey: Keys.spells)
+        }
+    }
+    
+    private func saveMonsters() {
+        if let data = try? JSONEncoder().encode(monsters) {
+            userDefaults.set(data, forKey: Keys.monsters)
         }
     }
     
@@ -895,6 +910,56 @@ class DataService: ObservableObject {
         if let index = backgrounds.firstIndex(where: { $0.id == background.id }) {
             backgrounds[index].isFavorite.toggle()
         }
+    }
+    
+    // MARK: - Monster Favorites
+    func toggleMonsterFavorite(_ monster: Monster, for characterId: UUID? = nil) {
+        print("=== TOGGLE MONSTER FAVORITE ===")
+        print("Monster: '\(monster.name)', characterId: \(characterId?.uuidString ?? "nil")")
+
+        if let index = monsters.firstIndex(where: { $0.id == monster.id }) {
+            monsters[index].isFavorite.toggle()
+            monsters[index].characterId = characterId
+            print("Monster favorite toggled to: \(monsters[index].isFavorite)")
+            saveMonsters() // Сохраняем изменения
+            print("Monster favorite saved successfully")
+        } else {
+            print("ERROR: Monster not found in monsters array")
+        }
+    }
+    
+    func getFavoriteMonsters(for characterId: UUID?) -> [Monster] {
+        let filteredMonsters: [Monster]
+        if let characterId = characterId {
+            filteredMonsters = monsters.filter { $0.isFavorite && $0.characterId == characterId }
+            print("=== GET FAVORITE MONSTERS ===")
+            print("Getting favorite monsters for character: \(characterId.uuidString)")
+            print("Found \(filteredMonsters.count) favorite monsters for this character")
+        } else {
+            filteredMonsters = monsters.filter { $0.isFavorite && $0.characterId == nil }
+            print("=== GET FAVORITE MONSTERS ===")
+            print("Getting favorite monsters without character (nil)")
+            print("Found \(filteredMonsters.count) favorite monsters without character")
+        }
+        return filteredMonsters
+    }
+    
+    func addFavoriteMonsters(_ monsters: [Monster], for characterId: UUID) {
+        print("=== ADD FAVORITE MONSTERS ===")
+        print("Adding \(monsters.count) favorite monsters for character: \(characterId.uuidString)")
+        
+        for monster in monsters {
+            if let index = self.monsters.firstIndex(where: { $0.id == monster.id }) {
+                self.monsters[index].isFavorite = true
+                self.monsters[index].characterId = characterId
+                print("Added favorite monster: \(monster.name)")
+            } else {
+                print("WARNING: Monster not found in monsters array: \(monster.name)")
+            }
+        }
+        
+        saveMonsters()
+        print("Favorite monsters saved successfully")
     }
     
     // MARK: - Session Management

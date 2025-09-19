@@ -23,7 +23,12 @@ struct CharacterEquipmentView: View {
             .navigationTitle("Снаряжение")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                // Убрали дублирующую кнопку - оставили только в emptyStateView
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Готово") {
+                        dismiss()
+                    }
+                    .foregroundColor(.orange)
+                }
             }
         }
         .sheet(isPresented: $showingAdvancedAddItem) {
@@ -37,32 +42,63 @@ struct CharacterEquipmentView: View {
     }
     
     private var equipmentHeader: some View {
-        VStack(spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Общий вес снаряжения")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+        VStack(spacing: 16) {
+            // Главная карточка с общей информацией
+            HStack(spacing: 20) {
+                // Иконка снаряжения
+                VStack(spacing: 8) {
+                    Image(systemName: "backpack.fill")
+                        .font(.system(size: 32))
+                        .foregroundColor(.blue)
+                        .shadow(color: .blue.opacity(0.3), radius: 4)
                     
-                    Text("\(String(format: "%.2f", totalWeight)) кг")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
+                    Text("Снаряжение")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.secondary)
                 }
                 
                 Spacer()
                 
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Предметов")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Text("\(character.equipment.count)")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
+                // Статистика
+                VStack(alignment: .trailing, spacing: 8) {
+                    HStack(spacing: 16) {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(String(format: "%.1f", totalWeight))")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.blue)
+                            Text("кг")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(character.equipment.count)")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
+                            Text("предметов")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
             }
+            .padding(20)
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [Color(.systemBackground), Color(.systemBackground).opacity(0.8)]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .cornerRadius(16)
+            .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.blue.opacity(0.2), lineWidth: 1)
+            )
             
             // Прогресс бар загрузки
             if maxCarryingCapacity > 0 {
@@ -117,40 +153,57 @@ struct CharacterEquipmentView: View {
     }
     
     private func equipmentItemRow(item: CharacterEquipment) -> some View {
-        HStack(spacing: 12) {
-            // Иконка предмета
-            Image(systemName: item.type.icon)
-                .font(.title3)
-                .foregroundColor(item.type.color)
-                .frame(width: 24)
+        HStack(spacing: 16) {
+            // Иконка предмета с фоном
+            ZStack {
+                Circle()
+                    .fill(item.type.color.opacity(0.15))
+                    .frame(width: 48, height: 48)
+                
+                Image(systemName: item.type.icon)
+                    .font(.title3)
+                    .foregroundColor(item.type.color)
+            }
             
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text(item.name)
                         .font(.body)
-                        .fontWeight(.medium)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
                     
                     Spacer()
                     
                     Text(item.rarity.rawValue)
-                        .font(.caption2)
+                        .font(.caption)
+                        .fontWeight(.medium)
                         .foregroundColor(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
                         .background(item.rarity.color)
-                        .cornerRadius(4)
+                        .cornerRadius(8)
                 }
                 
                 HStack {
-                    Text("\(String(format: "%.2f", item.weight)) кг")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 4) {
+                        Image(systemName: "scalemass.fill")
+                            .font(.caption2)
+                            .foregroundColor(.blue)
+                        Text("\(String(format: "%.1f", item.weight)) кг")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                     
                     Spacer()
                     
-                    Text("\(item.cost) м")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 4) {
+                        Image(systemName: "dollarsign.circle.fill")
+                            .font(.caption2)
+                            .foregroundColor(.green)
+                        Text("\(item.cost) м")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
                 
                 // Для оружия показываем бонус к попаданию и урон
@@ -169,10 +222,16 @@ struct CharacterEquipmentView: View {
                 }
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(8)
-        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemBackground))
+                .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(item.type.color.opacity(0.2), lineWidth: 1)
+        )
         .contextMenu {
             Button(action: {
                 editEquipment(item: item)

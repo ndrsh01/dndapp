@@ -39,6 +39,7 @@ struct Monster: Codable, Identifiable {
     let reactions: [Reaction]?
     
     var isFavorite: Bool = false
+    var characterId: UUID?
     
     enum CodingKeys: String, CodingKey {
         case name, slug, url, image, subtitle, size, type, alignment

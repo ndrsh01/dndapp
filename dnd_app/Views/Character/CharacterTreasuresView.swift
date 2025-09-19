@@ -42,32 +42,63 @@ struct CharacterTreasuresView: View {
     }
     
     private var treasuresHeader: some View {
-        VStack(spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Общая стоимость")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Text("\(totalValue) зм")
-                        .font(.title2)
-                        .fontWeight(.bold)
+        VStack(spacing: 16) {
+            // Главная карточка с общей информацией
+            HStack(spacing: 20) {
+                // Иконка сокровищ
+                VStack(spacing: 8) {
+                    Image(systemName: "diamond.fill")
+                        .font(.system(size: 32))
                         .foregroundColor(.yellow)
+                        .shadow(color: .yellow.opacity(0.3), radius: 4)
+                    
+                    Text("Сокровища")
+                        .font(.caption)
+                        .fontWeight(.medium)
+                        .foregroundColor(.secondary)
                 }
                 
                 Spacer()
                 
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Предметов")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Text("\(character.treasures.count)")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.primary)
+                // Статистика
+                VStack(alignment: .trailing, spacing: 8) {
+                    HStack(spacing: 16) {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(totalValue)")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.yellow)
+                            Text("золотых")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(character.treasures.count)")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.primary)
+                            Text("предметов")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
             }
+            .padding(20)
+            .background(
+                LinearGradient(
+                    gradient: Gradient(colors: [Color(.systemBackground), Color(.systemBackground).opacity(0.8)]),
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .cornerRadius(16)
+            .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 4)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.yellow.opacity(0.2), lineWidth: 1)
+            )
             
             // Информация о монетах (без кнопки)
             HStack(spacing: 8) {
@@ -114,25 +145,36 @@ struct CharacterTreasuresView: View {
     }
     
     private func treasureItemRow(item: Treasure) -> some View {
-        HStack(spacing: 12) {
-            // Иконка предмета
-            Image(systemName: item.category.icon)
-                .font(.title3)
-                .foregroundColor(item.category.color)
-                .frame(width: 24)
+        HStack(spacing: 16) {
+            // Иконка предмета с фоном
+            ZStack {
+                Circle()
+                    .fill(item.category.color.opacity(0.15))
+                    .frame(width: 48, height: 48)
+                
+                Image(systemName: item.category.icon)
+                    .font(.title3)
+                    .foregroundColor(item.category.color)
+            }
             
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack {
                     Text(item.name)
                         .font(.body)
-                        .fontWeight(.medium)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
                     
                     Spacer()
                     
                     if item.quantity > 1 {
                         Text("×\(item.quantity)")
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 2)
+                            .background(Color.blue.opacity(0.8))
+                            .cornerRadius(8)
                     }
                 }
                 
@@ -144,9 +186,15 @@ struct CharacterTreasuresView: View {
                     Spacer()
                     
                     if item.value > 0 {
-                        Text("\(item.value) зм")
-                            .font(.caption)
-                            .foregroundColor(.green)
+                        HStack(spacing: 4) {
+                            Image(systemName: "diamond.fill")
+                                .font(.caption2)
+                                .foregroundColor(.yellow)
+                            Text("\(item.value) зм")
+                                .font(.caption)
+                                .fontWeight(.medium)
+                                .foregroundColor(.yellow)
+                        }
                     }
                 }
             }
@@ -155,16 +203,22 @@ struct CharacterTreasuresView: View {
             Button(action: {
                 removeTreasure(item: item)
             }) {
-                Image(systemName: "trash")
-                    .font(.caption)
-                    .foregroundColor(.red)
+                Image(systemName: "trash.circle.fill")
+                    .font(.title3)
+                    .foregroundColor(.red.opacity(0.7))
             }
             .buttonStyle(PlainButtonStyle())
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(8)
-        .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemBackground))
+                .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(item.category.color.opacity(0.2), lineWidth: 1)
+        )
     }
     
     private var emptyStateView: some View {
@@ -260,14 +314,6 @@ struct CharacterTreasuresView: View {
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .keyboardType(.numberPad)
                             .frame(width: 80)
-                            .toolbar {
-                                ToolbarItemGroup(placement: .keyboard) {
-                                    Spacer()
-                                    Button("Готово") {
-                                        hideKeyboard()
-                                    }
-                                }
-                            }
                     }
                 }
                 
@@ -279,14 +325,6 @@ struct CharacterTreasuresView: View {
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                             .keyboardType(.numberPad)
                             .frame(width: 80)
-                            .toolbar {
-                                ToolbarItemGroup(placement: .keyboard) {
-                                    Spacer()
-                                    Button("Готово") {
-                                        hideKeyboard()
-                                    }
-                                }
-                            }
                         Text("золотых монет")
                             .font(.caption)
                             .foregroundColor(.secondary)
@@ -313,6 +351,13 @@ struct CharacterTreasuresView: View {
                         addAdvancedTreasure()
                     }
                     .disabled(newTreasure.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                
+                ToolbarItemGroup(placement: .keyboard) {
+                    Spacer()
+                    Button("Готово") {
+                        hideKeyboard()
+                    }
                 }
             }
         }

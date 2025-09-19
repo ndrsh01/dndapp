@@ -51,6 +51,7 @@ struct CharacterPersonalityView: View {
                     Button("Готово") {
                         dismiss()
                     }
+                    .foregroundColor(.orange)
                 }
             }
         }

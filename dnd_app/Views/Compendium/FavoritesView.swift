@@ -290,11 +290,10 @@ struct FavoriteFeatsSection: View {
 
 struct FavoriteBestiarySection: View {
     @ObservedObject private var dataService = DataService.shared
-    @State private var favoriteMonsters: Set<UUID> = []
     @State private var expandedMonsters: Set<UUID> = []
     
     var favoriteMonstersList: [Monster] {
-        dataService.monsters.filter { favoriteMonsters.contains($0.id) }
+        dataService.getFavoriteMonsters(for: CharacterManager.shared.selectedCharacter?.id)
     }
     
     var body: some View {
@@ -316,6 +315,9 @@ struct FavoriteBestiarySection: View {
                             isExpanded: expandedMonsters.contains(monster.id),
                             onTap: {
                                 toggleExpanded(monster.id)
+                            },
+                            onToggleFavorite: { monster in
+                                dataService.toggleMonsterFavorite(monster, for: CharacterManager.shared.selectedCharacter?.id)
                             }
                         )
                         .padding(.horizontal, 16)
@@ -325,12 +327,11 @@ struct FavoriteBestiarySection: View {
             .padding(.bottom, 20)
         }
         .onAppear {
-            loadFavoriteMonsters()
             // Загружаем монстров если они не загружены
             if dataService.monsters.isEmpty {
                 Task {
                     await dataService.loadMonsters()
-                    ;print("Monsters loaded")
+                    print("Monsters loaded")
                 }
             }
         }
@@ -341,13 +342,6 @@ struct FavoriteBestiarySection: View {
             expandedMonsters.remove(id)
         } else {
             expandedMonsters.insert(id)
-        }
-    }
-    
-    private func loadFavoriteMonsters() {
-        if let data = UserDefaults.standard.data(forKey: "favoriteMonsters"),
-           let favorites = try? JSONDecoder().decode(Set<UUID>.self, from: data) {
-            favoriteMonsters = favorites
         }
     }
 }

@@ -141,16 +141,20 @@ struct BestiaryView: View {
                         ForEach(filteredMonsters) { monster in
                             MonsterCardView(
                                 monster: monster,
-                                isExpanded: expandedMonsters.contains(monster.id)
-                            ) {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                                    if expandedMonsters.contains(monster.id) {
-                                        expandedMonsters.remove(monster.id)
-                                    } else {
-                                        expandedMonsters.insert(monster.id)
+                                isExpanded: expandedMonsters.contains(monster.id),
+                                onTap: {
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                        if expandedMonsters.contains(monster.id) {
+                                            expandedMonsters.remove(monster.id)
+                                        } else {
+                                            expandedMonsters.insert(monster.id)
+                                        }
                                     }
+                                },
+                                onToggleFavorite: { monster in
+                                    dataService.toggleMonsterFavorite(monster, for: CharacterManager.shared.selectedCharacter?.id)
                                 }
-                            }
+                            )
                         }
                     }
                     .padding(.horizontal, 16)
@@ -229,6 +233,7 @@ struct MonsterCardView: View {
     let monster: Monster
     let isExpanded: Bool
     let onTap: () -> Void
+    let onToggleFavorite: (Monster) -> Void
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -258,45 +263,46 @@ struct MonsterCardView: View {
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
-
+                
                 Spacer()
-
-                VStack(alignment: .trailing, spacing: 4) {
-                    HStack(spacing: 8) {
-                        Text("КЗ \(monster.armorClass ?? 10)")
-                            .font(.caption)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.blue.opacity(0.8))
-                            .cornerRadius(6)
-
-                        Text("ХП \(monster.hitPoints ?? 10)")
-                            .font(.caption)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Color.green.opacity(0.8))
-                            .cornerRadius(6)
-                    }
-
-                    Text("КО \(monster.challengeRating ?? "1/8")")
-                        .font(.caption)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.red.opacity(0.8))
-                        .cornerRadius(6)
+                
+                // Favorite Button
+                Button(action: {
+                    onToggleFavorite(monster)
+                }) {
+                    Image(systemName: monster.isFavorite ? "heart.fill" : "heart")
+                        .foregroundColor(monster.isFavorite ? .red : .gray)
+                        .font(.title3)
                 }
             }
-
+            
             // Stats
-            HStack(spacing: 16) {
-                StatView(title: "ХП", value: "\(monster.hitPoints ?? 0)")
-                StatView(title: "Скорость", value: monster.speed)
-                StatView(title: "Размер", value: monster.size)
-                StatView(title: "БМ", value: "+\(monster.proficiencyBonusValue)")
-                StatView(title: "ПВ", value: "\(monster.passivePerception)")
+            HStack(spacing: 8) {
+                Text("КЗ \(monster.armorClass ?? 10)")
+                    .font(.caption)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.blue.opacity(0.8))
+                    .cornerRadius(6)
+
+                Text("ХП \(monster.hitPoints ?? 10)")
+                    .font(.caption)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.green.opacity(0.8))
+                    .cornerRadius(6)
+                
+                Text("КО \(monster.challengeRating ?? "1/8")")
+                    .font(.caption)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.red.opacity(0.8))
+                    .cornerRadius(6)
+                
+                Spacer()
             }
 
             // Expandable Content

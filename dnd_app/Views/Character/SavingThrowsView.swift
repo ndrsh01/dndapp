@@ -36,6 +36,7 @@ struct SavingThrowsView: View {
                     Button("Готово") {
                         dismiss()
                     }
+                    .foregroundColor(.orange)
                 }
             }
         }

@@ -207,11 +207,13 @@ class CharacterManager: ObservableObject {
         let relationships = dataService.getRelationships(for: character.id)
         let notes = dataService.getNotes(for: character.id)
         let favoriteSpells = dataService.getFavoriteSpells(for: character.id)
+        let favoriteMonsters = dataService.getFavoriteMonsters(for: character.id)
 
         print("Related data counts:")
         print("- Relationships: \(relationships.count)")
         print("- Notes: \(notes.count)")
         print("- Favorite spells: \(favoriteSpells.count)")
+        print("- Favorite monsters: \(favoriteMonsters.count)")
 
         // Создаем упрощенную версию персонажа для экспорта
         var exportCharacter = character
@@ -226,7 +228,8 @@ class CharacterManager: ObservableObject {
             character: exportCharacter,
             relationships: relationships,
             notes: notes,
-            favoriteSpells: favoriteSpells
+            favoriteSpells: favoriteSpells,
+            favoriteMonsters: favoriteMonsters
         )
         print("ExtendedCharacterExport created successfully")
 
@@ -260,7 +263,8 @@ class CharacterManager: ObservableObject {
                 character: exportCharacter,
                 relationships: relationships,
                 notes: notes,
-                favoriteSpells: favoriteSpells
+                favoriteSpells: favoriteSpells,
+                favoriteMonsters: favoriteMonsters
             )
 
             do {
@@ -620,7 +624,7 @@ class CharacterManager: ObservableObject {
         )
     }
     
-    func importExtendedCharacter(from jsonString: String) -> (Character, [Relationship], [Note], [Spell])? {
+    func importExtendedCharacter(from jsonString: String) -> (Character, [Relationship], [Note], [Spell], [Monster])? {
         guard let data = jsonString.data(using: .utf8) else { return nil }
         
         let decoder = JSONDecoder()
@@ -646,41 +650,41 @@ class CharacterManager: ObservableObject {
             
             // Копируем остальные свойства
             var newCharacter = importedCharacter
-            newCharacter.subclass = extendedExport.character.subclass
-            newCharacter.strength = extendedExport.character.strength
-            newCharacter.dexterity = extendedExport.character.dexterity
-            newCharacter.constitution = extendedExport.character.constitution
-            newCharacter.intelligence = extendedExport.character.intelligence
-            newCharacter.wisdom = extendedExport.character.wisdom
-            newCharacter.charisma = extendedExport.character.charisma
-            newCharacter.armorClass = extendedExport.character.armorClass
-            newCharacter.initiative = extendedExport.character.initiative
-            newCharacter.speed = extendedExport.character.speed
-            newCharacter.hitPoints = extendedExport.character.hitPoints
-            newCharacter.maxHitPoints = extendedExport.character.maxHitPoints
-            newCharacter.proficiencyBonus = extendedExport.character.proficiencyBonus
-            newCharacter.skills = extendedExport.character.skills
-            newCharacter.skillsExpertise = extendedExport.character.skillsExpertise
-            newCharacter.savingThrows = extendedExport.character.savingThrows
-            newCharacter.classAbilities = extendedExport.character.classAbilities
-            newCharacter.equipment = extendedExport.character.equipment
-            newCharacter.treasures = extendedExport.character.treasures
-            newCharacter.copperPieces = extendedExport.character.copperPieces
-            newCharacter.silverPieces = extendedExport.character.silverPieces
-            newCharacter.electrumPieces = extendedExport.character.electrumPieces
-            newCharacter.goldPieces = extendedExport.character.goldPieces
-            newCharacter.platinumPieces = extendedExport.character.platinumPieces
-            newCharacter.personalityTraits = extendedExport.character.personalityTraits
-            newCharacter.ideals = extendedExport.character.ideals
-            newCharacter.bonds = extendedExport.character.bonds
-            newCharacter.flaws = extendedExport.character.flaws
-            newCharacter.features = extendedExport.character.features
-            newCharacter.classResources = extendedExport.character.classResources
-            newCharacter.classes = extendedExport.character.classes
-            newCharacter.activeEffects = extendedExport.character.activeEffects
-            newCharacter.temporaryHitPoints = extendedExport.character.temporaryHitPoints
-            newCharacter.inspiration = extendedExport.character.inspiration
-            newCharacter.avatarImageData = extendedExport.character.avatarImageData
+            newCharacter.subclass = characterData.subclass
+            newCharacter.strength = characterData.strength
+            newCharacter.dexterity = characterData.dexterity
+            newCharacter.constitution = characterData.constitution
+            newCharacter.intelligence = characterData.intelligence
+            newCharacter.wisdom = characterData.wisdom
+            newCharacter.charisma = characterData.charisma
+            newCharacter.armorClass = characterData.armorClass
+            newCharacter.initiative = characterData.initiative
+            newCharacter.speed = characterData.speed
+            newCharacter.hitPoints = characterData.hitPoints
+            newCharacter.maxHitPoints = characterData.maxHitPoints
+            newCharacter.proficiencyBonus = characterData.proficiencyBonus
+            newCharacter.skills = characterData.skills
+            newCharacter.skillsExpertise = characterData.skillsExpertise
+            newCharacter.savingThrows = characterData.savingThrows
+            newCharacter.classAbilities = characterData.classAbilities
+            newCharacter.equipment = characterData.equipment
+            newCharacter.treasures = characterData.treasures
+            newCharacter.copperPieces = characterData.copperPieces
+            newCharacter.silverPieces = characterData.silverPieces
+            newCharacter.electrumPieces = characterData.electrumPieces
+            newCharacter.goldPieces = characterData.goldPieces
+            newCharacter.platinumPieces = characterData.platinumPieces
+            newCharacter.personalityTraits = characterData.personalityTraits
+            newCharacter.ideals = characterData.ideals
+            newCharacter.bonds = characterData.bonds
+            newCharacter.flaws = characterData.flaws
+            newCharacter.features = characterData.features
+            newCharacter.classResources = characterData.classResources
+            newCharacter.classes = characterData.classes
+            newCharacter.activeEffects = characterData.activeEffects
+            newCharacter.temporaryHitPoints = characterData.temporaryHitPoints
+            newCharacter.inspiration = characterData.inspiration
+            newCharacter.avatarImageData = characterData.avatarImageData
             newCharacter.dateCreated = Date()
             newCharacter.dateModified = Date()
             
@@ -696,7 +700,7 @@ class CharacterManager: ObservableObject {
                 )
             }
             
-            let newNotes = extendedExport.notes.map { note in
+            let newNotes = (extendedExport.notes ?? []).map { note in
                 Note(
                     title: note.title,
                     description: note.description,
@@ -724,26 +728,32 @@ class CharacterManager: ObservableObject {
                 )
             }
             
-            let newSpells = extendedExport.favoriteSpells.map { spell in
+            let newSpells = (extendedExport.favoriteSpells ?? []).map { spell in
                 var newSpell = spell
                 newSpell.characterId = newCharacter.id
                 return newSpell
             }
             
-            return (newCharacter, newRelationships, newNotes, newSpells)
+            let newMonsters = (extendedExport.favoriteMonsters ?? []).map { monster in
+                var newMonster = monster
+                newMonster.characterId = newCharacter.id
+                return newMonster
+            }
+            
+            return (newCharacter, newRelationships, newNotes, newSpells, newMonsters)
         } catch {
             print("Ошибка импорта расширенного персонажа: \(error)")
             return nil
         }
     }
     
-    func importCharacterWithData(from jsonString: String) -> (Character, [Relationship], [Note], [Spell])? {
+    func importCharacterWithData(from jsonString: String) -> (Character, [Relationship], [Note], [Spell], [Monster])? {
         guard let data = jsonString.data(using: .utf8) else { return nil }
         
         // Сначала пробуем импорт из Long Story Short
         if let lssCharacter = importFromLongStoryShort(from: jsonString) {
             print("Успешно импортирован персонаж из Long Story Short")
-            return (lssCharacter, [], [], [])
+            return (lssCharacter, [], [], [], [])
         }
         
         let decoder = JSONDecoder()
@@ -754,76 +764,87 @@ class CharacterManager: ObservableObject {
             let extendedExport = try decoder.decode(ExtendedCharacterExport.self, from: data)
             print("Успешно импортирован ExtendedCharacterExport с дополнительными данными")
             
+            // Проверяем, есть ли данные персонажа
+            guard let character = extendedExport.character else {
+                throw NSError(domain: "CharacterManager", code: 3, userInfo: [NSLocalizedDescriptionKey: "Отсутствуют данные персонажа в экспорте"])
+            }
+            
             // Создаем новый персонаж с новым ID для импорта
             let importedCharacter = Character(
-                name: extendedExport.character.name,
-                race: extendedExport.character.race,
-                characterClass: extendedExport.character.characterClass,
-                background: extendedExport.character.background,
-                alignment: extendedExport.character.alignment,
-                level: extendedExport.character.level
+                name: character.name,
+                race: character.race,
+                characterClass: character.characterClass,
+                background: character.background,
+                alignment: character.alignment,
+                level: character.level
             )
             
             // Копируем остальные свойства
             var newCharacter = importedCharacter
-            newCharacter.subclass = extendedExport.character.subclass
-            newCharacter.strength = extendedExport.character.strength
-            newCharacter.dexterity = extendedExport.character.dexterity
-            newCharacter.constitution = extendedExport.character.constitution
-            newCharacter.intelligence = extendedExport.character.intelligence
-            newCharacter.wisdom = extendedExport.character.wisdom
-            newCharacter.charisma = extendedExport.character.charisma
-            newCharacter.armorClass = extendedExport.character.armorClass
-            newCharacter.initiative = extendedExport.character.initiative
-            newCharacter.speed = extendedExport.character.speed
-            newCharacter.hitPoints = extendedExport.character.hitPoints
-            newCharacter.maxHitPoints = extendedExport.character.maxHitPoints
-            newCharacter.proficiencyBonus = extendedExport.character.proficiencyBonus
-            newCharacter.skills = extendedExport.character.skills
-            newCharacter.skillsExpertise = extendedExport.character.skillsExpertise
-            newCharacter.savingThrows = extendedExport.character.savingThrows
-            newCharacter.classAbilities = extendedExport.character.classAbilities
-            newCharacter.equipment = extendedExport.character.equipment
-            newCharacter.treasures = extendedExport.character.treasures
-            newCharacter.copperPieces = extendedExport.character.copperPieces
-            newCharacter.silverPieces = extendedExport.character.silverPieces
-            newCharacter.electrumPieces = extendedExport.character.electrumPieces
-            newCharacter.goldPieces = extendedExport.character.goldPieces
-            newCharacter.platinumPieces = extendedExport.character.platinumPieces
-            newCharacter.personalityTraits = extendedExport.character.personalityTraits
-            newCharacter.ideals = extendedExport.character.ideals
-            newCharacter.bonds = extendedExport.character.bonds
-            newCharacter.flaws = extendedExport.character.flaws
-            newCharacter.features = extendedExport.character.features
-            newCharacter.classResources = extendedExport.character.classResources
-            newCharacter.classes = extendedExport.character.classes
-            newCharacter.activeEffects = extendedExport.character.activeEffects
-            newCharacter.temporaryHitPoints = extendedExport.character.temporaryHitPoints
-            newCharacter.inspiration = extendedExport.character.inspiration
-            newCharacter.avatarImageData = extendedExport.character.avatarImageData
+            newCharacter.subclass = character.subclass
+            newCharacter.strength = character.strength
+            newCharacter.dexterity = character.dexterity
+            newCharacter.constitution = character.constitution
+            newCharacter.intelligence = character.intelligence
+            newCharacter.wisdom = character.wisdom
+            newCharacter.charisma = character.charisma
+            newCharacter.armorClass = character.armorClass
+            newCharacter.initiative = character.initiative
+            newCharacter.speed = character.speed
+            newCharacter.hitPoints = character.hitPoints
+            newCharacter.maxHitPoints = character.maxHitPoints
+            newCharacter.proficiencyBonus = character.proficiencyBonus
+            newCharacter.skills = character.skills
+            newCharacter.skillsExpertise = character.skillsExpertise
+            newCharacter.savingThrows = character.savingThrows
+            newCharacter.classAbilities = character.classAbilities
+            newCharacter.equipment = character.equipment
+            newCharacter.treasures = character.treasures
+            newCharacter.copperPieces = character.copperPieces
+            newCharacter.silverPieces = character.silverPieces
+            newCharacter.electrumPieces = character.electrumPieces
+            newCharacter.goldPieces = character.goldPieces
+            newCharacter.platinumPieces = character.platinumPieces
+            newCharacter.personalityTraits = character.personalityTraits
+            newCharacter.ideals = character.ideals
+            newCharacter.bonds = character.bonds
+            newCharacter.flaws = character.flaws
+            newCharacter.features = character.features
+            newCharacter.classResources = character.classResources
+            newCharacter.classes = character.classes
+            newCharacter.activeEffects = character.activeEffects
+            newCharacter.temporaryHitPoints = character.temporaryHitPoints
+            newCharacter.inspiration = character.inspiration
+            newCharacter.avatarImageData = character.avatarImageData
             newCharacter.dateCreated = Date()
             newCharacter.dateModified = Date()
             
             // Обновляем ID для связанных данных
-            let newRelationships = extendedExport.relationships.map { relationship in
+            let newRelationships = (extendedExport.relationships ?? []).map { relationship in
                 var newRelationship = relationship
                 newRelationship.characterId = newCharacter.id
                 return newRelationship
             }
             
-            let newNotes = extendedExport.notes.map { note in
+            let newNotes = (extendedExport.notes ?? []).map { note in
                 var newNote = note
                 newNote.characterId = newCharacter.id
                 return newNote
             }
             
-            let newSpells = extendedExport.favoriteSpells.map { spell in
+            let newSpells = (extendedExport.favoriteSpells ?? []).map { spell in
                 var newSpell = spell
                 newSpell.characterId = newCharacter.id
                 return newSpell
             }
             
-            return (newCharacter, newRelationships, newNotes, newSpells)
+            let newMonsters = (extendedExport.favoriteMonsters ?? []).map { monster in
+                var newMonster = monster
+                newMonster.characterId = newCharacter.id
+                return newMonster
+            }
+            
+            return (newCharacter, newRelationships, newNotes, newSpells, newMonsters)
         } catch {
             print("Ошибка импорта расширенного персонажа: \(error)")
             return nil
@@ -847,7 +868,10 @@ class CharacterManager: ObservableObject {
             let character: Character
             do {
                 let extendedExport = try decoder.decode(ExtendedCharacterExport.self, from: data)
-                character = extendedExport.character
+                guard let unwrappedCharacter = extendedExport.character else {
+                    throw NSError(domain: "CharacterManager", code: 3, userInfo: [NSLocalizedDescriptionKey: "Отсутствуют данные персонажа в экспорте"])
+                }
+                character = unwrappedCharacter
                 print("Успешно импортирован ExtendedCharacterExport")
             } catch {
                 print("Не удалось декодировать как ExtendedCharacterExport, пробуем полный Character: \(error)")

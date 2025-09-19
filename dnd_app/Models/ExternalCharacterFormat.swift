@@ -171,6 +171,11 @@ struct ExternalCharacterData: Codable {
 struct CharacterField: Codable {
     let value: CharacterFieldValue
     
+    // Программный инициализатор
+    init(value: CharacterFieldValue) {
+        self.value = value
+    }
+    
     // Кастомный инициализатор для обработки разных структур
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)

@@ -50,7 +50,7 @@ struct CharacterSelectionView: View {
                 DocumentPicker { data in
                     // Сначала пробуем импортировать как расширенный формат с дополнительными данными
                     if let jsonString = String(data: data, encoding: .utf8),
-                       let (character, relationships, notes, spells) = characterManager.importCharacterWithData(from: jsonString) {
+                       let (character, relationships, notes, spells, monsters) = characterManager.importCharacterWithData(from: jsonString) {
                         characterManager.addCharacter(character)
                         
                         // Сохраняем дополнительные данные
@@ -64,6 +64,9 @@ struct CharacterSelectionView: View {
                         
                         // Сохраняем избранные заклинания
                         dataService.addFavoriteSpells(spells, for: character.id)
+                        
+                        // Сохраняем избранных монстров
+                        dataService.addFavoriteMonsters(monsters, for: character.id)
                         
                         alertMessage = "Персонаж успешно импортирован с дополнительными данными!"
                         showingAlert = true

@@ -1049,6 +1049,7 @@ struct CharacterSkillsView: View {
                     Button("Готово") {
                         dismiss()
                     }
+                    .foregroundColor(.orange)
                 }
             }
         }
@@ -1190,6 +1191,7 @@ struct CharacterClassFeaturesView: View {
                     Button("Готово") {
                         dismiss()
                     }
+                    .foregroundColor(.orange)
                 }
             }
         }
