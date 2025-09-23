@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2723C95F2E7D78DE0071CED8 /* items.json in Resources */ = {isa = PBXBuildFile; fileRef = 2723C95E2E7D78DE0071CED8 /* items.json */; };
+		2723C9612E7D79F50071CED8 /* MagicItemsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2723C9602E7D79F50071CED8 /* MagicItemsView.swift */; };
+		2723C9632E7D7A1A0071CED8 /* MagicItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2723C9622E7D7A1A0071CED8 /* MagicItem.swift */; };
+		2723C9652E7D7A2D0071CED8 /* MagicItemService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2723C9642E7D7A2D0071CED8 /* MagicItemService.swift */; };
 		276653102E6EAE0600949D0C /* ExtendedCharacterExport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2766530F2E6EAE0600949D0C /* ExtendedCharacterExport.swift */; };
 		276653122E6EB3AB00949D0C /* CharacterPersonalityView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276653112E6EB3AB00949D0C /* CharacterPersonalityView.swift */; };
 		276653142E6EB51400949D0C /* CharacterFeaturesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 276653132E6EB51400949D0C /* CharacterFeaturesView.swift */; };
@@ -80,6 +84,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		2723C95E2E7D78DE0071CED8 /* items.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = items.json; sourceTree = "<group>"; };
+		2723C9602E7D79F50071CED8 /* MagicItemsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MagicItemsView.swift; sourceTree = "<group>"; };
+		2723C9622E7D7A1A0071CED8 /* MagicItem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MagicItem.swift; sourceTree = "<group>"; };
+		2723C9642E7D7A2D0071CED8 /* MagicItemService.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MagicItemService.swift; sourceTree = "<group>"; };
 		2766530F2E6EAE0600949D0C /* ExtendedCharacterExport.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExtendedCharacterExport.swift; sourceTree = "<group>"; };
 		276653112E6EB3AB00949D0C /* CharacterPersonalityView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterPersonalityView.swift; sourceTree = "<group>"; };
 		276653132E6EB51400949D0C /* CharacterFeaturesView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CharacterFeaturesView.swift; sourceTree = "<group>"; };
@@ -227,6 +235,7 @@
 				2766530F2E6EAE0600949D0C /* ExtendedCharacterExport.swift */,
 				276653172E70063400949D0C /* CharacterEffects.swift */,
 				276653152E6EBC9100949D0C /* AppSettings.swift */,
+				2723C9622E7D7A1A0071CED8 /* MagicItem.swift */,
 				276653252E717A4100949D0C /* Equipment.swift */,
 				27AF9DD12E696FB7006311EC /* Character.swift */,
 				27AF9DD22E696FB7006311EC /* Background.swift */,
@@ -271,6 +280,7 @@
 				27AF9DDE2E696FB7006311EC /* feats.json */,
 				27AF9DDF2E696FB7006311EC /* classes.json */,
 				27AF9DE02E696FB7006311EC /* backgrounds.json */,
+				2723C95E2E7D78DE0071CED8 /* items.json */,
 				27AF9DE12E696FB7006311EC /* quotes.json */,
 				27AF9DE22E696FB7006311EC /* class_tables.json */,
 				27AF9DE32E696FB7006311EC /* bestiary_5e.ndjson */,
@@ -349,6 +359,7 @@
 			isa = PBXGroup;
 			children = (
 				27AF9E242E6998F6006311EC /* SpellsView.swift */,
+				2723C9602E7D79F50071CED8 /* MagicItemsView.swift */,
 				27AF9E2A2E69ACEA006311EC /* FavoritesView.swift */,
 				27AF9E282E69ACE0006311EC /* FeatsView.swift */,
 				27AF9E262E69ACD7006311EC /* BackgroundsView.swift */,
@@ -371,6 +382,7 @@
 			children = (
 				27AF9DF62E696FB7006311EC /* DataService.swift */,
 				27AF9DF72E696FB7006311EC /* MonsterService.swift */,
+				2723C9642E7D7A2D0071CED8 /* MagicItemService.swift */,
 				27AF9E222E6989DB006311EC /* CacheManager.swift */,
 				27BFB5EF2E6AE91A00149C08 /* CharacterManager.swift */,
 			);
@@ -442,6 +454,7 @@
 				27AF9E0F2E696FB7006311EC /* backgrounds.json in Resources */,
 				27AF9E002E696FB7006311EC /* Assets.xcassets in Resources */,
 				27AF9E102E696FB7006311EC /* quotes.json in Resources */,
+				2723C95F2E7D78DE0071CED8 /* items.json in Resources */,
 				27AF9E0D2E696FB7006311EC /* feats.json in Resources */,
 				27AF9E0A2E696FB7006311EC /* Preview Assets.xcassets in Resources */,
 				27AF9E122E696FB7006311EC /* bestiary_5e.ndjson in Resources */,
@@ -455,6 +468,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2723C9612E7D79F50071CED8 /* MagicItemsView.swift in Sources */,
 				2766531E2E703C5700949D0C /* SimpleEditStatView.swift in Sources */,
 				27AF9DF92E696FB7006311EC /* RelationshipsViewModel.swift in Sources */,
 				27BFB5EE2E6AE8E100149C08 /* CharacterEditView.swift in Sources */,
@@ -465,6 +479,7 @@
 				27AF9DFC2E696FB7006311EC /* NotesViewModel.swift in Sources */,
 				27BFB5FA2E6AF85300149C08 /* EditHitPointsPopupView.swift in Sources */,
 				27BFB5F42E6AF30100149C08 /* CharacterClass.swift in Sources */,
+				2723C9652E7D7A2D0071CED8 /* MagicItemService.swift in Sources */,
 				27BFB5EA2E6AE82900149C08 /* DocumentPicker.swift in Sources */,
 				27AF9E182E696FB7006311EC /* CharacterView.swift in Sources */,
 				27BFB5E62E6AE7C900149C08 /* CharacterTabView.swift in Sources */,
@@ -484,6 +499,7 @@
 				276653222E716E6900949D0C /* CharacterTreasuresView.swift in Sources */,
 				27AF9E232E6989DC006311EC /* CacheManager.swift in Sources */,
 				27AF9DF82E696FB7006311EC /* MainTabView.swift in Sources */,
+				2723C9632E7D7A1A0071CED8 /* MagicItem.swift in Sources */,
 				27AF9E012E696FB7006311EC /* TabaxiImages.swift in Sources */,
 				27FA09582E784AC600EDCE70 /* MulticlassManagementView.swift in Sources */,
 				27AF9DFD2E696FB7006311EC /* CharacterViewModel.swift in Sources */,

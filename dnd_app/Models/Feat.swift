@@ -9,6 +9,12 @@ struct Feat: Codable, Identifiable {
     let описание: String
     
     var isFavorite: Bool = false
+    var characterId: UUID? = nil
+    
+    // Computed property for name compatibility
+    var name: String {
+        return название
+    }
     
     enum CodingKeys: String, CodingKey {
         case название = "Название"

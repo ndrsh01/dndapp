@@ -39,6 +39,15 @@ class DataService: ObservableObject {
     private let userDefaults = UserDefaults.standard
     private let cacheManager = CacheManager.shared
     
+    // MARK: - File System Storage
+    private var documentsDirectory: URL {
+        FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+    }
+    
+    private func fileURL(for key: String) -> URL {
+        documentsDirectory.appendingPathComponent("\(key).json")
+    }
+    
     // MARK: - Keys for UserDefaults
     private enum Keys {
         static let relationships = "relationships"
@@ -46,6 +55,8 @@ class DataService: ObservableObject {
         static let characters = "characters"
         static let spells = "spells"
         static let monsters = "monsters"
+        static let feats = "feats"
+        static let backgrounds = "backgrounds"
         static let selectedCharacter = "selectedCharacter"
         static let selectedQuoteCategory = "selectedQuoteCategory"
     }
@@ -605,14 +616,18 @@ class DataService: ObservableObject {
     // loadCharacters() - убрано, персонажи управляются через CharacterManager
     
     private func loadSpells() {
-        if let data = userDefaults.data(forKey: Keys.spells),
+        let url = fileURL(for: Keys.spells)
+        if FileManager.default.fileExists(atPath: url.path),
+           let data = try? Data(contentsOf: url),
            let spells = try? JSONDecoder().decode([Spell].self, from: data) {
             self.spells = spells
         }
     }
     
     private func loadMonsters() {
-        if let data = userDefaults.data(forKey: Keys.monsters),
+        let url = fileURL(for: Keys.monsters)
+        if FileManager.default.fileExists(atPath: url.path),
+           let data = try? Data(contentsOf: url),
            let monsters = try? JSONDecoder().decode([Monster].self, from: data) {
             self.monsters = monsters
         }
@@ -722,14 +737,28 @@ class DataService: ObservableObject {
     // saveCharacters() - убрано, персонажи управляются через CharacterManager
     
     private func saveSpells() {
+        let url = fileURL(for: Keys.spells)
         if let data = try? JSONEncoder().encode(spells) {
-            userDefaults.set(data, forKey: Keys.spells)
+            try? data.write(to: url)
         }
     }
     
     private func saveMonsters() {
+        let url = fileURL(for: Keys.monsters)
         if let data = try? JSONEncoder().encode(monsters) {
-            userDefaults.set(data, forKey: Keys.monsters)
+            try? data.write(to: url)
+        }
+    }
+    
+    private func saveFeats() {
+        if let data = try? JSONEncoder().encode(feats) {
+            userDefaults.set(data, forKey: Keys.feats)
+        }
+    }
+    
+    private func saveBackgrounds() {
+        if let data = try? JSONEncoder().encode(backgrounds) {
+            userDefaults.set(data, forKey: Keys.backgrounds)
         }
     }
     
@@ -900,15 +929,33 @@ class DataService: ObservableObject {
         print("Favorite spells saved successfully")
     }
     
-    func toggleFeatFavorite(_ feat: Feat) {
+    func toggleFeatFavorite(_ feat: Feat, for characterId: UUID? = nil) {
+        print("=== TOGGLE FEAT FAVORITE ===")
+        print("Feat: '\(feat.name)', characterId: \(characterId?.uuidString ?? "nil")")
+        
         if let index = feats.firstIndex(where: { $0.id == feat.id }) {
             feats[index].isFavorite.toggle()
+            feats[index].characterId = characterId
+            print("Feat favorite toggled to: \(feats[index].isFavorite)")
+            saveFeats() // Сохраняем изменения
+            print("Feat favorite saved successfully")
+        } else {
+            print("ERROR: Feat not found in feats array")
         }
     }
     
-    func toggleBackgroundFavorite(_ background: Background) {
+    func toggleBackgroundFavorite(_ background: Background, for characterId: UUID? = nil) {
+        print("=== TOGGLE BACKGROUND FAVORITE ===")
+        print("Background: '\(background.name)', characterId: \(characterId?.uuidString ?? "nil")")
+        
         if let index = backgrounds.firstIndex(where: { $0.id == background.id }) {
             backgrounds[index].isFavorite.toggle()
+            backgrounds[index].characterId = characterId
+            print("Background favorite toggled to: \(backgrounds[index].isFavorite)")
+            saveBackgrounds() // Сохраняем изменения
+            print("Background favorite saved successfully")
+        } else {
+            print("ERROR: Background not found in backgrounds array")
         }
     }
     
@@ -960,6 +1007,84 @@ class DataService: ObservableObject {
         
         saveMonsters()
         print("Favorite monsters saved successfully")
+    }
+    
+    // MARK: - Feat Favorites
+    func getFavoriteFeats(for characterId: UUID?) -> [Feat] {
+        let filteredFeats: [Feat]
+        if let characterId = characterId {
+            filteredFeats = feats.filter { feat in
+                feat.isFavorite && feat.characterId == characterId
+            }
+            print("=== GET FAVORITE FEATS ===")
+            print("Getting favorite feats for character: \(characterId.uuidString)")
+            print("Found \(filteredFeats.count) favorite feats for this character")
+        } else {
+            filteredFeats = feats.filter { feat in
+                feat.isFavorite && feat.characterId == nil
+            }
+            print("=== GET FAVORITE FEATS ===")
+            print("Getting favorite feats without character (nil)")
+            print("Found \(filteredFeats.count) favorite feats without character")
+        }
+        return filteredFeats
+    }
+    
+    func addFavoriteFeats(_ feats: [Feat], for characterId: UUID) {
+        print("=== ADD FAVORITE FEATS ===")
+        print("Adding \(feats.count) favorite feats for character: \(characterId.uuidString)")
+        
+        for feat in feats {
+            if let index = self.feats.firstIndex(where: { $0.id == feat.id }) {
+                self.feats[index].isFavorite = true
+                self.feats[index].characterId = characterId
+                print("Added favorite feat: \(feat.name)")
+            } else {
+                print("WARNING: Feat not found in feats array: \(feat.name)")
+            }
+        }
+        
+        saveFeats()
+        print("Favorite feats saved successfully")
+    }
+    
+    // MARK: - Background Favorites
+    func getFavoriteBackgrounds(for characterId: UUID?) -> [Background] {
+        let filteredBackgrounds: [Background]
+        if let characterId = characterId {
+            filteredBackgrounds = backgrounds.filter { background in
+                background.isFavorite && background.characterId == characterId
+            }
+            print("=== GET FAVORITE BACKGROUNDS ===")
+            print("Getting favorite backgrounds for character: \(characterId.uuidString)")
+            print("Found \(filteredBackgrounds.count) favorite backgrounds for this character")
+        } else {
+            filteredBackgrounds = backgrounds.filter { background in
+                background.isFavorite && background.characterId == nil
+            }
+            print("=== GET FAVORITE BACKGROUNDS ===")
+            print("Getting favorite backgrounds without character (nil)")
+            print("Found \(filteredBackgrounds.count) favorite backgrounds without character")
+        }
+        return filteredBackgrounds
+    }
+    
+    func addFavoriteBackgrounds(_ backgrounds: [Background], for characterId: UUID) {
+        print("=== ADD FAVORITE BACKGROUNDS ===")
+        print("Adding \(backgrounds.count) favorite backgrounds for character: \(characterId.uuidString)")
+        
+        for background in backgrounds {
+            if let index = self.backgrounds.firstIndex(where: { $0.id == background.id }) {
+                self.backgrounds[index].isFavorite = true
+                self.backgrounds[index].characterId = characterId
+                print("Added favorite background: \(background.name)")
+            } else {
+                print("WARNING: Background not found in backgrounds array: \(background.name)")
+            }
+        }
+        
+        saveBackgrounds()
+        print("Favorite backgrounds saved successfully")
     }
     
     // MARK: - Session Management

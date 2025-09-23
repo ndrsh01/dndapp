@@ -8,15 +8,28 @@ struct FavoritesView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 16) {
-                // Табы
-                Picker("Тип", selection: $selectedTab) {
-                    Text("Заклинания").tag(0)
-                    Text("Предыстории").tag(1)
-                    Text("Черты").tag(2)
-                    Text("Бестиарий").tag(3)
+                // Табы - горизонтальный скроллинг
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(0..<5) { index in
+                            Button(action: {
+                                selectedTab = index
+                            }) {
+                                Text(tabTitle(for: index))
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(selectedTab == index ? .white : .primary)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 20)
+                                            .fill(selectedTab == index ? Color(.systemOrange) : Color(.systemGray6))
+                                    )
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
                 }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding(.horizontal, 16)
                 .padding(.top, 20)
                 
                 // Контент
@@ -36,6 +49,10 @@ struct FavoritesView: View {
                     // Избранные монстры
                     FavoriteBestiarySection()
                         .tag(3)
+                    
+                    // Избранные магические предметы
+                    FavoriteMagicItemsSection()
+                        .tag(4)
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
             }
@@ -43,6 +60,19 @@ struct FavoritesView: View {
             .navigationTitle("Избранное")
             .navigationBarTitleDisplayMode(.large)
             .ignoresSafeArea(.all, edges: .bottom)
+        }
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func tabTitle(for index: Int) -> String {
+        switch index {
+        case 0: return "Заклинания"
+        case 1: return "Предыстории"
+        case 2: return "Черты"
+        case 3: return "Бестиарий"
+        case 4: return "Предметы"
+        default: return ""
         }
     }
     
@@ -342,6 +372,82 @@ struct FavoriteBestiarySection: View {
             expandedMonsters.remove(id)
         } else {
             expandedMonsters.insert(id)
+        }
+    }
+}
+
+struct FavoriteMagicItemsSection: View {
+    @StateObject private var magicItemService = MagicItemService()
+    @State private var favoriteItems: Set<String> = []
+    @State private var expandedItems: Set<String> = []
+    
+    var favoriteItemsList: [MagicItem] {
+        magicItemService.magicItems.filter { favoriteItems.contains($0.id) }
+    }
+    
+    var body: some View {
+        ScrollView {
+            LazyVStack(spacing: 12) {
+                if favoriteItemsList.isEmpty {
+                    EmptyStateView(
+                        icon: "heart",
+                        title: "Нет избранных предметов",
+                        description: "Добавьте магические предметы в избранное, нажав на сердечко",
+                        actionTitle: nil,
+                        action: nil
+                    )
+                    .padding(.top, 50)
+                } else {
+                    ForEach(favoriteItemsList, id: \.id) { item in
+                        MagicItemCardView(
+                            item: item,
+                            isExpanded: expandedItems.contains(item.id),
+                            isFavorite: favoriteItems.contains(item.id),
+                            onToggleExpanded: {
+                                toggleExpanded(item.id)
+                            },
+                            onToggleFavorite: {
+                                toggleFavorite(item.id)
+                            }
+                        )
+                        .padding(.horizontal, 16)
+                    }
+                }
+            }
+            .padding(.bottom, 20)
+        }
+        .onAppear {
+            loadFavoriteItems()
+        }
+    }
+    
+    private func toggleExpanded(_ id: String) {
+        if expandedItems.contains(id) {
+            expandedItems.remove(id)
+        } else {
+            expandedItems.insert(id)
+        }
+    }
+    
+    private func toggleFavorite(_ id: String) {
+        if favoriteItems.contains(id) {
+            favoriteItems.remove(id)
+        } else {
+            favoriteItems.insert(id)
+        }
+        saveFavoriteItems()
+    }
+    
+    private func loadFavoriteItems() {
+        if let data = UserDefaults.standard.data(forKey: "favoriteMagicItems"),
+           let favorites = try? JSONDecoder().decode(Set<String>.self, from: data) {
+            favoriteItems = favorites
+        }
+    }
+    
+    private func saveFavoriteItems() {
+        if let data = try? JSONEncoder().encode(favoriteItems) {
+            UserDefaults.standard.set(data, forKey: "favoriteMagicItems")
         }
     }
 }

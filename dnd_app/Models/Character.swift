@@ -702,6 +702,10 @@ struct Character: Codable, Identifiable {
         
         // Обновить общий уровень
         self.level = totalLevel
+        
+        // Ресурсы класса будут обновлены в CharacterView при следующем обновлении
+        // Очищаем старые ресурсы, чтобы они пересоздались с новыми значениями
+        classResources.removeAll()
     }
     
     /// Удалить класс из мультикласса
@@ -717,6 +721,10 @@ struct Character: Codable, Identifiable {
             characterClass = remainingClass.name
             subclass = remainingClass.subclass
         }
+        
+        // Ресурсы класса будут обновлены в CharacterView при следующем обновлении
+        // Очищаем старые ресурсы, чтобы они пересоздались с новыми значениями
+        classResources.removeAll()
     }
     
     /// Обновить уровень класса
@@ -724,6 +732,10 @@ struct Character: Codable, Identifiable {
         if let index = classes.firstIndex(where: { $0.id == classId }) {
             classes[index].level = newLevel
             self.level = totalLevel
+            
+            // Ресурсы класса будут обновлены в CharacterView при следующем обновлении
+            // Очищаем старые ресурсы, чтобы они пересоздались с новыми значениями
+            classResources.removeAll()
         }
     }
     

@@ -5,6 +5,7 @@ enum SheetContent {
     case backgrounds
     case feats
     case bestiary
+    case magicItems
     case favorites
 }
 
@@ -71,6 +72,18 @@ struct CompendiumView: View {
                     )
                     
                     CompendiumCategoryCard(
+                        title: "Магические предметы",
+                        subtitle: "Волшебные артефакты и предметы",
+                        icon: "sparkles",
+                        iconColor: .purple,
+                        action: {
+                            print("Magic Items button tapped")
+                            sheetContent = .magicItems
+                            showSheet = true
+                        }
+                    )
+                    
+                    CompendiumCategoryCard(
                         title: "Избранное",
                         subtitle: "Сохраненные элементы",
                         icon: "heart.fill",
@@ -104,6 +117,8 @@ struct CompendiumView: View {
                     .environmentObject(viewModel)
             case .bestiary:
                 BestiaryView()
+            case .magicItems:
+                MagicItemsView()
             case .favorites:
                 FavoritesView()
                     .environmentObject(viewModel)

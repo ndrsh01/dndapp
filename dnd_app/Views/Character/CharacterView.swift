@@ -65,11 +65,15 @@ struct CharacterView: View {
         .onAppear {
             // Убеждаемся, что данные загружены
             dataService.ensureClassTablesLoaded()
-            
-            // Инициализируем ресурсы если они пустые
-            if viewModel.character.classResources.isEmpty {
-                initializeCharacterResources()
-            }
+            checkAndUpdateResources()
+        }
+        .onChange(of: viewModel.character.level) { _ in
+            // Обновляем ресурсы при изменении уровня
+            checkAndUpdateResources()
+        }
+        .onChange(of: viewModel.character.classes) { _ in
+            // Обновляем ресурсы при изменении классов
+            checkAndUpdateResources()
         }
         .overlay(
             ZStack {
@@ -989,6 +993,25 @@ struct CharacterView: View {
             return .black.opacity(0.05)
         @unknown default:
             return .black.opacity(0.1)
+        }
+    }
+    
+    private func checkAndUpdateResources() {
+        // Инициализируем ресурсы если они пустые или нужно обновить
+        if viewModel.character.classResources.isEmpty {
+            initializeCharacterResources()
+        } else {
+            // Проверяем, нужно ли обновить ресурсы (например, при изменении уровня)
+            let currentResources = classResourcesFromTables
+            let needsUpdate = currentResources.count != viewModel.character.classResources.count ||
+                currentResources.contains { resource in
+                    let characterResource = viewModel.character.classResources[resource.name]
+                    return characterResource?.maxValue != resource.maxValue
+                }
+            
+            if needsUpdate {
+                initializeCharacterResources()
+            }
         }
     }
     
